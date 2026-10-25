@@ -1,8 +1,11 @@
-# Draws the DV mod icons (no external art).
+# Draws the DV mod icons as 32x32 pixel art (no external art), then scales them up crisp.
 #   art/icons/<mod>.png                       512x512, for Modrinth / CurseForge
 #   <mod>/src/main/resources/<mod>_logo.png   128x128, shown in the Mods list (logoFile in mods.toml)
 #   art/icons/sheet.png                       all icons side by side, for review
 # Run from the repo root:  powershell -ExecutionPolicy Bypass -File tools\make-icons.ps1
+#
+# Each shape is a predicate over pixel centres. Part() paints a shape with a 1px dark outline
+# around it, so later parts sit on earlier ones with a clean border, like Minecraft item sprites.
 
 Add-Type -AssemblyName System.Drawing
 $ErrorActionPreference = 'Stop'
@@ -10,240 +13,195 @@ $root = Split-Path -Parent $PSScriptRoot
 $out = Join-Path $root 'art\icons'
 New-Item -ItemType Directory -Force $out | Out-Null
 
-function C([string]$hex, [int]$a = 255) {
+$N = 32
+$script:grid = $null
+
+function Col([string]$hex) {
     $v = [Convert]::ToInt32($hex.TrimStart('#'), 16)
-    [System.Drawing.Color]::FromArgb($a, ($v -shr 16) -band 255, ($v -shr 8) -band 255, $v -band 255)
+    [System.Drawing.Color]::FromArgb(255, ($v -shr 16) -band 255, ($v -shr 8) -band 255, $v -band 255).ToArgb()
+}
+$OUTLINE = Col '#120F1C'
+
+function Set-Px([int]$x, [int]$y, [int]$c) { if ($x -ge 0 -and $y -ge 0 -and $x -lt $N -and $y -lt $N) { $script:grid[$x, $y] = $c } }
+
+function Mask([scriptblock]$shape) {
+    $m = New-Object 'bool[,]' $N, $N
+    for ($y = 0; $y -lt $N; $y++) { for ($x = 0; $x -lt $N; $x++) { $m[$x, $y] = [bool](& $shape ($x + 0.5) ($y + 0.5)) } }
+    , $m
 }
 
-function RoundRect([float]$x, [float]$y, [float]$w, [float]$h, [float]$r) {
-    $p = New-Object System.Drawing.Drawing2D.GraphicsPath
-    $d = $r * 2
-    $p.AddArc($x, $y, $d, $d, 180, 90)
-    $p.AddArc($x + $w - $d, $y, $d, $d, 270, 90)
-    $p.AddArc($x + $w - $d, $y + $h - $d, $d, $d, 0, 90)
-    $p.AddArc($x, $y + $h - $d, $d, $d, 90, 90)
-    $p.CloseFigure()
-    $p
+function Paint($m, [int]$c) {
+    for ($y = 0; $y -lt $N; $y++) { for ($x = 0; $x -lt $N; $x++) { if ($m[$x, $y]) { $script:grid[$x, $y] = $c } } }
 }
 
-function Pen([string]$hex, [float]$width, [int]$a = 255) {
-    $pen = New-Object System.Drawing.Pen((C $hex $a), $width)
-    $pen.StartCap = 'Round'; $pen.EndCap = 'Round'; $pen.LineJoin = 'Round'
-    $pen
-}
-
-function Brush([string]$hex, [int]$a = 255) { New-Object System.Drawing.SolidBrush((C $hex $a)) }
-
-$LibPurple = '#9B6BFF'
-$Outline = '#120F1C'
-
-# The DV Lib mark, a "library computer": a CRT monitor showing an upright ":3" cat face
-# (dots as eyes on top, the 3 as the mouth), standing on a row of books that forms the case.
-# $s is the width; the mark is about 1.13 * $s tall.
-function Badge($g, [float]$x, [float]$y, [float]$s) {
-    $line = Pen $Outline ($s * 0.045)
-
-    # books (the case) and the shelf they stand on
-    $bx = $x + $s * 0.07; $bw = $s * 0.86 / 5
-    $bh = $s * 0.36; $bBottom = $y + $s * 0.72 + $bh
-    $colors = '#E5534B', '#4FC3F7', '#FFD54F', '#81C784', '#9B6BFF'
-    $heights = 1.0, 0.86, 1.0, 0.93, 0.8
-    for ($i = 0; $i -lt 5; $i++) {
-        $h = $bh * $heights[$i]
-        $rect = [System.Drawing.RectangleF]::new($bx + $i * $bw, $bBottom - $h, $bw, $h)
-        $g.FillRectangle((Brush $colors[$i]), $rect)
-        $g.DrawRectangle($line, $rect.X, $rect.Y, $rect.Width, $rect.Height)
-        $g.DrawLine((Pen '#FFFFFF' ($s * 0.02) 150), [float]($rect.X + $bw * 0.25), [float]($rect.Y + $h * 0.22), [float]($rect.X + $bw * 0.75), [float]($rect.Y + $h * 0.22))
+# 1px outline on the 4 sides of the shape, then the shape itself.
+function Part([scriptblock]$shape, [string]$hex) {
+    $m = Mask $shape
+    for ($y = 0; $y -lt $N; $y++) {
+        for ($x = 0; $x -lt $N; $x++) {
+            if ($m[$x, $y]) { continue }
+            foreach ($d in @(@(1, 0), @(-1, 0), @(0, 1), @(0, -1))) {
+                $nx = $x + $d[0]; $ny = $y + $d[1]
+                if ($nx -ge 0 -and $ny -ge 0 -and $nx -lt $N -and $ny -lt $N -and $m[$nx, $ny]) { $script:grid[$x, $y] = $OUTLINE; break }
+            }
+        }
     }
-    $shelf = [System.Drawing.RectangleF]::new($x, $bBottom, $s, $s * 0.08)
-    $g.FillRectangle((Brush '#A0682F'), $shelf)
-    $g.DrawRectangle((Pen $Outline ($s * 0.025)), $shelf.X, $shelf.Y, $shelf.Width, $shelf.Height)
-
-    # monitor neck and CRT body
-    $neck = [System.Drawing.RectangleF]::new($x + $s * 0.42, $y + $s * 0.62, $s * 0.16, $s * 0.1)
-    $g.FillRectangle((Brush '#BDB5A4'), $neck)
-    $g.DrawRectangle($line, $neck.X, $neck.Y, $neck.Width, $neck.Height)
-    $body = RoundRect $x $y $s ($s * 0.64) ($s * 0.1)
-    $g.FillPath((Brush '#D9D2C2'), $body)
-    $g.DrawPath($line, $body)
-    $sw = $s * 0.76; $sh = $s * 0.46
-    $screen = RoundRect ($x + $s * 0.12) ($y + $s * 0.08) $sw $sh ($s * 0.07)
-    $g.FillPath((Brush $LibPurple), $screen)
-    $g.DrawPath((Pen $Outline ($s * 0.03)), $screen)
-    $g.FillEllipse((Brush '#7EE787'), $x + $s * 0.06, $y + $s * 0.56, $s * 0.04, $s * 0.04) # power light
-
-    # upright ":3": rotate the text a quarter turn so the colon sits on top as eyes
-    $font = New-Object System.Drawing.Font('Arial Black', ($sh * 0.78), [System.Drawing.FontStyle]::Bold, [System.Drawing.GraphicsUnit]::Pixel)
-    $fmt = New-Object System.Drawing.StringFormat
-    $fmt.Alignment = 'Center'; $fmt.LineAlignment = 'Center'
-    $state = $g.Save()
-    $g.TranslateTransform(($x + $s * 0.12 + $sw / 2), ($y + $s * 0.08 + $sh / 2))
-    $g.RotateTransform(90)
-    $g.DrawString(':3', $font, (Brush '#FFFFFF'), [System.Drawing.RectangleF]::new(-$sh, -$sw / 2, $sh * 2, $sw), $fmt)
-    $g.Restore($state)
+    Paint $m (Col $hex)
 }
 
-function Canvas([string]$accent) {
-    $bmp = New-Object System.Drawing.Bitmap(512, 512)
-    $g = [System.Drawing.Graphics]::FromImage($bmp)
-    $g.SmoothingMode = 'AntiAlias'; $g.TextRenderingHint = 'AntiAliasGridFit'; $g.InterpolationMode = 'HighQualityBicubic'
-    $bg = RoundRect 16 16 480 480 96
-    $grad = New-Object System.Drawing.Drawing2D.LinearGradientBrush((New-Object System.Drawing.Point(0, 0)), (New-Object System.Drawing.Point(512, 512)), (C '#2A2540'), (C '#15121F'))
-    $g.FillPath($grad, $bg)
-    $g.DrawPath((Pen $accent 12 200), $bg)
-    @{ bmp = $bmp; g = $g }
+# Shapes (all take pixel-centre coordinates)
+function RectS([float]$x, [float]$y, [float]$w, [float]$h) { { param($px, $py) $px -ge $x -and $px -lt $x + $w -and $py -ge $y -and $py -lt $y + $h }.GetNewClosure() }
+function Disc([float]$cx, [float]$cy, [float]$r) { { param($px, $py) ($px - $cx) * ($px - $cx) + ($py - $cy) * ($py - $cy) -le $r * $r }.GetNewClosure() }
+function SegDist([float]$px, [float]$py, [float]$x0, [float]$y0, [float]$x1, [float]$y1) {
+    $dx = $x1 - $x0; $dy = $y1 - $y0
+    # 0.0 / 1.0, not 0 / 1: with int literals PowerShell picks Math.Max(int, int) and rounds t away
+    $t = [Math]::Max(0.0, [Math]::Min(1.0, [double]((($px - $x0) * $dx + ($py - $y0) * $dy) / ($dx * $dx + $dy * $dy))))
+    [Math]::Sqrt([Math]::Pow($px - ($x0 + $t * $dx), 2) + [Math]::Pow($py - ($y0 + $t * $dy), 2))
+}
+function Seg([float]$x0, [float]$y0, [float]$x1, [float]$y1, [float]$r) { { param($px, $py) (SegDist $px $py $x0 $y0 $x1 $y1) -le $r }.GetNewClosure() }
+function Poly([float[]]$pts) {
+    {
+        param($px, $py)
+        $inside = $false; $n = $pts.Count / 2
+        for ($i = 0; $i -lt $n; $i++) {
+            $j = ($i + $n - 1) % $n
+            $xi = $pts[2 * $i]; $yi = $pts[2 * $i + 1]; $xj = $pts[2 * $j]; $yj = $pts[2 * $j + 1]
+            if ((($yi -gt $py) -ne ($yj -gt $py)) -and ($px -lt ($xj - $xi) * ($py - $yi) / ($yj - $yi) + $xi)) { $inside = -not $inside }
+        }
+        $inside
+    }.GetNewClosure()
+}
+# thick quadratic curve, sampled as a polyline
+function Curve([float]$x0, [float]$y0, [float]$cx, [float]$cy, [float]$x1, [float]$y1, [float]$r) {
+    $pts = for ($i = 0; $i -le 16; $i++) { $t = $i / 16; ,@(((1 - $t) * (1 - $t) * $x0 + 2 * (1 - $t) * $t * $cx + $t * $t * $x1), ((1 - $t) * (1 - $t) * $y0 + 2 * (1 - $t) * $t * $cy + $t * $t * $y1)) }
+    {
+        param($px, $py)
+        for ($i = 0; $i -lt $pts.Count - 1; $i++) { if ((SegDist $px $py $pts[$i][0] $pts[$i][1] $pts[$i + 1][0] $pts[$i + 1][1]) -le $r) { return $true } }
+        $false
+    }.GetNewClosure()
+}
+
+# Rounded dark tile with a 1px accent border.
+function New-Icon([string]$accent) {
+    $script:grid = New-Object 'int[,]' $N, $N
+    # rounded square: distance to the inner 24x24 core; the border is the outer 1px ring
+    $tile = { param($px, $py) $cx = [Math]::Max(4, [Math]::Min(28, $px)); $cy = [Math]::Max(4, [Math]::Min(28, $py)); ($px - $cx) * ($px - $cx) + ($py - $cy) * ($py - $cy) -le 16 }
+    $inner = { param($px, $py) $cx = [Math]::Max(4, [Math]::Min(28, $px)); $cy = [Math]::Max(4, [Math]::Min(28, $py)); ($px - $cx) * ($px - $cx) + ($py - $cy) * ($py - $cy) -le 9 }
+    Paint (Mask $tile) (Col $accent)
+    Paint (Mask $inner) (Col '#221E33')
+    Paint (Mask { param($px, $py) $py -lt 3 -and (& $inner $px $py) }) (Col '#2C2742') # soft top light
 }
 
 $icons = [ordered]@{}
-
-# --- DV Lib: the badge itself
-$c = Canvas $LibPurple
-Badge $c.g 106 90 300
-$icons['dvlib'] = $c
-
-# --- DV Zoom: magnifying glass
-$c = Canvas '#4FC3F7'; $g = $c.g
-$g.DrawLine((Pen $Outline 70), 345, 345, 440, 440)
-$g.DrawLine((Pen '#CFE8FF' 48), 345, 345, 440, 440)
-$g.FillEllipse((Brush '#4FC3F7' 70), 175, 175, 200, 200)
-$g.DrawEllipse((Pen $Outline 56), 175, 175, 200, 200)
-$g.DrawEllipse((Pen '#4FC3F7' 34), 175, 175, 200, 200)
-$g.DrawArc((Pen '#FFFFFF' 14 180), 205, 205, 140, 140, 200, 70)
-Badge $g 32 30 145
-$icons['dvzoom'] = $c
-
-# --- DV Food: drumstick with a gold (saturation) outline
-$c = Canvas '#FFB74D'; $g = $c.g
-$g.DrawLine((Pen $Outline 62), 330, 330, 415, 415)
-$g.DrawLine((Pen '#F2E8D5' 40), 330, 330, 415, 415)
-$g.FillEllipse((Brush '#F2E8D5'), 400, 375, 52, 52); $g.FillEllipse((Brush '#F2E8D5'), 375, 400, 52, 52)
-$state = $g.Save(); $g.TranslateTransform(265, 265); $g.RotateTransform(-45)
-$g.DrawEllipse((Pen '#FFC830' 18), -125, -95, 250, 190)
-$g.FillEllipse((Brush '#B5562A'), -125, -95, 250, 190)
-$g.FillEllipse((Brush '#D9773E'), -105, -85, 190, 120)
-$g.Restore($state)
-Badge $g 32 30 145
-$icons['dvfood'] = $c
-
-# --- DV Lens: an eye
-$c = Canvas '#2EC4B6'; $g = $c.g
-$eye = New-Object System.Drawing.Drawing2D.GraphicsPath
-$eye.AddBezier(110, 310, 200, 170, 380, 170, 470, 310)
-$eye.AddBezier(470, 310, 380, 450, 200, 450, 110, 310)
-$g.DrawPath((Pen $Outline 28), $eye)
-$g.FillPath((Brush '#F4F7FB'), $eye)
-$g.FillEllipse((Brush '#2EC4B6'), 220, 240, 140, 140)
-$g.FillEllipse((Brush $Outline), 258, 278, 64, 64)
-$g.FillEllipse((Brush '#FFFFFF'), 300, 268, 26, 26)
-Badge $g 32 30 145
-$icons['dvlens'] = $c
-
-# --- DV Vein: pickaxe and ore bits
-$c = Canvas '#90A4AE'; $g = $c.g
-foreach ($gem in @(@(160, 300), @(215, 380), @(140, 400))) {
-    $s = $g.Save(); $g.TranslateTransform($gem[0], $gem[1]); $g.RotateTransform(45)
-    $g.FillRectangle((Brush $Outline), -24, -24, 48, 48); $g.FillRectangle((Brush '#3EE6D0'), -17, -17, 34, 34)
-    $g.Restore($s)
-}
-# The head's midpoint (t = 0.5) sits on the top of the handle, so the pick reaches both ways.
-$g.DrawLine((Pen $Outline 56), 200, 450, 395, 190)
-$g.DrawLine((Pen '#8B5A2B' 34), 200, 450, 395, 190)
-$head = New-Object System.Drawing.Drawing2D.GraphicsPath
-$head.AddBezier(275, 160, 355, 115, 455, 200, 445, 315)
-$g.DrawPath((Pen $Outline 66), $head)
-$g.DrawPath((Pen '#B8C4D0' 42), $head)
-Badge $g 32 30 145
-$icons['dvvein'] = $c
-
-# --- DV Slots: a chestplate with elytra wings spread behind it (armor and elytra at once)
-$c = Canvas '#B39DDB'; $g = $c.g
-$cx = 290
-foreach ($side in -1, 1) {
-    # wing: from the shoulder out to a high tip, then a long feathered trailing edge back in
-    $w = New-Object System.Drawing.Drawing2D.GraphicsPath
-    $w.AddBezier($cx + $side * 40, 260, $cx + $side * 105, 215, $cx + $side * 150, 210, $cx + $side * 168, 232)
-    $w.AddBezier($cx + $side * 168, 232, $cx + $side * 172, 320, $cx + $side * 150, 400, $cx + $side * 110, 455)
-    $w.AddLine($cx + $side * 110, 455, $cx + $side * 90, 425)
-    $w.AddLine($cx + $side * 90, 425, $cx + $side * 75, 452)
-    $w.AddLine($cx + $side * 75, 452, $cx + $side * 58, 405)
-    $w.AddLine($cx + $side * 58, 405, $cx + $side * 40, 260)
-    $w.CloseFigure()
-    $g.DrawPath((Pen $Outline 22), $w)
-    $g.FillPath((Brush '#C9B6FF'), $w)
-    foreach ($t in 0.35, 0.7) {
-        $g.DrawLine((Pen '#8E7CC3' 8), [float]($cx + $side * (60 + 100 * $t)), [float](240 + 15 * $t), [float]($cx + $side * (55 + 50 * $t)), [float](395 + 30 * $t))
+function Save-Icon([string]$id) {
+    $bmp = New-Object System.Drawing.Bitmap($N, $N)
+    $grid = $script:grid
+    for ($y = 0; $y -lt $N; $y++) {
+        for ($x = 0; $x -lt $N; $x++) {
+            $argb = $grid[$x, $y] # read first: a comma inside a method call's arguments would split them
+            $bmp.SetPixel($x, $y, [System.Drawing.Color]::FromArgb($argb))
+        }
     }
+    $icons[$id] = $bmp
 }
-# chestplate: wide shoulders, V neck, narrower waist
-$chest = New-Object System.Drawing.Drawing2D.GraphicsPath
-$chest.AddLines([System.Drawing.PointF[]]@(
-    [System.Drawing.PointF]::new($cx - 95, 230), [System.Drawing.PointF]::new($cx - 35, 225),
-    [System.Drawing.PointF]::new($cx, 265), [System.Drawing.PointF]::new($cx + 35, 225),
-    [System.Drawing.PointF]::new($cx + 95, 230), [System.Drawing.PointF]::new($cx + 100, 300),
-    [System.Drawing.PointF]::new($cx + 65, 305), [System.Drawing.PointF]::new($cx + 65, 430),
-    [System.Drawing.PointF]::new($cx - 65, 430), [System.Drawing.PointF]::new($cx - 65, 305),
-    [System.Drawing.PointF]::new($cx - 100, 300)))
-$chest.CloseFigure()
-$g.DrawPath((Pen $Outline 22), $chest)
-$g.FillPath((Brush '#D5DEE7'), $chest)
-$g.DrawLine((Pen '#A9B6C3' 10), $cx, 280, $cx, 420)
-$g.DrawLine((Pen '#A9B6C3' 10), ($cx - 65), 360, ($cx + 65), 360) # belt line
-# shoulder plates make it read as armor, not a shirt
-foreach ($side in -1, 1) {
-    $plate = RoundRect ($cx + $side * 72 - 32) 214 64 50 16
-    $g.DrawPath((Pen $Outline 14), $plate)
-    $g.FillPath((Brush '#AEBBC8'), $plate)
-}
-Badge $g 32 30 145
-$icons['dvslots'] = $c
 
-# --- DV Dark: crescent moon and stars
-$c = Canvas '#FFE08A'; $g = $c.g
-$disc = New-Object System.Drawing.Drawing2D.GraphicsPath; $disc.AddEllipse(150, 150, 300, 300)
-$moon = New-Object System.Drawing.Region($disc)
-$cut = New-Object System.Drawing.Drawing2D.GraphicsPath; $cut.AddEllipse(225, 105, 290, 290)
-$moon.Exclude($cut)
-$g.FillRegion((Brush '#FFE08A'), $moon)
-foreach ($st in @(@(395, 395, 26), @(440, 300, 16), @(345, 455, 12))) {
-    $x = $st[0]; $y = $st[1]; $r = $st[2]
-    $pts = [System.Drawing.PointF[]]@(
-        ([System.Drawing.PointF]::new($x, $y - $r)), ([System.Drawing.PointF]::new($x + $r * 0.28, $y - $r * 0.28)),
-        ([System.Drawing.PointF]::new($x + $r, $y)), ([System.Drawing.PointF]::new($x + $r * 0.28, $y + $r * 0.28)),
-        ([System.Drawing.PointF]::new($x, $y + $r)), ([System.Drawing.PointF]::new($x - $r * 0.28, $y + $r * 0.28)),
-        ([System.Drawing.PointF]::new($x - $r, $y)), ([System.Drawing.PointF]::new($x - $r * 0.28, $y - $r * 0.28)))
-    $g.FillPolygon((Brush '#FFF4C7'), $pts)
-}
-Badge $g 32 30 145
-$icons['dvdark'] = $c
+# ---------- DV Lib: CRT monitor with an upright ":3" cat face, on a case made of books
+New-Icon '#9B6BFF'
+Part (RectS 4 25 24 2) '#A0682F'                                  # shelf
+$books = @(@(6, 19, '#E5534B'), @(10, 20, '#4FC3F7'), @(14, 19, '#FFD54F'), @(18, 21, '#81C784'), @(22, 20, '#9B6BFF'))
+foreach ($b in $books) { Part (RectS $b[0] $b[1] 3 (24 - $b[1])) $b[2]; Set-Px ($b[0] + 1) ($b[1] + 1) (Col '#FFFFFF') }
+Part (RectS 14 17 4 2) '#BDB5A4'                                  # neck
+Part (RectS 5 4 22 12) '#D9D2C2'                                  # monitor body
+Part (RectS 7 6 18 8) '#9B6BFF'                                   # screen
+Set-Px 6 14 (Col '#7EE787')                                       # power light
+$white = Col '#FFFFFF'
+# Face is mirror-symmetric around x = 16 (between columns 15 and 16).
+foreach ($p in @(@(13, 7), @(14, 7), @(13, 8), @(14, 8), @(17, 7), @(18, 7), @(17, 8), @(18, 8))) { Set-Px $p[0] $p[1] $white } # eyes: the ":" dots
+# mouth "ω" (the "3" turned upright): three tips, two cups under the eyes
+foreach ($p in @(@(12, 10), @(15, 10), @(16, 10), @(19, 10), @(13, 11), @(14, 11), @(17, 11), @(18, 11))) { Set-Px $p[0] $p[1] $white }
+Save-Icon 'dvlib'
 
-# --- DV Harvest: wheat ear
-$c = Canvas '#E8C25A'; $g = $c.g
-$g.DrawLine((Pen $Outline 26), 300, 465, 300, 215)
-$g.DrawLine((Pen '#C9A23E' 14), 300, 465, 300, 215)
-for ($i = 0; $i -lt 4; $i++) {
-    $y = 225 + $i * 52
-    foreach ($side in -1, 1) {
-        $s = $g.Save(); $g.TranslateTransform((300 + $side * 26), $y); $g.RotateTransform($side * 35)
-        $g.FillEllipse((Brush $Outline), -26, -40, 52, 80); $g.FillEllipse((Brush '#F2D27A'), -18, -32, 36, 64)
-        $g.Restore($s)
-    }
-}
-$g.FillEllipse((Brush $Outline), 274, 150, 52, 80); $g.FillEllipse((Brush '#F2D27A'), 282, 158, 36, 64)
-Badge $g 32 30 145
-$icons['dvharvest'] = $c
+# ---------- DV Zoom: telescope (spyglass)
+New-Icon '#4FC3F7'
+Part (Seg 6 26 15 17 1.6) '#8B5A2B'                               # eyepiece end
+Part (Seg 13 19 21 11 2.3) '#C8963E'                              # tube
+Part (Seg 20 12 25 7 3.0) '#E2B65A'                               # wide front
+Part (Disc 25.5 6.5 1.6) '#7FDBFF'                                # lens
+foreach ($p in @(@(14, 17), @(15, 18), @(19, 12), @(20, 13))) { Set-Px $p[0] $p[1] (Col '#7A4E1F') }  # rings
+Set-Px 22 9 (Col '#FFF1C1'); Set-Px 23 8 (Col '#FFF1C1')          # shine
+Save-Icon 'dvzoom'
 
-# --- write files
+# ---------- DV Food: drumstick
+New-Icon '#FFB74D'
+Part (Seg 17 17 23 23 1.3) '#F2E8D5'                              # bone
+Part (Disc 24.5 22 1.8) '#F2E8D5'; Part (Disc 22 24.5 1.8) '#F2E8D5'
+Part (Disc 13 13 7.5) '#B5562A'                                   # meat
+Paint (Mask (Disc 11.5 11.5 4.5)) (Col '#D9773E')
+Paint (Mask (Disc 10 10 1.6)) (Col '#F0A060')
+Save-Icon 'dvfood'
+
+# ---------- DV Lens: eye
+New-Icon '#2EC4B6'
+Part { param($px, $py) $t = ($px - 16) / 12; [Math]::Abs($py - 16) -le 7 * (1 - $t * $t) } '#F4F7FB'
+Paint (Mask (Disc 16 16 4.6)) (Col '#2EC4B6')
+Paint (Mask (Disc 16 16 2.2)) (Col '#120F1C')
+Set-Px 17 14 $white; Set-Px 18 14 $white
+Save-Icon 'dvlens'
+
+# ---------- DV Vein: pickaxe, head centred on the handle, plus ore bits
+New-Icon '#90A4AE'
+foreach ($g in @(@(6, 9), @(9, 13), @(5, 15))) { Part (RectS $g[0] $g[1] 2 2) '#3EE6D0' }
+Part (Seg 7.5 25.5 19.5 13.5 1.1) '#8B5A2B'                       # handle (2px diagonal)
+# head: the handle lies on x + y = 33; the two tips mirror each other across it and the
+# control point sits on it, so the head is exactly symmetric and centred on the handle
+Part (Curve 11 6.5 23.5 9.5 26.5 22 1.5) '#B8C4D0'
+Save-Icon 'dvvein'
+
+# ---------- DV Slots: chestplate with elytra wings behind
+New-Icon '#B39DDB'
+$wing = @(13, 10, 8, 8, 4, 11, 4, 20, 7, 27, 9, 24, 11, 26, 13, 20)
+Part (Poly $wing) '#C9B6FF'
+Part (Poly ($wing | ForEach-Object -Begin { $i = 0 } -Process { if ($i++ % 2 -eq 0) { 32 - $_ } else { $_ } })) '#C9B6FF'
+foreach ($x in 6, 9, 22, 25) { for ($y = 13; $y -le 22; $y++) { Set-Px $x $y (Col '#8E7CC3') } }
+Part (Poly @(9, 9, 13, 9, 16, 12, 19, 9, 23, 9, 24, 14, 21, 14, 21, 25, 11, 25, 11, 14, 8, 14)) '#D5DEE7'
+Paint (Mask (RectS 9 9 4 3)) (Col '#AEBBC8'); Paint (Mask (RectS 19 9 4 3)) (Col '#AEBBC8')
+for ($y = 14; $y -le 24; $y++) { Set-Px 16 $y (Col '#A9B6C3') }
+for ($x = 11; $x -le 20; $x++) { Set-Px $x 20 (Col '#A9B6C3') }
+Save-Icon 'dvslots'
+
+# ---------- DV Dark: crescent moon and stars
+New-Icon '#FFE08A'
+Part { param($px, $py) (($px - 15) * ($px - 15) + ($py - 16) * ($py - 16) -le 81) -and -not (($px - 19.5) * ($px - 19.5) + ($py - 12.5) * ($py - 12.5) -le 64) } '#FFE08A'
+foreach ($s in @(@(24, 21), @(25, 9), @(20, 26))) {
+    foreach ($d in @(@(0, 0), @(1, 0), @(-1, 0), @(0, 1), @(0, -1))) { Set-Px ($s[0] + $d[0]) ($s[1] + $d[1]) (Col '#FFF4C7') }
+}
+Save-Icon 'dvdark'
+
+# ---------- DV Harvest: wheat
+New-Icon '#E8C25A'
+Part (RectS 15 13 2 15) '#C9A23E'                                 # stem
+foreach ($y in 9, 13, 17, 21) {
+    Part ({ param($px, $py) (($px - 13) * ($px - 13)) / 2.6 + (($py - $y) * ($py - $y)) / 5.0 -le 1 }.GetNewClosure()) '#F2D27A'
+    Part ({ param($px, $py) (($px - 19) * ($px - 19)) / 2.6 + (($py - $y) * ($py - $y)) / 5.0 -le 1 }.GetNewClosure()) '#F2D27A'
+}
+Part { param($px, $py) (($px - 16) * ($px - 16)) / 2.6 + (($py - 6) * ($py - 6)) / 5.0 -le 1 } '#F2D27A'
+Save-Icon 'dvharvest'
+
+# ---------- write files (nearest-neighbour scaling keeps the pixels sharp)
+function Scale($bmp, [int]$size) {
+    $big = New-Object System.Drawing.Bitmap($size, $size)
+    $g = [System.Drawing.Graphics]::FromImage($big)
+    $g.InterpolationMode = 'NearestNeighbor'; $g.PixelOffsetMode = 'Half'
+    $g.DrawImage($bmp, 0, 0, $size, $size)
+    $big
+}
 $sheet = New-Object System.Drawing.Bitmap((256 * $icons.Count), 256)
-$sg = [System.Drawing.Graphics]::FromImage($sheet); $sg.InterpolationMode = 'HighQualityBicubic'; $sg.Clear((C '#FFFFFF'))
+$sg = [System.Drawing.Graphics]::FromImage($sheet); $sg.InterpolationMode = 'NearestNeighbor'; $sg.PixelOffsetMode = 'Half'; $sg.Clear([System.Drawing.Color]::White)
 $i = 0
 foreach ($id in $icons.Keys) {
-    $bmp = $icons[$id].bmp
-    $bmp.Save((Join-Path $out "$id.png"), [System.Drawing.Imaging.ImageFormat]::Png)
-    $small = New-Object System.Drawing.Bitmap(128, 128)
-    $smg = [System.Drawing.Graphics]::FromImage($small); $smg.InterpolationMode = 'HighQualityBicubic'; $smg.DrawImage($bmp, 0, 0, 128, 128)
-    $res = Join-Path $root "$id\src\main\resources"
-    $small.Save((Join-Path $res "${id}_logo.png"), [System.Drawing.Imaging.ImageFormat]::Png)
-    $sg.DrawImage($bmp, $i * 256, 0, 256, 256)
+    (Scale $icons[$id] 512).Save((Join-Path $out "$id.png"), [System.Drawing.Imaging.ImageFormat]::Png)
+    (Scale $icons[$id] 128).Save((Join-Path $root "$id\src\main\resources\${id}_logo.png"), [System.Drawing.Imaging.ImageFormat]::Png)
+    $sg.DrawImage($icons[$id], $i * 256, 0, 256, 256)
     $i++
 }
 $sheet.Save((Join-Path $out 'sheet.png'), [System.Drawing.Imaging.ImageFormat]::Png)

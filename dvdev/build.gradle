@@ -3,7 +3,7 @@ plugins {
     id 'net.minecraftforge.gradle'
 }
 
-def dvMods = ['dvlib', 'dvzoom', 'dvfood', 'dvlens', 'dvvein', 'dvslots', 'dvdark']
+def dvMods = ['dvlib', 'dvzoom', 'dvfood', 'dvlens', 'dvvein', 'dvslots', 'dvdark', 'dvharvest']
 def mixinConfigs = ['dvslots.mixins.json', 'dvdark.mixins.json']
 dvMods.each { evaluationDependsOn(":$it") }
 

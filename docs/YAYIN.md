@@ -12,6 +12,7 @@ Ortak bilgiler: **Minecraft 1.20.1 · Forge 47+ ve NeoForge 47.1+ · Lisans MIT 
 | DV Vein | `dvvein-1.20.1-0.1.0.jar` | ikisi (zorunlu) | DV Lib | Utility |
 | DV Slots | `dvslots-1.20.1-0.1.0.jar` | ikisi (zorunlu) | DV Lib | Equipment |
 | DV Dark | `dvdark-1.20.1-0.1.0.jar` | istemci | DV Lib | Decoration, Utility |
+| DV Harvest | `dvharvest-1.20.1-0.1.0.jar` | ikisi (zorunlu) | — | Utility, Farming |
 
 Jar'lar: `<mod>/build/libs/` (`.\gradlew.bat build` ile üretilir).
 
@@ -89,6 +90,17 @@ The library behind the DV mods. Install it together with any DV mod.
 - Dark label text is brightened so it stays readable
 - Toggle with a key or from the DV menu
 - Client-side only
+
+## DV Harvest
+**Summary:** Right-click a ripe crop to harvest and replant it.
+
+- Right-click a fully grown crop: it drops its harvest and goes back to a seedling
+- One seed from the drops is used for replanting
+- Wheat, carrots, potatoes, beetroot, nether wart, cocoa, and modded crops built on vanilla's crop block (e.g. Farmer's Delight)
+- Other modded crops: add them to the `dvharvest:harvestable` block tag; exclude blocks with `dvharvest:blacklist`
+- Fortune on your held tool applies; sneak to use items normally
+- Respects claim/protection permissions
+- Required on both client and server
 
 ---
 

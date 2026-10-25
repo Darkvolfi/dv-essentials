@@ -16,4 +16,4 @@ plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '0.7.0'
 }
 rootProject.name = 'dv-essentials'
-include 'dvlib', 'dvzoom', 'dvfood', 'dvlens', 'dvvein', 'dvslots', 'dvdark', 'dvdev'
+include 'dvlib', 'dvzoom', 'dvfood', 'dvlens', 'dvvein', 'dvslots', 'dvdark', 'dvharvest', 'dvdev'

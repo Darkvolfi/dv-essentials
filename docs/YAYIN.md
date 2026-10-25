@@ -57,6 +57,7 @@ The library behind the DV mods. Install it together with any DV mod.
 - Name, icon and mod of the block or entity you're looking at
 - For blocks that need a tool: the minimum tool (e.g. "Needs: Iron Pickaxe") with ✔/✘ for your held item
 - Crop growth, entity health, dropped item counts
+- Horse, donkey, mule and camel speed (blocks/s) and jump height (blocks)
 - Toggle key; every line can be turned off
 - Client-side only
 

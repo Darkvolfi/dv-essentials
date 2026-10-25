@@ -12,6 +12,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.animal.camel.Camel;
+import net.minecraft.world.entity.animal.horse.AbstractHorse;
+import net.minecraft.world.entity.animal.horse.Llama;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SpawnEggItem;
@@ -27,6 +31,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /** What the info box shows: an optional icon and a list of lines. Built from client-side data only. */
 record LensInfo(ItemStack icon, List<Component> lines) {
@@ -84,10 +89,29 @@ record LensInfo(ItemStack icon, List<Component> lines) {
             lines.add(Component.literal("❤ " + format(living.getHealth()) + " / " + format(living.getMaxHealth()))
                     .withStyle(ChatFormatting.RED));
         }
+        if (LensConfig.SHOW_HORSE_STATS.get() && entity instanceof AbstractHorse horse && !(horse instanceof Llama)) {
+            lines.add(Component.translatable("dvlens.horse.speed", format(horseSpeed(horse))).withStyle(ChatFormatting.AQUA));
+            if (!(horse instanceof Camel)) { // camels dash instead of jumping
+                lines.add(Component.translatable("dvlens.horse.jump", format(jumpHeight(horse.getCustomJump()))).withStyle(ChatFormatting.AQUA));
+            }
+        }
         if (LensConfig.SHOW_MOD_NAME.get()) {
             lines.add(modName(ForgeRegistries.ENTITY_TYPES.getKey(entity.getType())));
         }
         return new LensInfo(icon, lines);
+    }
+
+    /** Movement speed attribute to blocks per second (factor from the Minecraft Wiki). */
+    private static float horseSpeed(AbstractHorse horse) {
+        return (float) (horse.getAttributeValue(Attributes.MOVEMENT_SPEED) * 42.16);
+    }
+
+    /** Jump strength attribute to jump height in blocks (fitted curve from the Minecraft Wiki). */
+    private static float jumpHeight(double strength) {
+        return (float) (-0.1817584952 * strength * strength * strength
+                + 3.689713992 * strength * strength
+                + 2.128599134 * strength
+                - 0.343930367);
     }
 
     /** Crops and similar blocks expose their growth as an "age" property. */
@@ -145,6 +169,6 @@ record LensInfo(ItemStack icon, List<Component> lines) {
     }
 
     private static String format(float value) {
-        return value == (int) value ? Integer.toString((int) value) : String.format("%.1f", value);
+        return value == (int) value ? Integer.toString((int) value) : String.format(Locale.ROOT, "%.1f", value);
     }
 }

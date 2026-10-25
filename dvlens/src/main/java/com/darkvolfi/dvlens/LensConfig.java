@@ -9,6 +9,7 @@ public final class LensConfig {
     public static final ForgeConfigSpec.BooleanValue SHOW_HARVEST;
     public static final ForgeConfigSpec.BooleanValue SHOW_GROWTH;
     public static final ForgeConfigSpec.BooleanValue SHOW_HEALTH;
+    public static final ForgeConfigSpec.BooleanValue SHOW_HORSE_STATS;
 
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
@@ -22,6 +23,8 @@ public final class LensConfig {
                 .define("showGrowth", true);
         SHOW_HEALTH = b.comment("Show the health of living entities.")
                 .define("showHealth", true);
+        SHOW_HORSE_STATS = b.comment("Show speed and jump height of horses, donkeys, mules and camels.")
+                .define("showHorseStats", true);
         SPEC = b.build();
     }
 

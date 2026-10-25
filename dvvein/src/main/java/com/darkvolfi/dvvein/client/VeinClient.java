@@ -3,8 +3,8 @@ package com.darkvolfi.dvvein.client;
 import com.darkvolfi.dvlib.DVLib;
 import com.darkvolfi.dvvein.DVVein;
 import com.darkvolfi.dvvein.VeinConfig;
-import com.darkvolfi.dvvein.VeinFinder;
 import com.darkvolfi.dvvein.VeinMiner;
+import com.darkvolfi.dvvein.VeinShape;
 import com.darkvolfi.dvvein.network.VeinKeyPacket;
 import com.darkvolfi.dvvein.network.VeinNetwork;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -23,6 +23,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
@@ -40,10 +41,14 @@ public final class VeinClient {
     public static final KeyMapping VEIN_KEY = new KeyMapping("key.dvvein.vein",
             KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_GRAVE_ACCENT, DVLib.KEY_CATEGORY);
 
+    private static boolean held;
+    private static VeinShape shape = VeinShape.SHAPELESS;
     private static boolean sentHeld;
+    private static VeinShape sentShape = VeinShape.SHAPELESS;
     private static List<BlockPos> preview = List.of();
     private static BlockPos previewStart;
     private static BlockState previewState;
+    private static VeinShape previewShape;
 
     private VeinClient() {}
 
@@ -53,16 +58,25 @@ public final class VeinClient {
         Minecraft mc = Minecraft.getInstance();
         boolean serverHasMod = mc.getConnection() != null
                 && VeinNetwork.CHANNEL.isRemotePresent(mc.getConnection().getConnection());
-        boolean held = serverHasMod && VEIN_KEY.isDown() && mc.screen == null;
+        held = serverHasMod && VEIN_KEY.isDown() && mc.screen == null;
 
-        if (held != sentHeld) {
-            VeinNetwork.CHANNEL.sendToServer(new VeinKeyPacket(held));
+        if (held != sentHeld || shape != sentShape) {
+            VeinNetwork.CHANNEL.sendToServer(new VeinKeyPacket(held, shape));
             sentHeld = held;
+            sentShape = shape;
         }
-        updatePreview(mc, held);
+        updatePreview(mc);
     }
 
-    private static void updatePreview(Minecraft mc, boolean held) {
+    /** While the vein key is held, the mouse wheel picks the shape instead of the hotbar slot. */
+    @SubscribeEvent
+    public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
+        if (!held) return;
+        shape = shape.cycle(event.getScrollDelta() > 0 ? -1 : 1);
+        event.setCanceled(true);
+    }
+
+    private static void updatePreview(Minecraft mc) {
         if (!held || !VeinConfig.SHOW_PREVIEW.get() || mc.level == null
                 || !(mc.hitResult instanceof BlockHitResult hit) || hit.getType() != HitResult.Type.BLOCK) {
             preview = List.of();
@@ -70,12 +84,15 @@ public final class VeinClient {
             return;
         }
         BlockState state = mc.level.getBlockState(hit.getBlockPos());
-        // Recompute when the target changes, and every second in case nearby blocks changed.
-        if (hit.getBlockPos().equals(previewStart) && state == previewState && mc.level.getGameTime() % 20 != 0) return;
+        // Shapes follow where you look, so recompute them every tick; a vein only when its target
+        // changes, and every second in case nearby blocks changed.
+        boolean same = hit.getBlockPos().equals(previewStart) && state == previewState && shape == previewShape;
+        if (same && shape == VeinShape.SHAPELESS && mc.level.getGameTime() % 20 != 0) return;
         previewStart = hit.getBlockPos();
         previewState = state;
+        previewShape = shape;
         preview = VeinMiner.canVein(mc.player, state)
-                ? VeinFinder.find(mc.level, previewStart, state, VeinConfig.maxBlocks(), VeinConfig.groupOres())
+                ? shape.blocks(mc.level, mc.player, previewStart, state, VeinConfig.maxBlocks(), VeinConfig.groupOres())
                 : List.of();
     }
 
@@ -97,11 +114,16 @@ public final class VeinClient {
         buffers.endBatch(RenderType.lines());
     }
 
+    /** Under the crosshair while the key is held: the shape (wheel to change) and the block count. */
     private static void renderCount(ForgeGui gui, GuiGraphics g, float partialTick, int width, int height) {
-        if (preview.size() < 2 || gui.getMinecraft().options.hideGui) return;
-        Component text = Component.translatable("dvvein.count", preview.size());
-        int x = (width - gui.getMinecraft().font.width(text)) / 2;
-        g.drawString(gui.getMinecraft().font, text, x, height / 2 + 10, 0xFFD040);
+        if (!held || gui.getMinecraft().options.hideGui) return;
+        var font = gui.getMinecraft().font;
+        Component name = Component.translatable("dvvein.shape_hint", Component.translatable(shape.translationKey()));
+        g.drawString(font, name, (width - font.width(name)) / 2, height / 2 + 10, 0xFFD040);
+        if (preview.size() >= 2) {
+            Component count = Component.translatable("dvvein.count", preview.size());
+            g.drawString(font, count, (width - font.width(count)) / 2, height / 2 + 21, 0xFFFFFF);
+        }
     }
 
     @Mod.EventBusSubscriber(modid = DVVein.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)

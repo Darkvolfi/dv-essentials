@@ -66,6 +66,7 @@ The library behind the DV mods. Install it together with any DV mod.
 
 - Hold **`** (grave) and break a block: connected blocks of the same kind break too, diagonals included
 - Ore variants count as one vein (iron + deepslate iron, and modded ores sharing a `forge:ores/*` tag)
+- **Shapes** — scroll the mouse wheel while holding the key: Vein, Small tunnel (1×1), Mining tunnel (1×2), Large tunnel (3×3), 3×3 square, Escape tunnel (stairs up)
 - Outline preview and block counter while the key is held
 - Drops and XP gather where you started
 - Safe: stops before your tool breaks or when you run out of hunger; in survival only works with a tool that actually drops the block

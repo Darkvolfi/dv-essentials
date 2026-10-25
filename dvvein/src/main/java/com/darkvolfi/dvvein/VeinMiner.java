@@ -16,7 +16,9 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -25,6 +27,7 @@ import java.util.UUID;
 @Mod.EventBusSubscriber(modid = DVVein.MOD_ID)
 public final class VeinMiner {
     private static final Set<UUID> keyHeld = new HashSet<>();
+    private static final Map<UUID, VeinShape> shapes = new HashMap<>();
 
     /** Set while breaking a vein: guards against our own break events and gathers the drops. */
     private static Level miningLevel;
@@ -37,9 +40,10 @@ public final class VeinMiner {
         return keyHeld.contains(player.getUUID());
     }
 
-    public static void setKeyHeld(ServerPlayer player, boolean held) {
+    public static void setKeyState(ServerPlayer player, boolean held, VeinShape shape) {
         if (held) keyHeld.add(player.getUUID());
         else keyHeld.remove(player.getUUID());
+        shapes.put(player.getUUID(), shape);
     }
 
     // Low priority: let protection mods cancel the original break first.
@@ -52,7 +56,8 @@ public final class VeinMiner {
         BlockState origin = event.getState();
         if (!canVein(player, origin)) return;
 
-        List<BlockPos> vein = VeinFinder.find(level, event.getPos(), origin, VeinConfig.MAX_BLOCKS.get(), VeinConfig.GROUP_ORES.get());
+        VeinShape shape = shapes.getOrDefault(player.getUUID(), VeinShape.SHAPELESS);
+        List<BlockPos> vein = shape.blocks(level, player, event.getPos(), origin, VeinConfig.MAX_BLOCKS.get(), VeinConfig.GROUP_ORES.get());
         miningLevel = level;
         dropPoint = Vec3.atCenterOf(event.getPos());
         try {
@@ -96,5 +101,6 @@ public final class VeinMiner {
     @SubscribeEvent
     public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         keyHeld.remove(event.getEntity().getUUID());
+        shapes.remove(event.getEntity().getUUID());
     }
 }

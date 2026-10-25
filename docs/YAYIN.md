@@ -117,6 +117,6 @@ The library behind the DV mods. Install it together with any DV mod.
 - [x] Forge 1.20.1 ayrılmış sunucuda açılıyor (2026-10-25)
 - [x] NeoForge 1.20.1 (47.1.106) ayrılmış sunucuda gerçek jar'larla açılıyor, mixin'ler uygulanıyor (2026-10-25)
 - [ ] NeoForge istemcisinde (başlatıcıyla) bir kez dene
-- [ ] Mod ikonları (`logoFile` mods.toml'da)
+- [x] Mod ikonları: `art/icons/<mod>.png` (512, sayfalar için), jar içinde `<mod>_logo.png` (128); yeniden üretmek için `tools/make-icons.ps1`
 - [ ] GitHub deposu açılınca `displayURL` ve `issueTrackerURL` ekle
 - [ ] Ekran görüntüleri (her sayfa için 2–3)

@@ -11,7 +11,9 @@ import net.minecraft.world.item.ItemStack;
 /** The DV equipment slots. The order here is the order of the slots in storage and on screen. */
 public enum SlotType {
     /** Elytra (or anything tagged dvslots:back), worn alongside a chestplate. */
-    BACK("back", ItemTags.create(new ResourceLocation(DVSlots.MOD_ID, "back")));
+    BACK("back", ItemTags.create(new ResourceLocation(DVSlots.MOD_ID, "back"))),
+    /** Saddle that goes onto a tamed horse when you mount it and comes back when you dismount. */
+    SADDLE("saddle", ItemTags.create(new ResourceLocation(DVSlots.MOD_ID, "saddle")));
 
     private final String id;
     private final TagKey<Item> tag;

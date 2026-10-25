@@ -79,6 +79,8 @@ The library behind the DV mods. Install it together with any DV mod.
 - **DV** button in the inventory (or a key) opens the DV slots screen
 - Flies exactly like a normal elytra and wears down the same way
 - Visible on your back to everyone, uses your cape texture if you have one
+- **Saddle** slot: mounting a tamed horse, donkey, mule or camel puts your saddle on it; dismounting takes it back
+- Right-click a saddle in the air to put it into the saddle slot
 - Dropped on death unless keepInventory is on
 - Required on both client and server
 

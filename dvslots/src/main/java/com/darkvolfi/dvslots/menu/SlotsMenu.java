@@ -14,11 +14,24 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.SlotItemHandler;
 import net.minecraftforge.network.NetworkHooks;
 
-/** DV slots on top, player inventory and hotbar below, in the usual 176px wide layout. */
+/**
+ * DV slots on top in labelled columns of two (room for four), player inventory and hotbar
+ * below, in the usual 176px wide layout.
+ */
 public class SlotsMenu extends AbstractContainerMenu {
     public static final int DV_SLOTS_X = 8;
-    public static final int DV_SLOTS_Y = 20;
+    public static final int DV_SLOTS_Y = 18;
+    public static final int COLUMN_WIDTH = 82;
+    public static final int ROW_HEIGHT = 22;
     public static final int INVENTORY_Y = 84;
+
+    public static int slotX(SlotType type) {
+        return DV_SLOTS_X + type.ordinal() / 2 * COLUMN_WIDTH;
+    }
+
+    public static int slotY(SlotType type) {
+        return DV_SLOTS_Y + type.ordinal() % 2 * ROW_HEIGHT;
+    }
 
     private final int dvSlotCount = SlotType.values().length;
 
@@ -26,7 +39,7 @@ public class SlotsMenu extends AbstractContainerMenu {
         super(DVSlots.SLOTS_MENU.get(), id);
         SlotData data = SlotData.get(inventory.player);
         for (SlotType type : SlotType.values()) {
-            addSlot(new SlotItemHandler(data.items(), type.ordinal(), DV_SLOTS_X + type.ordinal() * 18, DV_SLOTS_Y));
+            addSlot(new SlotItemHandler(data.items(), type.ordinal(), slotX(type), slotY(type)));
         }
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {

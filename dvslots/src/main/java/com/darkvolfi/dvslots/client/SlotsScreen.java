@@ -52,8 +52,8 @@ public class SlotsScreen extends AbstractContainerScreen<SlotsMenu> {
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
         super.renderLabels(g, mouseX, mouseY);
         for (SlotType type : SlotType.values()) {
-            int sx = SlotsMenu.DV_SLOTS_X + type.ordinal() * 18;
-            g.drawString(font, Component.translatable("dvslots.slot." + type.id()), sx + 20, SlotsMenu.DV_SLOTS_Y + 5, 0x404040, false);
+            g.drawString(font, Component.translatable("dvslots.slot." + type.id()),
+                    SlotsMenu.slotX(type) + 20, SlotsMenu.slotY(type) + 5, 0x404040, false);
         }
     }
 }

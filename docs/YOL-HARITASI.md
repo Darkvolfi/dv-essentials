@@ -2,7 +2,7 @@
 
 Darkvolfi'nin alışık olduğu oyun içi kolaylıkları kendi "DV" ekosisteminde toplayan Minecraft modları.
 
-- **Minecraft:** 1.20.1 · **Yükleyici:** Forge 47.4.x (NeoForge 1.20.1'de de çalışması hedef, çünkü NeoForge 1.20.1 Forge 47.1'in çatalıdır — doğrulanacak)
+- **Minecraft:** 1.20.1 · **Yükleyici:** Forge 47.4.x; aynı jar NeoForge 1.20.1'de de çalışıyor (47.1.106 sunucusunda doğrulandı, 2026-10-25) · **Lisans:** MIT
 - **İlke:** Benzer modların (FTB Ultimine, Jade, AppleSkin, Curios…) kodu kopyalanmaz; özellikler sıfırdan yazılır. DV dışı mod bağımlılığı yok.
 
 ## Yapı (karar, 2026-10-25)
@@ -37,12 +37,16 @@ DV/
 | M5.1 | DV Slots ek slotlar | Yeni slot türleri (ör. tılsım/yüzük), Mending'in sırttaki elytra'yı onarması, pelerin ile elytra'nın üst üste binmesini önleme | Curios | ikisi | ⏳ |
 | M6 | **DV Dark** (`dvdark`) | `textures/gui/` altındaki dokular yüklenirken gri pikseller koyulaştırılır (renkliler korunur, ton sırası korunduğu için kabartmalar bozulmaz); başka modların arayüzleri de dahil. HUD ikonları ve menü logosu hariç. Koyu gri etiket yazıları (0x404040) ekran açıkken açık griye çevrilir. Doku dağıtılmaz. Aç/kapa tuşu dokuları yeniden yükler. 2 Mixin: `SimpleTexture.load` (NativeImage STORE), `GuiGraphics.drawString` (vanilya int sürümleri) | Dark Mode Everywhere | istemci | ✅ 0.1.0, oyunda denendi |
 | M7 | **DV Lib ortak parçalar** | Ana ekranda ve Esc menüsünde ("Seçenekler"in solunda) **DV** düğmesi → "DV Modları" menüsü (kurulu her DV modu bir düğme). Ortak ayar ekranı: Mods listesindeki **Config** düğmesi de aynı ekranı açar; açık/kapalı düğmeleri, sayı kutuları (geçersiz değer kırmızı, Bitti kapanır), açıklamalar tooltip'te, TR/EN etiketler. Sunucu ayarları (DV Vein) yalnızca tek oyunculu dünya içinde. Ayar ekranının altında modun tuşları (`key.<modid>.*`): tıkla, yeni tuşa/fare tuşuna bas, Esc boşaltır, çakışan kırmızı; hemen kaydedilir. DV Slots menüde sadece tuşuyla. `DVTheme`: DV Dark açıkken düz renkle çizilen ekranlar (DV Slots) da koyulaşır | — | istemci | 🔄 yazıldı, oyunda denenecek |
-| M8 | İlk yayın | Lisans, yayın yeri, git, NeoForge 1.20.1'de deneme | — | — | ⏳ |
+| M8 | İlk yayın | MIT lisansı, Modrinth + CurseForge, yerel git (gizli GitHub sonra). Forge ve NeoForge 1.20.1 (47.1.106) ayrılmış sunucularda test edildi. Sayfa metinleri `docs/YAYIN.md` | — | — | 🔄 yükleme kullanıcıda; ikon ve ekran görüntüsü eksik |
+| M9 | **DV Harvest** (`dvharvest`) | Olgun ekine sağ tık: hasat eder, tohumu yeniden diker; başka modların ekinleriyle uyumlu (kullanıcının fikri, 2026-10-25) | Right Click Harvest | ikisi | ⏳ |
+| M5.2 | **DV Slots eyer slotu** | Eyer DV slotunda durur; ata/eşeğe binince otomatik takılır, inince çıkarılıp slota döner (kullanıcının fikri, 2026-10-25) | — | ikisi | ⏳ |
 
 M5 en büyük iş: kayıt, sunucu senkronu, envanter ekranı, elytra uçuşu için mixin.
 
-## Açık kararlar
-- Lisans (şu an "All Rights Reserved"; diğer DV uygulamaları GPL-3.0).
-- Dağıtım yeri (CurseForge / Modrinth / GitHub).
-- Hepsini içeren tek "DV Essentials" paketi de çıkarılsın mı (şimdilik hayır).
-- M6: vanilya dokularını yeniden renklendirmek yerine kendi koyu dokularımızı çizmek (telif açısından daha temiz).
+## Kararlar
+- Lisans **MIT**; yayın **Modrinth + CurseForge**; git yerel, GitHub gizli depo kullanıcı açınca (2026-10-25).
+- Hepsini içeren tek "DV Essentials" paketi şimdilik yok.
+- Hiçbir vanilya dokusu dağıtılmaz: DV Food kenarı ve DV Dark çalışma anında üretir.
+
+## Açık
+- Mod ikonları, ekran görüntüleri, sürüm adı (şimdilik 0.1.0).

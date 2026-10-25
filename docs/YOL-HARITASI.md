@@ -49,4 +49,4 @@ M5 en büyük iş: kayıt, sunucu senkronu, envanter ekranı, elytra uçuşu iç
 - Hiçbir vanilya dokusu dağıtılmaz: DV Food kenarı ve DV Dark çalışma anında üretir.
 
 ## Açık
-- Ekran görüntüleri, sürüm adı (şimdilik 0.1.0). İkonlar: kulaklı mor ":3" DV Lib rozeti her ikonun sol üstünde (kullanıcının fikri).
+- Ekran görüntüleri, sürüm adı (şimdilik 0.1.0). İkonlar: DV Lib işareti her ikonun sol üstünde — tüplü monitör (ekranda dik ":3" kedi yüzü) ve altında kitaplardan kasa; kullanıcının tarifi.

@@ -19,6 +19,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.Collections;
@@ -53,15 +54,37 @@ public final class Harvest {
         if (seedling == null || !level.mayInteract(player, pos) || !player.mayBuild()) return;
 
         if (level instanceof ServerLevel server) {
-            List<ItemStack> drops = Block.getDrops(state, server, pos, level.getBlockEntity(pos), player, player.getMainHandItem());
-            removeOne(drops, state.getBlock().getCloneItemStack(level, pos, state)); // the seed that gets replanted
-            level.levelEvent(BREAK_EFFECTS, pos, Block.getId(state));
-            level.setBlock(pos, seedling, Block.UPDATE_ALL);
-            for (ItemStack drop : drops) Block.popResource(level, pos, drop);
+            harvest(server, player, pos, state, seedling, pos);
             player.causeFoodExhaustion(EXHAUSTION);
+            if (ModList.get().isLoaded("dvvein") && VeinHarvest.isVeinKeyHeld(player)) {
+                harvestField(server, player, pos, state);
+            }
         }
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide));
+    }
+
+    /** With DV Vein's key held: every ripe crop of the same kind connected to the clicked one. */
+    private static void harvestField(ServerLevel level, Player player, BlockPos origin, BlockState originState) {
+        List<BlockPos> field = VeinHarvest.connectedCrops(level, origin, originState);
+        for (BlockPos pos : field.subList(1, field.size())) { // the clicked crop is already done
+            if (!player.isCreative() && player.getFoodData().getFoodLevel() <= 0) return;
+            BlockState state = level.getBlockState(pos);
+            if (!isRipe(state) || !level.mayInteract(player, pos)) continue;
+            BlockState seedling = seedling(state);
+            if (seedling == null) continue;
+            harvest(level, player, pos, state, seedling, origin);
+            player.causeFoodExhaustion(EXHAUSTION + VeinHarvest.extraExhaustion());
+        }
+    }
+
+    /** Drops the harvest at {@code dropAt} and puts a seedling in place. */
+    private static void harvest(ServerLevel level, Player player, BlockPos pos, BlockState state, BlockState seedling, BlockPos dropAt) {
+        List<ItemStack> drops = Block.getDrops(state, level, pos, level.getBlockEntity(pos), player, player.getMainHandItem());
+        removeOne(drops, state.getBlock().getCloneItemStack(level, pos, state)); // the seed that gets replanted
+        level.levelEvent(BREAK_EFFECTS, pos, Block.getId(state));
+        level.setBlock(pos, seedling, Block.UPDATE_ALL);
+        for (ItemStack drop : drops) Block.popResource(level, dropAt, drop);
     }
 
     static boolean isRipe(BlockState state) {

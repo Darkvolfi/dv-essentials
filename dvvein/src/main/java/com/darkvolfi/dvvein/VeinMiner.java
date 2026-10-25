@@ -32,6 +32,11 @@ public final class VeinMiner {
 
     private VeinMiner() {}
 
+    /** Server side: whether the player is holding the vein key. Also used by DV Harvest. */
+    public static boolean isKeyHeld(Player player) {
+        return keyHeld.contains(player.getUUID());
+    }
+
     public static void setKeyHeld(ServerPlayer player, boolean held) {
         if (held) keyHeld.add(player.getUUID());
         else keyHeld.remove(player.getUUID());

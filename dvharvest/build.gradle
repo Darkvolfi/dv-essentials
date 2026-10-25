@@ -3,3 +3,8 @@ plugins {
 }
 
 apply from: rootProject.file('gradle/dv-mod.gradle')
+
+dependencies {
+    // Optional: whole-field harvesting while DV Vein's key is held. Checked with ModList at runtime.
+    compileOnly project(':dvvein')
+}

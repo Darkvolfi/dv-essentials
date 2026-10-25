@@ -25,3 +25,10 @@ displayTest="IGNORE_ALL_VERSION"
     ordering="NONE"
     side="BOTH"
 
+
+[[dependencies.${mod_id}]]
+    modId="dvvein"
+    mandatory=false
+    versionRange="[0.1.0,)"
+    ordering="NONE"
+    side="BOTH"

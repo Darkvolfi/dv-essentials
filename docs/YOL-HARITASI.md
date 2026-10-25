@@ -1,0 +1,48 @@
+# DV Essentials — Yol haritası
+
+Darkvolfi'nin alışık olduğu oyun içi kolaylıkları kendi "DV" ekosisteminde toplayan Minecraft modları.
+
+- **Minecraft:** 1.20.1 · **Yükleyici:** Forge 47.4.x (NeoForge 1.20.1'de de çalışması hedef, çünkü NeoForge 1.20.1 Forge 47.1'in çatalıdır — doğrulanacak)
+- **İlke:** Benzer modların (FTB Ultimine, Jade, AppleSkin, Curios…) kodu kopyalanmaz; özellikler sıfırdan yazılır. DV dışı mod bağımlılığı yok.
+
+## Yapı (karar, 2026-10-25)
+
+Tek depo, çok modül. Her özellik **ayrı bir mod** (ayrı jar), hepsi ortak **DV Lib**'e bağlı — FTB modları ile FTB Library gibi. Oyuncu sadece istediğini kurar.
+
+```
+DV/
+├── gradle/dv-mod.gradle   ← tüm modların ortak derleme ayarı
+├── gradle.properties      ← ortak: MC/Forge sürümü, yazar, lisans
+├── dvlib/                 ← DV Lib: ortak kod (şimdilik "DV Modları" tuş kategorisi)
+├── dvzoom/                ← DV Zoom
+├── …                      ← her yeni mod: kendi klasörü + gradle.properties (mod_id, ad, sürüm)
+└── dvdev/                 ← mod değil: tüm DV modlarını birlikte açan geliştirme çalıştırması
+```
+
+- Ortak bir şey **en az iki modda** gerekince DV Lib'e taşınır (ayar ekranı, ağ paketleri, koyu tema renkleri…). Önceden tahminle doldurulmaz.
+- Jar adı: `<mod_id>-1.20.1-<sürüm>.jar`. Her modun sürümü ayrı.
+
+## Modlar
+
+| # | Mod | Ne yapar | Benzediği | Taraf | Durum |
+|---|---|---|---|---|---|
+| — | **DV Lib** (`dvlib`) | Ortak kod | FTB Library | ikisi | ✅ 0.1.0 |
+| M1 | **DV Zoom** (`dvzoom`) | C'ye basılı tutunca yakınlaştırma (varsayılan 4×), tekerlekle 1×–50×, yumuşak geçiş, sinematik kamera | OptiFine zoom | istemci | ✅ 0.1.0, oyunda denendi |
+| M2 | **DV Food** (`dvfood`) | Doygunluk kadar butun çevresinde altın kenar; elde yemek varken kazanılacak açlık/doygunluk ve doğal yenilenmeyle dolacak can yanıp söner; çubuğun arkasında yorgunluk (exhaustion) şeridi; tooltip'te açlık ve altın kenarlı doygunluk ikonları; F3'te açlık/doygunluk/yorgunluk satırı. Sunucuda da kuruluysa doygunluk/yorgunluk her değiştiğinde senkronlanır. Altın kenar, vanilya `icons.png`'den çalışma anında çıkarılır (doku dağıtılmaz, doku paketleriyle uyumlu) | AppleSkin | ikisi (iki tarafta da isteğe bağlı) | ✅ 0.1.0, oyunda denendi |
+| M3 | **DV Lens** (`dvlens`) | Ekranın üst ortasında tooltip tarzı kutu: bakılan blok/varlığın ikonu, adı, modu; gereken alet ve seviye (✔/✘ elindekiyle kırılır mı); ekin büyümesi; canlı canı; yerdeki eşya ve sayısı. Aç/kapa tuşu (varsayılan atanmamış) | Jade | istemci | ✅ 0.1.0, oyunda denendi (alet satırı sadece doğru alet gerektiren bloklarda: "En az: Taş Kazma") |
+| M3.1 | DV Lens sunucu bilgileri | Sandık/fırın içeriği, fırın ilerlemesi, spawner vb. (sunucu paketi gerekir) | Jade | ikisi | ⏳ |
+| M4 | **DV Vein** (`dvvein`) | ` tuşu basılıyken kırılan bloğa (çaprazlar dahil) bağlı aynı bloklar da kırılır; `forge:ores/*` etiketini paylaşan cevherler birlikte (demir + derin demir). Altın çizgili önizleme ve "Damar: N blok" sayacı. Sunucu ayarı: en çok 64 blok, blok başına ek açlık; alet kırılmak üzereyken ya da açlık bitince durur; Hayatta Kalma'da doğru alet yoksa çalışmaz (Yaratıcı'da her blokta çalışır). Düşenler ve XP ilk bloğun yerinde toplanır. Kırma `ServerPlayerGameMode.destroyBlock` ile (koruma modları, aşınma, istatistik vanilya gibi) | FTB Ultimine | ikisi | ✅ 0.1.0, oyunda denendi |
+| M4.1 | DV Vein şekilleri | Tünel, 3×3, sadece aynı yüzey gibi şekil modları | FTB Ultimine | ikisi | ⏳ |
+| M5 | **DV Slots** (`dvslots`) | Oyuncuya kayıtlı DV slotları (capability). İlk slot **Sırt**: elytra (ya da `dvslots:back` etiketli eşya) göğüs zırhıyla aynı anda. Envanterde "DV" düğmesi ve tuş (varsayılan atanmamış) DV slot ekranını açar; elinde elytra ile sağ tık doğrudan sırt slotuna takar. Uçuş 3 Mixin ile (`LivingEntity.updateFallFlying`, `Player.tryToStartFallFlying`, `LocalPlayer.aiStep` içindeki `getItemBySlot(CHEST)`), aşınma sırttaki elytra'ya işler. Sırtta görünür (cape/skin elytra dokusu dahil), diğer oyunculara senkronlanır. Ölümde keepInventory kapalıysa düşer | Curios / Elytra Slot | ikisi | ✅ 0.1.0, oyunda denendi |
+| M5.1 | DV Slots ek slotlar | Yeni slot türleri (ör. tılsım/yüzük), Mending'in sırttaki elytra'yı onarması, pelerin ile elytra'nın üst üste binmesini önleme | Curios | ikisi | ⏳ |
+| M6 | **DV Dark** (`dvdark`) | `textures/gui/` altındaki dokular yüklenirken gri pikseller koyulaştırılır (renkliler korunur, ton sırası korunduğu için kabartmalar bozulmaz); başka modların arayüzleri de dahil. HUD ikonları ve menü logosu hariç. Koyu gri etiket yazıları (0x404040) ekran açıkken açık griye çevrilir. Doku dağıtılmaz. Aç/kapa tuşu dokuları yeniden yükler. 2 Mixin: `SimpleTexture.load` (NativeImage STORE), `GuiGraphics.drawString` (vanilya int sürümleri) | Dark Mode Everywhere | istemci | ✅ 0.1.0, oyunda denendi |
+| M7 | **DV Lib ortak parçalar** | Ana ekranda ve Esc menüsünde ("Seçenekler"in solunda) **DV** düğmesi → "DV Modları" menüsü (kurulu her DV modu bir düğme). Ortak ayar ekranı: Mods listesindeki **Config** düğmesi de aynı ekranı açar; açık/kapalı düğmeleri, sayı kutuları (geçersiz değer kırmızı, Bitti kapanır), açıklamalar tooltip'te, TR/EN etiketler. Sunucu ayarları (DV Vein) yalnızca tek oyunculu dünya içinde. Ayar ekranının altında modun tuşları (`key.<modid>.*`): tıkla, yeni tuşa/fare tuşuna bas, Esc boşaltır, çakışan kırmızı; hemen kaydedilir. DV Slots menüde sadece tuşuyla. `DVTheme`: DV Dark açıkken düz renkle çizilen ekranlar (DV Slots) da koyulaşır | — | istemci | 🔄 yazıldı, oyunda denenecek |
+| M8 | İlk yayın | Lisans, yayın yeri, git, NeoForge 1.20.1'de deneme | — | — | ⏳ |
+
+M5 en büyük iş: kayıt, sunucu senkronu, envanter ekranı, elytra uçuşu için mixin.
+
+## Açık kararlar
+- Lisans (şu an "All Rights Reserved"; diğer DV uygulamaları GPL-3.0).
+- Dağıtım yeri (CurseForge / Modrinth / GitHub).
+- Hepsini içeren tek "DV Essentials" paketi de çıkarılsın mı (şimdilik hayır).
+- M6: vanilya dokularını yeniden renklendirmek yerine kendi koyu dokularımızı çizmek (telif açısından daha temiz).

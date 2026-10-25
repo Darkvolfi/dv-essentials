@@ -1,0 +1,8 @@
+{
+  "key.dvvein.vein": "Damar kır (basılı tut)",
+  "dvvein.count": "Damar: %s blok",
+  "dvvein.config.showPreview": "Çizgili önizleme",
+  "dvvein.config.maxBlocks": "En çok blok",
+  "dvvein.config.exhaustionPerBlock": "Blok başına açlık",
+  "dvvein.config.groupOres": "Cevher türlerini birleştir"
+}

@@ -1,0 +1,42 @@
+// Not a mod: a development run that loads every DV mod together (gradlew :dvdev:runClient).
+plugins {
+    id 'net.minecraftforge.gradle'
+}
+
+def dvMods = ['dvlib', 'dvzoom', 'dvfood', 'dvlens', 'dvvein', 'dvslots', 'dvdark']
+def mixinConfigs = ['dvslots.mixins.json', 'dvdark.mixins.json']
+dvMods.each { evaluationDependsOn(":$it") }
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+minecraft {
+    mappings channel: mapping_channel, version: mapping_version
+    copyIdeResources = true
+
+    runs {
+        configureEach {
+            workingDirectory rootProject.file('run')
+            property 'forge.logging.console.level', 'debug'
+            mixinConfigs.each { args '--mixin.config', it }
+            mods {
+                dvMods.each { name ->
+                    "${name}" {
+                        source project(":$name").sourceSets.main
+                    }
+                }
+            }
+        }
+        client {}
+        server {
+            args '--nogui'
+        }
+    }
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    dvMods.each { implementation project(":$it") }
+}
+
+tasks.named('jar') { enabled = false }
+tasks.matching { it.name == 'reobfJar' }.configureEach { enabled = false }

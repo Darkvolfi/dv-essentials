@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.darkvolfi.dvdark.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "dvdark.refmap.json",
+  "client": [
+    "GuiGraphicsMixin",
+    "SimpleTextureMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

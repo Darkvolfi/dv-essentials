@@ -266,7 +266,7 @@ public class DVConfigScreen extends Screen {
         String key = modId + ".config." + name;
         if (I18n.exists(key)) return Component.translatable(key);
         // Fallback: "showModName" -> "Show mod name"
-        String words = name.replaceAll("([a-z])([A-Z])", "$1 $2").toLowerCase();
+        String words = name.replaceAll("([a-z])([A-Z])", "$1 $2").toLowerCase(Locale.ROOT);
         return Component.literal(Character.toUpperCase(words.charAt(0)) + words.substring(1));
     }
 

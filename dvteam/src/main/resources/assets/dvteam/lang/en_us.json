@@ -1,0 +1,56 @@
+{
+  "key.dvteam.open_team": "Open Team Menu",
+
+  "dvteam.config.showClaimsOnMinimap": "Show claims on minimap",
+  "dvteam.config.showTerritoryBanner": "Show territory notifications",
+  "dvteam.config.maxClaimsPerPlayer": "Max claims per member",
+  "dvteam.config.maxForceLoadedPerPlayer": "Max force-loaded per member",
+  "dvteam.config.protectExplosions": "Protect claims from explosions",
+  "dvteam.config.allowFakePlayers": "Allow fake players in claims",
+
+  "dvteam.map.team_button": "Team",
+  "dvteam.map.claim_mode_on": "Claims: ON",
+  "dvteam.map.claim_mode_off": "Claims: OFF",
+  "dvteam.map.force_loaded_tag": "[⚡ Force-loaded]",
+  "dvteam.map.banner_counts": "Claimed: %s/%s  •  Force-loaded: %s/%s",
+  "dvteam.map.banner_help": "Left: Claim • Right: Unclaim • Shift+Left: Force-load • Shift+Right: Unforce",
+
+  "dvteam.screen.title": "DV Team & Territory",
+  "dvteam.screen.name": "Team Name",
+  "dvteam.screen.save_name": "Save",
+  "dvteam.screen.change_color": "Team Colour",
+  "dvteam.screen.friendly_fire": "Friendly Fire: %s",
+  "dvteam.screen.ally_interact": "Ally Interact: %s",
+  "dvteam.screen.ally_edit": "Ally Build/Break: %s",
+  "dvteam.screen.public_interact": "Public Interact: %s",
+  "dvteam.screen.unclaim_all": "Unclaim All",
+  "dvteam.screen.leave": "Leave Team",
+  "dvteam.screen.empty_list": "Nothing to display.",
+
+  "dvteam.tab.members": "Team",
+  "dvteam.tab.invite": "Invite",
+  "dvteam.tab.invites_in": "Inbox",
+  "dvteam.tab.allies": "Allies",
+
+  "dvteam.action.kick": "Kick",
+  "dvteam.action.invite": "Invite",
+  "dvteam.action.invited": "Sent",
+  "dvteam.action.join": "Join",
+  "dvteam.action.ally": "Ally",
+  "dvteam.action.allied": "Allied",
+
+  "dvteam.msg.protected": "Protected by %s",
+  "dvteam.msg.invited_you": "You have been invited to join %s! Open the DV Team screen (Y) to accept.",
+  "dvteam.msg.invited_sent": "Invited %s to your team.",
+  "dvteam.msg.entering_territory": "Entering %s's territory",
+  "dvteam.msg.entering_wilderness": "Entering Wilderness",
+
+  "dvteam.cmd.info": "Team: %s (%s members) • Claims: %s/%s • Force-loaded: %s/%s",
+  "dvteam.cmd.renamed": "Team renamed to %s.",
+  "dvteam.cmd.joined": "Joined team %s!",
+  "dvteam.cmd.no_invite": "No pending invite found for '%s'.",
+  "dvteam.cmd.left": "You left the team.",
+  "dvteam.cmd.claimed": "Claimed chunk (%s, %s).",
+  "dvteam.cmd.claim_failed": "Cannot claim this chunk (already claimed or limit reached).",
+  "dvteam.cmd.unclaimed": "Unclaimed chunk (%s, %s)."
+}

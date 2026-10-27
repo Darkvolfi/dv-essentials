@@ -1,0 +1,107 @@
+package com.darkvolfi.dvmap;
+
+import net.minecraftforge.common.ForgeConfigSpec;
+
+public final class MapConfig {
+    public enum Corner {
+        TOP_RIGHT,
+        TOP_LEFT,
+        BOTTOM_RIGHT,
+        BOTTOM_LEFT
+    }
+
+    public enum Shape {
+        SQUARE,
+        CIRCLE
+    }
+
+    public enum LayerMode {
+        AUTO,
+        SURFACE,
+        CAVE
+    }
+
+    public static final ForgeConfigSpec SPEC;
+    public static final ForgeConfigSpec.BooleanValue MINIMAP_ENABLED;
+    public static final ForgeConfigSpec.EnumValue<Corner> MINIMAP_CORNER;
+    public static final ForgeConfigSpec.EnumValue<Shape> MINIMAP_SHAPE;
+    public static final ForgeConfigSpec.IntValue MINIMAP_SIZE;
+    public static final ForgeConfigSpec.IntValue MINIMAP_ZOOM;
+    public static final ForgeConfigSpec.BooleanValue ROTATE_WITH_PLAYER;
+    public static final ForgeConfigSpec.EnumValue<LayerMode> LAYER_MODE;
+    public static final ForgeConfigSpec.BooleanValue HEIGHT_SHADING;
+    public static final ForgeConfigSpec.BooleanValue BIOME_BLENDING;
+    public static final ForgeConfigSpec.BooleanValue BLOCK_LIGHT_SHADING;
+    public static final ForgeConfigSpec.BooleanValue SHOW_COORDINATES;
+    public static final ForgeConfigSpec.BooleanValue SHOW_BIOME;
+    public static final ForgeConfigSpec.BooleanValue SHOW_TIME;
+    public static final ForgeConfigSpec.BooleanValue SHOW_CHUNK_GRID;
+    public static final ForgeConfigSpec.BooleanValue SHOW_PLAYERS;
+    public static final ForgeConfigSpec.BooleanValue SHOW_HOSTILES;
+    public static final ForgeConfigSpec.BooleanValue SHOW_ANIMALS;
+    public static final ForgeConfigSpec.BooleanValue SHOW_ITEMS;
+    public static final ForgeConfigSpec.BooleanValue MOB_FACES;
+    public static final ForgeConfigSpec.BooleanValue DAY_NIGHT;
+    public static final ForgeConfigSpec.BooleanValue HIDE_ME;
+    public static final ForgeConfigSpec.BooleanValue HIDE_MY_NAME;
+    public static final ForgeConfigSpec.BooleanValue SHOW_WAYPOINTS_MINIMAP;
+    public static final ForgeConfigSpec.BooleanValue SHOW_WAYPOINTS_WORLD;
+    public static final ForgeConfigSpec.BooleanValue DEATH_WAYPOINT;
+
+    static {
+        ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
+        MINIMAP_ENABLED = b.comment("Show the minimap on the HUD.")
+                .define("minimapEnabled", true);
+        MINIMAP_CORNER = b.comment("Which screen corner the minimap sits in.")
+                .defineEnum("minimapCorner", Corner.TOP_RIGHT);
+        MINIMAP_SHAPE = b.comment("Minimap border shape (Square or Circle).")
+                .defineEnum("minimapShape", Shape.SQUARE);
+        MINIMAP_SIZE = b.comment("Minimap radius/half-size in GUI pixels (40 to 140).")
+                .defineInRange("minimapSize", 68, 40, 140);
+        MINIMAP_ZOOM = b.comment("Minimap zoom level (1 = wide, 4 = close).")
+                .defineInRange("minimapZoom", 2, 1, 4);
+        ROTATE_WITH_PLAYER = b.comment("Rotate the minimap with the player's camera yaw instead of keeping North up.")
+                .define("rotateWithPlayer", false);
+        LAYER_MODE = b.comment("Map layer mode: AUTO switches to cave view when under a roof.")
+                .defineEnum("layerMode", LayerMode.AUTO);
+        HEIGHT_SHADING = b.comment("Shade terrain slopes and water depth.")
+                .define("heightShading", true);
+        BIOME_BLENDING = b.comment("Tint grass, foliage and water with biome colours.")
+                .define("biomeBlending", true);
+        BLOCK_LIGHT_SHADING = b.comment("Warmly highlight blocks lit by torches, lava or glowstone.")
+                .define("blockLightShading", true);
+        SHOW_COORDINATES = b.comment("Show X, Y, Z coordinates below the minimap.")
+                .define("showCoordinates", true);
+        SHOW_BIOME = b.comment("Show the current biome name below the minimap.")
+                .define("showBiome", true);
+        SHOW_TIME = b.comment("Show in-game clock time below the minimap.")
+                .define("showTime", true);
+        SHOW_CHUNK_GRID = b.comment("Draw chunk boundary grid lines.")
+                .define("showChunkGrid", false);
+        SHOW_PLAYERS = b.comment("Show other players on the radar.")
+                .define("showPlayers", true);
+        SHOW_HOSTILES = b.comment("Show hostile monsters on the radar.")
+                .define("showHostiles", true);
+        SHOW_ANIMALS = b.comment("Show passive animals and creatures on the radar.")
+                .define("showAnimals", true);
+        SHOW_ITEMS = b.comment("Show dropped items on the radar.")
+                .define("showItems", false);
+        MOB_FACES = b.comment("Draw creatures as small faces instead of dots.")
+                .define("mobFaces", true);
+        DAY_NIGHT = b.comment("Darken the map at night, like the world around you.")
+                .define("dayNight", true);
+        HIDE_ME = b.comment("Hide yourself from other players' maps (needs DV Map on the server). Also hides your name.")
+                .define("hideMe", false);
+        HIDE_MY_NAME = b.comment("Hide your name on other players' maps (needs DV Map on the server).")
+                .define("hideMyName", false);
+        SHOW_WAYPOINTS_MINIMAP = b.comment("Show waypoint markers on the minimap.")
+                .define("showWaypointsOnMinimap", true);
+        SHOW_WAYPOINTS_WORLD = b.comment("Show waypoint beams and distance labels in the 3D world.")
+                .define("showWaypointsInWorld", true);
+        DEATH_WAYPOINT = b.comment("Automatically create or update a waypoint where you last died.")
+                .define("deathWaypoint", true);
+        SPEC = b.build();
+    }
+
+    private MapConfig() {}
+}

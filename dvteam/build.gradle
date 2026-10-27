@@ -1,0 +1,23 @@
+plugins {
+    id 'net.minecraftforge.gradle'
+}
+
+apply from: rootProject.file('gradle/dv-mod.gradle')
+
+evaluationDependsOn(':dvmap')
+
+minecraft {
+    runs {
+        configureEach {
+            mods {
+                dvmap {
+                    source project(':dvmap').sourceSets.main
+                }
+            }
+        }
+    }
+}
+
+dependencies {
+    implementation project(':dvmap')
+}

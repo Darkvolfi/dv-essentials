@@ -1,0 +1,56 @@
+{
+  "key.dvteam.open_team": "Takım Ekranını Aç",
+
+  "dvteam.config.showClaimsOnMinimap": "Mini haritada bölgeleri göster",
+  "dvteam.config.showTerritoryBanner": "Bölgeye giriş bildirimini göster",
+  "dvteam.config.maxClaimsPerPlayer": "Üye başına maks. bölge (chunk)",
+  "dvteam.config.maxForceLoadedPerPlayer": "Üye başına maks. yüklü chunk",
+  "dvteam.config.protectExplosions": "Bölgelerde patlama koruması",
+  "dvteam.config.allowFakePlayers": "Otomasyon (fake player) izni",
+
+  "dvteam.map.team_button": "Takım",
+  "dvteam.map.claim_mode_on": "Bölge: AÇIK",
+  "dvteam.map.claim_mode_off": "Bölge: KAPALI",
+  "dvteam.map.force_loaded_tag": "[⚡ Yüklü]",
+  "dvteam.map.banner_counts": "Bölge: %s/%s  •  Yüklü: %s/%s",
+  "dvteam.map.banner_help": "Sol: Al • Sağ: Bırak • Shift+Sol: Yükle • Shift+Sağ: Yüklemeyi Kaldır",
+
+  "dvteam.screen.title": "DV Takım ve Bölgeler",
+  "dvteam.screen.name": "Takım Adı",
+  "dvteam.screen.save_name": "Kaydet",
+  "dvteam.screen.change_color": "Takım Rengi",
+  "dvteam.screen.friendly_fire": "Dost Ateşi: %s",
+  "dvteam.screen.ally_interact": "Müttefik Etkileşim: %s",
+  "dvteam.screen.ally_edit": "Müttefik İnşa: %s",
+  "dvteam.screen.public_interact": "Herkese Açık Etkileşim: %s",
+  "dvteam.screen.unclaim_all": "Tümünü Bırak",
+  "dvteam.screen.leave": "Takımdan Çık",
+  "dvteam.screen.empty_list": "Gösterilecek öğe yok.",
+
+  "dvteam.tab.members": "Üyeler",
+  "dvteam.tab.invite": "Davet",
+  "dvteam.tab.invites_in": "Gelen",
+  "dvteam.tab.allies": "Müttefik",
+
+  "dvteam.action.kick": "At",
+  "dvteam.action.invite": "Davet",
+  "dvteam.action.invited": "Gönderildi",
+  "dvteam.action.join": "Katıl",
+  "dvteam.action.ally": "Ekle",
+  "dvteam.action.allied": "Müttefik",
+
+  "dvteam.msg.protected": "%s tarafından korunuyor",
+  "dvteam.msg.invited_you": "%s takımına davet edildin! Kabul etmek için Takım ekranını (Y) aç.",
+  "dvteam.msg.invited_sent": "%s takımına davet edildi.",
+  "dvteam.msg.entering_territory": "%s bölgesine girildi",
+  "dvteam.msg.entering_wilderness": "Serbest bölgeye çıkıldı",
+
+  "dvteam.cmd.info": "Takım: %s (%s üye) • Bölge: %s/%s • Yüklü: %s/%s",
+  "dvteam.cmd.renamed": "Takım adı %s olarak değiştirildi.",
+  "dvteam.cmd.joined": "%s takımına katıldın!",
+  "dvteam.cmd.no_invite": "'%s' için bekleyen davet bulunamadı.",
+  "dvteam.cmd.left": "Takımdan ayrıldın.",
+  "dvteam.cmd.claimed": "Chunk (%s, %s) sahiplenildi.",
+  "dvteam.cmd.claim_failed": "Bu chunk alınamadı (başkasına ait veya sınır doldu).",
+  "dvteam.cmd.unclaimed": "Chunk (%s, %s) bırakıldı."
+}

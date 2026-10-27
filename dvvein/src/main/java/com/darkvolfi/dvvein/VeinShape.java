@@ -8,6 +8,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * What the vein key breaks. SHAPELESS follows connected blocks of the same kind; the others
@@ -23,7 +24,8 @@ public enum VeinShape {
     ESCAPE_TUNNEL;
 
     public String translationKey() {
-        return "dvvein.shape." + name().toLowerCase();
+        // Locale.ROOT: in Turkish, "MINING".toLowerCase() is "mınıng" (dotless ı) and the key is not found
+        return "dvvein.shape." + name().toLowerCase(Locale.ROOT);
     }
 
     public VeinShape cycle(int step) {
@@ -45,39 +47,36 @@ public enum VeinShape {
         Direction look = Direction.orderedByNearest(player)[0];
         Direction facing = player.getDirection();
 
-        if (this == ESCAPE_TUNNEL) {
-            // Stairs up and away: step k is k blocks forward and k up, three blocks tall for headroom.
-            BlockPos feet = player.blockPosition();
-            for (int k = 1; result.size() < max && k <= max; k++) {
-                BlockPos floor = feet.relative(facing, k).above(k);
-                for (int h = 0; h < 3; h++) add(level, player, floor.above(h), result, max);
+        if (this == ESCAPE_TUNNEL || this == MINING_TUNNEL) {
+            // Stairs from the clicked block: column k is k forward and k up (escape) or down (mining),
+            // three blocks tall so you can walk/jump through; the block under each column is the step.
+            int rise = this == ESCAPE_TUNNEL ? 1 : -1;
+            for (int k = 0; k <= max && result.size() < max; k++) {
+                BlockPos base = origin.relative(facing, k).above(rise * k);
+                int cut = 0;
+                for (int h = 0; h < 3; h++) cut += add(level, player, base.above(h), result, max) ? 1 : 0;
+                if (k > 0 && cut == 0) break; // reached open air (or only uncuttable blocks): stop here
             }
             return result;
         }
 
-        List<BlockPos> cross = crossSection(player, origin, look);
+        List<BlockPos> cross = crossSection(look);
         int depthLimit = this == SQUARE ? 1 : max;
         for (int depth = 0; depth < depthLimit && result.size() < max; depth++) {
+            int cut = 0;
             for (BlockPos offset : cross) {
-                add(level, player, origin.relative(look, depth).offset(offset), result, max);
+                cut += add(level, player, origin.relative(look, depth).offset(offset), result, max) ? 1 : 0;
             }
+            // A slice with nothing to cut is a gap (cave, air): don't jump over it to unconnected blocks.
+            if (depth > 0 && cut == 0) break;
         }
         return result;
     }
 
     /** Offsets across the tunnel, perpendicular to {@code look}. */
-    private List<BlockPos> crossSection(Player player, BlockPos origin, Direction look) {
+    private List<BlockPos> crossSection(Direction look) {
         List<BlockPos> offsets = new ArrayList<>();
         switch (this) {
-            case SMALL_TUNNEL -> offsets.add(BlockPos.ZERO);
-            case MINING_TUNNEL -> {
-                offsets.add(BlockPos.ZERO);
-                if (look.getAxis().isHorizontal()) {
-                    // walkable: the block at the other height of the player's two blocks
-                    boolean eyeLevel = origin.getY() > player.getBlockY();
-                    offsets.add(eyeLevel ? BlockPos.ZERO.below() : BlockPos.ZERO.above());
-                }
-            }
             case LARGE_TUNNEL, SQUARE -> {
                 Direction u = look.getAxis().isHorizontal() ? Direction.UP : Direction.NORTH;
                 Direction v = look.getAxis().isHorizontal() ? look.getClockWise() : Direction.EAST;
@@ -90,9 +89,12 @@ public enum VeinShape {
         return offsets;
     }
 
-    private static void add(Level level, Player player, BlockPos pos, List<BlockPos> result, int max) {
-        if (result.size() >= max || result.contains(pos)) return;
-        if (canCut(level, player, pos)) result.add(pos.immutable());
+    /** Whether {@code pos} is part of the shape: newly added, or already in it (the clicked block). */
+    private static boolean add(Level level, Player player, BlockPos pos, List<BlockPos> result, int max) {
+        if (result.contains(pos)) return true;
+        if (result.size() >= max || !canCut(level, player, pos)) return false;
+        result.add(pos.immutable());
+        return true;
     }
 
     /** Shaped modes cut through mixed blocks, but never containers, fluids or unbreakable blocks. */

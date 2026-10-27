@@ -40,14 +40,16 @@ public class DVMenuScreen extends Screen {
 
     @Override
     protected void init() {
-        int y = 40;
+        int i = 0;
         for (Map.Entry<String, Function<Screen, Screen>> mod : MODS.entrySet()) {
             String name = ModList.get().getModContainerById(mod.getKey())
                     .map(c -> c.getModInfo().getDisplayName()).orElse(mod.getKey());
+            int x = (i % 2 == 0) ? width / 2 - 155 : width / 2 + 5;
+            int y = 40 + (i / 2) * 24;
             addRenderableWidget(Button.builder(Component.literal(name),
                             b -> Minecraft.getInstance().setScreen(mod.getValue().apply(this)))
-                    .bounds(width / 2 - 100, y, 200, 20).build());
-            y += 24;
+                    .bounds(x, y, 150, 20).build());
+            i++;
         }
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, b -> onClose())
                 .bounds(width / 2 - 100, height - 28, 200, 20).build());

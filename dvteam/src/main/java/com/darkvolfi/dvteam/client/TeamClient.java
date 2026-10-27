@@ -4,7 +4,7 @@ import com.darkvolfi.dvlib.DVLib;
 import com.darkvolfi.dvmap.client.MapOverlayHook;
 import com.darkvolfi.dvteam.DVTeam;
 import com.darkvolfi.dvteam.TeamConfig;
-import com.darkvolfi.dvteam.network.SyncTeamDataPacket;
+import com.darkvolfi.dvteam.data.ClanData;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
@@ -60,7 +60,7 @@ public final class TeamClient {
 
         while (OPEN_TEAM_KEY.consumeClick()) {
             if (mc.screen == null) {
-                mc.setScreen(new TeamScreen(null));
+                mc.setScreen(new ClanScreen(null));
             }
         }
 
@@ -70,27 +70,29 @@ public final class TeamClient {
                 lastChunkX = cp.x;
                 lastChunkZ = cp.z;
                 ResourceKey<Level> dim = mc.level.dimension();
-                SyncTeamDataPacket.ClaimEntry claim = ClientTeamCache.getClaim(dim, cp.x, cp.z);
-                UUID currentTeamId = claim != null ? claim.teamId() : null;
+                ClanData.Settlement settlement = ClientClanCache.settlementAt(dim, cp.x, cp.z);
+                UUID currentId = settlement != null ? settlement.id : null;
 
-                if (initializedTerritory && !Objects.equals(currentTeamId, lastTerritoryTeamId)) {
-                    if (currentTeamId == null) {
+                if (initializedTerritory && !Objects.equals(currentId, lastTerritoryTeamId)) {
+                    if (settlement == null) {
                         mc.player.displayClientMessage(
                                 Component.translatable("dvteam.msg.entering_wilderness").withStyle(ChatFormatting.GRAY),
                                 true
                         );
                     } else {
-                        SyncTeamDataPacket.TeamEntry team = ClientTeamCache.getTeam(currentTeamId);
-                        if (team != null) {
+                        ClanData.Clan clan = ClientClanCache.clan(settlement.clanId);
+                        if (clan != null) {
                             mc.player.displayClientMessage(
                                     Component.translatable("dvteam.msg.entering_territory",
-                                            Component.literal(team.name()).withStyle(s -> s.withColor(team.color()))),
+                                            Component.literal(settlement.name).withStyle(s -> s.withColor(clan.color)),
+                                            Component.translatable(settlement.type.translationKey()),
+                                            Component.literal("[" + clan.tag + "] " + clan.name).withStyle(s -> s.withColor(clan.color))),
                                     true
                             );
                         }
                     }
                 }
-                lastTerritoryTeamId = currentTeamId;
+                lastTerritoryTeamId = currentId;
                 initializedTerritory = true;
             }
         }
@@ -98,7 +100,7 @@ public final class TeamClient {
 
     @SubscribeEvent
     public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
-        ClientTeamCache.clear();
+        ClientClanCache.clear();
         lastChunkX = Integer.MIN_VALUE;
         lastChunkZ = Integer.MIN_VALUE;
         lastTerritoryTeamId = null;

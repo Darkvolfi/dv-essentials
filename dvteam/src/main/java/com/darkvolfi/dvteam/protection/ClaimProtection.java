@@ -1,258 +1,215 @@
 package com.darkvolfi.dvteam.protection;
 
 import com.darkvolfi.dvteam.DVTeam;
-import com.darkvolfi.dvteam.TeamConfig;
-import com.darkvolfi.dvteam.data.TeamSavedData;
-import com.darkvolfi.dvteam.network.TeamNetwork;
+import com.darkvolfi.dvteam.data.ClanData;
+import com.darkvolfi.dvteam.data.ClanTypes.Perm;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BucketItem;
-import net.minecraft.world.item.DispensibleContainerItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.BonemealableBlock;
+import net.minecraft.world.level.block.ButtonBlock;
+import net.minecraft.world.level.block.CocoaBlock;
+import net.minecraft.world.level.block.CropBlock;
+import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.FenceGateBlock;
+import net.minecraft.world.level.block.LeverBlock;
+import net.minecraft.world.level.block.NetherWartBlock;
+import net.minecraft.world.level.block.PressurePlateBlock;
+import net.minecraft.world.level.block.StemBlock;
+import net.minecraft.world.level.block.SweetBerryBushBlock;
+import net.minecraft.world.level.block.TrapDoorBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.util.BlockSnapshot;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.level.ExplosionEvent;
-import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.Event;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import java.util.Iterator;
-
+/**
+ * Settlement protection: each action maps to one {@link Perm}, checked against the settlement the block or
+ * entity is in. High priority, so cancelled actions never reach other mods (e.g. DV Vein's harvesting).
+ */
 @Mod.EventBusSubscriber(modid = DVTeam.MOD_ID)
 public final class ClaimProtection {
     private ClaimProtection() {}
 
-    @SubscribeEvent
-    public static void onServerStarted(ServerStartedEvent event) {
-        TeamSavedData.get(event.getServer()).applyAllForceLoads(event.getServer());
-    }
-
-    @SubscribeEvent
-    public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
-        if (event.getEntity() instanceof ServerPlayer sp && sp.getServer() != null) {
-            TeamSavedData.get(sp.getServer()).ensurePlayerTeam(sp);
-            TeamNetwork.syncToAll(sp.getServer());
+    private static boolean allowed(ServerLevel level, Player player, BlockPos pos, Perm perm) {
+        String dim = level.dimension().location().toString();
+        ClanData data = ClanData.get(level.getServer());
+        if (data.allows(level.getServer(), player, dim, pos.getX() >> 4, pos.getZ() >> 4, perm)) return true;
+        ClanData.Settlement s = data.settlementAt(dim, pos.getX() >> 4, pos.getZ() >> 4);
+        ClanData.Clan clan = s == null ? null : data.clan(s.clanId);
+        if (s != null && clan != null) {
+            player.displayClientMessage(Component.translatable("dvteam.msg.protected", s.name, clan.name)
+                    .withStyle(ChatFormatting.RED), true);
         }
+        return false;
     }
 
-    @SubscribeEvent
-    public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
-        if (event.getEntity() instanceof ServerPlayer sp && sp.getServer() != null) {
-            TeamNetwork.syncToAll(sp.getServer());
+    /** Crops and the like count as farming, so planting and harvesting can be allowed without building. */
+    private static boolean isFarming(BlockState state) {
+        Block b = state.getBlock();
+        return b instanceof CropBlock || b instanceof StemBlock || b instanceof NetherWartBlock
+                || b instanceof CocoaBlock || b instanceof SweetBerryBushBlock;
+    }
+
+    private static Perm permForBlockUse(ServerLevel level, BlockPos pos, BlockState state) {
+        Block b = state.getBlock();
+        if (b instanceof DoorBlock || b instanceof TrapDoorBlock || b instanceof FenceGateBlock
+                || b instanceof ButtonBlock || b instanceof LeverBlock || b instanceof PressurePlateBlock) {
+            return Perm.DOORS;
         }
+        if (isFarming(state)) return Perm.FARMING;
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof Container || b instanceof BaseEntityBlock && state.getMenuProvider(level, pos) != null) {
+            return Perm.CONTAINERS;
+        }
+        return Perm.BUILD;
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onBlockBreak(BlockEvent.BreakEvent event) {
-        if (!(event.getLevel() instanceof ServerLevel level)) return;
-        Player player = event.getPlayer();
-        if (player == null) return;
-
-        BlockPos pos = event.getPos();
-        if (!checkEdit(level, pos, player)) {
-            event.setCanceled(true);
-        }
+        if (!(event.getLevel() instanceof ServerLevel level) || event.getPlayer() == null) return;
+        Perm perm = isFarming(event.getState()) ? Perm.FARMING : Perm.BUILD;
+        if (!allowed(level, event.getPlayer(), event.getPos(), perm)) event.setCanceled(true);
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
-        if (!(event.getLevel() instanceof ServerLevel level)) return;
-        if (!(event.getEntity() instanceof Player player)) return;
-
-        if (!checkEdit(level, event.getPos(), player)) {
-            event.setCanceled(true);
-        }
+        if (!(event.getLevel() instanceof ServerLevel level) || !(event.getEntity() instanceof Player player)) return;
+        Perm perm = isFarming(event.getPlacedBlock()) ? Perm.FARMING : Perm.BUILD;
+        if (!allowed(level, player, event.getPos(), perm)) event.setCanceled(true);
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onMultiBlockPlace(BlockEvent.EntityMultiPlaceEvent event) {
-        if (!(event.getLevel() instanceof ServerLevel level)) return;
-        if (!(event.getEntity() instanceof Player player)) return;
-
+        if (!(event.getLevel() instanceof ServerLevel level) || !(event.getEntity() instanceof Player player)) return;
         for (BlockSnapshot snap : event.getReplacedBlockSnapshots()) {
-            if (!checkEdit(level, snap.getPos(), player)) {
+            if (!allowed(level, player, snap.getPos(), Perm.BUILD)) {
                 event.setCanceled(true);
                 return;
             }
         }
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onFarmlandTrample(BlockEvent.FarmlandTrampleEvent event) {
         if (!(event.getLevel() instanceof ServerLevel level)) return;
         BlockPos pos = event.getPos();
+        ClanData data = ClanData.get(level.getServer());
         String dim = level.dimension().location().toString();
-        TeamSavedData data = TeamSavedData.get(level.getServer());
         if (event.getEntity() instanceof Player player) {
-            if (!data.canEdit(dim, pos.getX() >> 4, pos.getZ() >> 4, player)) {
-                event.setCanceled(true);
-            }
-        } else if (data.getClaim(dim, pos.getX() >> 4, pos.getZ() >> 4) != null) {
+            if (!data.allows(level.getServer(), player, dim, pos.getX() >> 4, pos.getZ() >> 4, Perm.FARMING)) event.setCanceled(true);
+        } else if (data.settlementAt(dim, pos.getX() >> 4, pos.getZ() >> 4) != null) {
             event.setCanceled(true);
         }
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
-        Level rawLevel = event.getLevel();
-        if (!(rawLevel instanceof ServerLevel level)) return;
-        Player player = event.getEntity();
+        if (!(event.getLevel() instanceof ServerLevel level)) return;
         BlockPos pos = event.getPos();
-        String dim = level.dimension().location().toString();
-        TeamSavedData data = TeamSavedData.get(level.getServer());
-
-        if (!data.canInteract(dim, pos.getX() >> 4, pos.getZ() >> 4, player)) {
-            event.setUseBlock(Event.Result.DENY);
-            if (!data.canEdit(dim, pos.getX() >> 4, pos.getZ() >> 4, player)) {
-                // Allow eating food or using non-block items in hand, but deny placing blocks/buckets
-                ItemStack held = event.getItemStack();
-                if (!held.isEdible()) {
-                    event.setUseItem(Event.Result.DENY);
-                    event.setCanceled(true);
-                }
-            }
-            notifyDenied(level, pos, player);
+        BlockState state = level.getBlockState(pos);
+        ItemStack held = event.getItemStack();
+        Perm perm = permForBlockUse(level, pos, state);
+        // Bone meal on crops is farming too.
+        if (perm == Perm.BUILD && state.getBlock() instanceof BonemealableBlock && isFarming(state)) perm = Perm.FARMING;
+        if (allowed(level, event.getEntity(), pos, perm)) return;
+        event.setUseBlock(Event.Result.DENY);
+        // Still let players eat or use items that don't touch the block.
+        if (!held.isEdible()) {
+            event.setUseItem(Event.Result.DENY);
+            event.setCanceled(true);
         }
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
-        if (!(event.getLevel() instanceof ServerLevel level)) return;
-        ItemStack stack = event.getItemStack();
-        if (!(stack.getItem() instanceof BucketItem) && !(stack.getItem() instanceof DispensibleContainerItem)) {
-            return;
-        }
+        if (!(event.getLevel() instanceof ServerLevel level) || !(event.getItemStack().getItem() instanceof BucketItem)) return;
         Player player = event.getEntity();
         Vec3 eye = player.getEyePosition();
-        Vec3 look = player.getViewVector(1.0f);
-        Vec3 end = eye.add(look.scale(5.0));
-        BlockHitResult hit = level.clip(new ClipContext(eye, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.ANY, player));
-        if (hit.getType() == HitResult.Type.BLOCK) {
-            BlockPos target = hit.getBlockPos().relative(hit.getDirection());
-            if (!checkEdit(level, hit.getBlockPos(), player) || !checkEdit(level, target, player)) {
-                event.setCanceled(true);
-            }
+        BlockHitResult hit = level.clip(new ClipContext(eye, eye.add(player.getViewVector(1.0f).scale(5.0)),
+                ClipContext.Block.OUTLINE, ClipContext.Fluid.ANY, player));
+        if (hit.getType() != HitResult.Type.BLOCK) return;
+        BlockPos target = hit.getBlockPos().relative(hit.getDirection());
+        if (!allowed(level, player, hit.getBlockPos(), Perm.BUILD) || !allowed(level, player, target, Perm.BUILD)) {
+            event.setCanceled(true);
         }
     }
 
-    @SubscribeEvent
+    private static Perm permForEntity(Entity target) {
+        if (target instanceof AbstractVillager) return Perm.TRADING;
+        return target instanceof LivingEntity ? Perm.ANIMALS : Perm.BUILD; // armor stands, frames, minecarts
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
-        if (!(event.getLevel() instanceof ServerLevel level)) return;
-        Entity target = event.getTarget();
-        if (target instanceof Enemy) return;
-        BlockPos pos = target.blockPosition();
-        String dim = level.dimension().location().toString();
-        TeamSavedData data = TeamSavedData.get(level.getServer());
-        if (!data.canInteract(dim, pos.getX() >> 4, pos.getZ() >> 4, event.getEntity())) {
-            event.setCanceled(true);
-            notifyDenied(level, pos, event.getEntity());
-        }
+        if (!(event.getLevel() instanceof ServerLevel level) || event.getTarget() instanceof Enemy) return;
+        if (!allowed(level, event.getEntity(), event.getTarget().blockPosition(), permForEntity(event.getTarget()))) event.setCanceled(true);
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onEntityInteractSpecific(PlayerInteractEvent.EntityInteractSpecific event) {
-        if (!(event.getLevel() instanceof ServerLevel level)) return;
-        Entity target = event.getTarget();
-        if (target instanceof Enemy) return;
-        BlockPos pos = target.blockPosition();
-        String dim = level.dimension().location().toString();
-        TeamSavedData data = TeamSavedData.get(level.getServer());
-        if (!data.canInteract(dim, pos.getX() >> 4, pos.getZ() >> 4, event.getEntity())) {
-            event.setCanceled(true);
-            notifyDenied(level, pos, event.getEntity());
-        }
+        if (!(event.getLevel() instanceof ServerLevel level) || event.getTarget() instanceof Enemy) return;
+        if (!allowed(level, event.getEntity(), event.getTarget().blockPosition(), permForEntity(event.getTarget()))) event.setCanceled(true);
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onAttackEntity(AttackEntityEvent event) {
-        Player attacker = event.getEntity();
-        if (!(attacker.level() instanceof ServerLevel level)) return;
         Entity target = event.getTarget();
-        if (target instanceof Enemy || target instanceof Player) return;
-        if (!checkEdit(level, target.blockPosition(), attacker)) {
-            event.setCanceled(true);
-        }
+        if (!(event.getEntity().level() instanceof ServerLevel level)) return;
+        if (target instanceof net.minecraft.world.entity.monster.Enemy || target instanceof Player) return;
+        Perm perm = target instanceof LivingEntity ? Perm.ANIMALS : Perm.BUILD;
+        if (!allowed(level, event.getEntity(), target.blockPosition(), perm)) event.setCanceled(true);
     }
 
-    @SubscribeEvent
+    /** No PvP in trade centers; clanmates and allies only hurt each other with friendly fire on. */
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onLivingAttack(LivingAttackEvent event) {
-        if (!(event.getEntity() instanceof ServerPlayer victim)) return;
-        Entity sourceEntity = event.getSource().getEntity();
-        if (!(sourceEntity instanceof ServerPlayer attacker)) return;
+        if (!(event.getEntity() instanceof ServerPlayer victim) || !(event.getSource().getEntity() instanceof ServerPlayer attacker)) return;
         if (victim == attacker) return;
-
-        MinecraftServer server = victim.getServer();
-        if (server == null) return;
-        TeamSavedData data = TeamSavedData.get(server);
-        TeamSavedData.TeamRecord victimTeam = data.getPlayerTeam(victim.getUUID());
-        TeamSavedData.TeamRecord attackerTeam = data.getPlayerTeam(attacker.getUUID());
-        if (victimTeam != null && attackerTeam != null) {
-            boolean sameTeam = victimTeam.id.equals(attackerTeam.id);
-            boolean mutuallyAllied = victimTeam.allies.contains(attackerTeam.id) && attackerTeam.allies.contains(victimTeam.id);
-            if ((sameTeam || mutuallyAllied) && (!victimTeam.friendlyFire || !attackerTeam.friendlyFire)) {
-                event.setCanceled(true);
-            }
+        ClanData data = ClanData.get(victim.getServer());
+        String dim = victim.level().dimension().location().toString();
+        if (data.inTradeCenter(dim, victim.chunkPosition().x, victim.chunkPosition().z)
+                || data.inTradeCenter(dim, attacker.chunkPosition().x, attacker.chunkPosition().z)) {
+            event.setCanceled(true);
+            return;
         }
+        ClanData.Clan a = data.clanOf(attacker.getUUID());
+        ClanData.Clan v = data.clanOf(victim.getUUID());
+        if (a == null || v == null) return;
+        if ((a == v || data.mutualAllies(a, v)) && !(a.friendlyFire && v.friendlyFire)) event.setCanceled(true);
     }
 
-    @SubscribeEvent
-    public static void onExplosionDetonate(ExplosionEvent.Detonate event) {
-        if (!TeamConfig.PROTECT_EXPLOSIONS.get()) return;
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public static void onExplosion(ExplosionEvent.Detonate event) {
         if (!(event.getLevel() instanceof ServerLevel level)) return;
-
+        ClanData data = ClanData.get(level.getServer());
         String dim = level.dimension().location().toString();
-        TeamSavedData data = TeamSavedData.get(level.getServer());
-
-        event.getAffectedBlocks().removeIf(pos -> data.getClaim(dim, pos.getX() >> 4, pos.getZ() >> 4) != null);
-        Iterator<Entity> it = event.getAffectedEntities().iterator();
-        while (it.hasNext()) {
-            Entity entity = it.next();
-            if (!(entity instanceof Enemy)) {
-                BlockPos pos = entity.blockPosition();
-                if (data.getClaim(dim, pos.getX() >> 4, pos.getZ() >> 4) != null) {
-                    it.remove();
-                }
-            }
-        }
-    }
-
-    private static boolean checkEdit(ServerLevel level, BlockPos pos, Player player) {
-        String dim = level.dimension().location().toString();
-        TeamSavedData data = TeamSavedData.get(level.getServer());
-        if (!data.canEdit(dim, pos.getX() >> 4, pos.getZ() >> 4, player)) {
-            notifyDenied(level, pos, player);
-            return false;
-        }
-        return true;
-    }
-
-    private static void notifyDenied(ServerLevel level, BlockPos pos, Player player) {
-        String dim = level.dimension().location().toString();
-        TeamSavedData data = TeamSavedData.get(level.getServer());
-        TeamSavedData.ClaimRecord claim = data.getClaim(dim, pos.getX() >> 4, pos.getZ() >> 4);
-        if (claim == null) return;
-        TeamSavedData.TeamRecord team = data.getTeam(claim.teamId);
-        String teamName = team != null ? team.name : "DV Team";
-        player.displayClientMessage(
-                Component.translatable("dvteam.msg.protected", teamName).withStyle(ChatFormatting.RED),
-                true
-        );
+        event.getAffectedBlocks().removeIf(p -> !data.explosionAllowed(level.getServer(), dim, p.getX() >> 4, p.getZ() >> 4));
+        event.getAffectedEntities().removeIf(e -> !(e instanceof Enemy) && !(e instanceof Player)
+                && !data.explosionAllowed(level.getServer(), dim, e.chunkPosition().x, e.chunkPosition().z));
     }
 }

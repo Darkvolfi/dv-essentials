@@ -111,13 +111,17 @@ The library behind the DV mods. Install it together with any DV mod.
 - Client-side only; integrates with **DV Team** when installed
 
 ## DV Team
-**Summary:** Teams, chunk claiming, chunk force-loading and territory protection on DV Map.
+**Summary:** Clans with a flag, a capital, villages and trade centers on DV Map — with alliances and wars.
 
-- **Claim on DV Map:** open the world map (**M**), enable **Claims**, and click or drag across chunks to claim, unclaim, or force-load them
-- **Connected territory borders:** claimed chunks appear on the world map and minimap in your team's colour
-- **Force-loading (chunkloader):** keep selected claimed chunks loaded even while you are away or offline
-- **Territory protection:** blocks breaking/placing, container/door interactions, buckets, farmland trampling, entity damage and explosions inside claimed chunks
-- **Teams & Allies (Y or /dvteam):** customize team name and colour, invite players, ally other teams, toggle friendly fire, ally permissions and public interaction, or chat with `/dvteam msg`
+- **Clans (Y):** found a clan with a name, a short tag, any colour you like and a banner-style flag (up to 6 pattern layers); ranks: leader, officers, members
+- **No clan, no land:** only clans can claim chunks
+- **Settlements:** your first claim founds the **capital**; land elsewhere becomes a named **village** or **trade center**. Names and icons show on the map in your clan colour, the capital with a castle and your flag
+- **Permissions per settlement:** choose what allies and everyone else may do — build, doors, containers, animals, farming, villager trading
+- **Trade centers:** no PvP and no raids; outsiders get more freedom by default
+- **Wars:** declare war, a warm-up, then PvP and raids on enemy land (trade centers and the capital core stay safe; no raids while the defenders are all offline). Ends by peace, surrender or time
+- **Alliances:** offer and accept; friendly fire follows each clan's setting
+- **Server limits:** chunks per clan, villages, trade centers, village size, force-loaded chunks, gap between clans, war timings
+- Claim from the world map (**M** → Claims), or `/clan claim`; force-load chunks with Shift
 - Required on both client and server; requires **DV Map** on the client
 
 ---

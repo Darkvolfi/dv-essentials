@@ -12,7 +12,8 @@ Ortak bilgiler: **Minecraft 1.20.1 · Forge 47+ ve NeoForge 47.1+ · Lisans MIT 
 | DV Vein | `dvvein-1.20.1-0.1.0.jar` | ikisi (zorunlu) | DV Lib | Utility |
 | DV Slots | `dvslots-1.20.1-0.1.0.jar` | ikisi (zorunlu) | DV Lib | Equipment |
 | DV Dark | `dvdark-1.20.1-0.1.0.jar` | istemci | DV Lib | Decoration, Utility |
-| DV Harvest | `dvharvest-1.20.1-0.1.0.jar` | ikisi (zorunlu) | DV Vein isteğe bağlı (toplu hasat) | Utility, Farming |
+| DV Map | `dvmap-1.20.1-0.1.0.jar` | istemci | DV Lib | Map, Utility |
+| DV Team | `dvteam-1.20.1-0.1.0.jar` | ikisi (zorunlu) | DV Lib, DV Map (istemci) | Utility, Multiplayer |
 
 Jar'lar: `<mod>/build/libs/` (`.\gradlew.bat build` ile üretilir).
 
@@ -62,13 +63,16 @@ The library behind the DV mods. Install it together with any DV mod.
 - Client-side only
 
 ## DV Vein
-**Summary:** Hold a key to break a whole vein at once.
+**Summary:** Hold a key to break a whole vein, harvest a whole field or shear every sheep around — straight into your inventory.
 
 - Hold **`** (grave) and break a block: connected blocks of the same kind break too, diagonals included
 - Ore variants count as one vein (iron + deepslate iron, and modded ores sharing a `forge:ores/*` tag)
-- **Shapes** — scroll the mouse wheel while holding the key: Vein, Small tunnel (1×1), Mining tunnel (1×2), Large tunnel (3×3), 3×3 square, Escape tunnel (stairs up)
+- **Shapes** — scroll the mouse wheel while holding the key: Vein, Small tunnel (1×1), Mining tunnel (stairs down), Large tunnel (3×3), 3×3 square, Escape tunnel (stairs up)
 - Outline preview and block counter while the key is held
-- Drops and XP gather where you started
+- Drops and XP go straight into your inventory (what doesn't fit drops at your feet)
+- **Harvest:** right-click a fully grown crop to harvest it and replant it from its own seed. Wheat, carrots, potatoes, beetroot, nether wart, cocoa, and modded crops built on vanilla's crop block (e.g. Farmer's Delight); other crops via the `dvvein:harvestable` block tag, exclude with `dvvein:blacklist`. Fortune applies, sneak to use items normally, respects claims
+- **Whole field:** hold the key and right-click a crop to harvest every connected ripe crop of that kind into your inventory
+- **Shear them all:** hold the key and shear a sheep to shear every sheep within 32 blocks (3 up, 3 down); the wool goes into your inventory
 - Safe: stops before your tool breaks or when you run out of hunger; in survival only works with a tool that actually drops the block
 - Server settings: max blocks (64), hunger per block, ore grouping
 - Required on both client and server
@@ -95,17 +99,26 @@ The library behind the DV mods. Install it together with any DV mod.
 - Toggle with a key or from the DV menu
 - Client-side only
 
-## DV Harvest
-**Summary:** Right-click a ripe crop to harvest and replant it.
+## DV Map
+**Summary:** Customizable minimap, full-screen world map, waypoints and entity radar.
 
-- Right-click a fully grown crop: it drops its harvest and goes back to a seedling
-- One seed from the drops is used for replanting
-- Wheat, carrots, potatoes, beetroot, nether wart, cocoa, and modded crops built on vanilla's crop block (e.g. Farmer's Delight)
-- Other modded crops: add them to the `dvharvest:harvestable` block tag; exclude blocks with `dvharvest:blacklist`
-- With **DV Vein** installed: hold the vein key and right-click to harvest the whole connected field at once
-- Fortune on your held tool applies; sneak to use items normally
-- Respects claim/protection permissions
-- Required on both client and server
+- **Minimap:** choose corner, square or circle shape, size, zoom, north-up or rotate-with-player, plus optional coordinates, biome name, clock time and chunk grid
+- **Full-screen World Map (M):** drag to pan, scroll to zoom, inspect coordinates and biomes, right-click anywhere to add a waypoint
+- **Surface & Cave modes:** biome-tinted terrain with slope/water depth shading and torch/lava glow, plus an underground cave slice view (automatic when under a roof)
+- **Persistent exploration:** discovered surface regions are saved per world and dimension
+- **Waypoints (B):** custom colours, in-world light beams and distance labels, quick teleport (when permitted), and automatic Last Death waypoint
+- **Entity Radar:** toggleable markers for players, hostiles, animals and dropped items
+- Client-side only; integrates with **DV Team** when installed
+
+## DV Team
+**Summary:** Teams, chunk claiming, chunk force-loading and territory protection on DV Map.
+
+- **Claim on DV Map:** open the world map (**M**), enable **Claims**, and click or drag across chunks to claim, unclaim, or force-load them
+- **Connected territory borders:** claimed chunks appear on the world map and minimap in your team's colour
+- **Force-loading (chunkloader):** keep selected claimed chunks loaded even while you are away or offline
+- **Territory protection:** blocks breaking/placing, container/door interactions, buckets, farmland trampling, entity damage and explosions inside claimed chunks
+- **Teams & Allies (Y or /dvteam):** customize team name and colour, invite players, ally other teams, toggle friendly fire, ally permissions and public interaction, or chat with `/dvteam msg`
+- Required on both client and server; requires **DV Map** on the client
 
 ---
 

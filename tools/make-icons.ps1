@@ -177,15 +177,27 @@ foreach ($s in @(@(24, 21), @(25, 9), @(20, 26))) {
 }
 Save-Icon 'dvdark'
 
-# ---------- DV Harvest: wheat
-New-Icon '#E8C25A'
-Part (RectS 15 13 2 15) '#C9A23E'                                 # stem
-foreach ($y in 9, 13, 17, 21) {
-    Part ({ param($px, $py) (($px - 13) * ($px - 13)) / 2.6 + (($py - $y) * ($py - $y)) / 5.0 -le 1 }.GetNewClosure()) '#F2D27A'
-    Part ({ param($px, $py) (($px - 19) * ($px - 19)) / 2.6 + (($py - $y) * ($py - $y)) / 5.0 -le 1 }.GetNewClosure()) '#F2D27A'
-}
-Part { param($px, $py) (($px - 16) * ($px - 16)) / 2.6 + (($py - 6) * ($py - 6)) / 5.0 -le 1 } '#F2D27A'
-Save-Icon 'dvharvest'
+
+# ---------- DV Map: parchment map with terrain patches and red waypoint pin
+New-Icon '#66BB6A'
+Part (RectS 6 8 20 18) '#E8D5B0'                                  # parchment sheet
+Paint (Mask (RectS 8 10 8 7)) (Col '#7CB342')                     # green land
+Paint (Mask (RectS 16 11 8 12)) (Col '#4FC3F7')                   # river/sea
+Paint (Mask (RectS 8 18 10 6)) (Col '#AED581')                    # lower meadow
+for ($y = 8; $y -lt 26; $y++) { Set-Px 13 $y (Col '#C8B08A'); Set-Px 19 $y (Col '#C8B08A') } # fold lines
+Part (Poly @(16, 17, 13, 11, 19, 11)) '#E5534B'                   # red pin tip
+Part (Disc 16 9.5 3.2) '#E5534B'                                  # red pin head
+Set-Px 15 9 $white; Set-Px 16 9 $white
+Save-Icon 'dvmap'
+
+# ---------- DV Team: heraldic shield & banner with gold star
+New-Icon '#E5534B'
+Part (Poly @(8, 6, 24, 6, 24, 17, 16, 26, 8, 17)) '#D32F2F'       # shield body
+Paint (Mask (Poly @(16, 7, 23, 7, 23, 16.5, 16, 24.5))) (Col '#B71C1C') # shield right half shade
+Part (RectS 15 7 2 17) '#FFD54F'                                  # gold vertical stripe
+Part (RectS 9 13 14 2) '#FFD54F'                                  # gold horizontal cross
+Part (Disc 16 14 2.5) '#FFF1C1'                                   # emblem core
+Save-Icon 'dvteam'
 
 # ---------- write files (nearest-neighbour scaling keeps the pixels sharp)
 function Scale($bmp, [int]$size) {

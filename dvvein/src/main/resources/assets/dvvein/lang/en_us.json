@@ -1,5 +1,5 @@
 {
-  "key.dvvein.vein": "Vein Mine (hold, wheel = shape)",
+  "key.dvvein.vein": "Vein mine, harvest and shear all (hold, wheel = shape)",
   "dvvein.count": "%s blocks",
   "dvvein.shape_hint": "%s  (mouse wheel)",
   "dvvein.shape.shapeless": "Vein",

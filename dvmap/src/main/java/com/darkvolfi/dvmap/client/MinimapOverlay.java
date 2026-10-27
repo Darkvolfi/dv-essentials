@@ -34,6 +34,14 @@ public final class MinimapOverlay {
         event.registerAboveAll("minimap", MinimapOverlay::render);
     }
 
+    /** How much of the top-right corner the minimap takes (0 when it is elsewhere or hidden). */
+    static int topRightWidth() {
+        Minecraft mc = Minecraft.getInstance();
+        if (!MapConfig.MINIMAP_ENABLED.get() || MapConfig.MINIMAP_CORNER.get() != MapConfig.Corner.TOP_RIGHT) return 0;
+        if (mc.level == null || mc.options.hideGui || mc.options.renderDebug || mc.screen instanceof WorldMapScreen) return 0;
+        return MapConfig.MINIMAP_SIZE.get() / 2 * 2 + 8 + 4; // size + margin + frame and gap
+    }
+
     private static void render(ForgeGui gui, GuiGraphics g, float partialTick, int screenWidth, int screenHeight) {
         if (!MapConfig.MINIMAP_ENABLED.get()) return;
         Minecraft mc = Minecraft.getInstance();
@@ -205,7 +213,7 @@ public final class MinimapOverlay {
             boolean inside = circle ? Math.hypot(rx, rz) <= edge : Math.max(Math.abs(rx), Math.abs(rz)) <= edge;
             points.add(inside ? new int[]{cx + (int) Math.round(rx), cy + (int) Math.round(rz)} : null);
         }
-        MapMarkers.drawAll(g, markers, points, 10,Mth.lerp(partialTick, mc.player.yo, mc.player.getY()));
+        MapMarkers.drawAll(g, markers, points, 8, Mth.lerp(partialTick, mc.player.yo, mc.player.getY()));
     }
 
     private static void renderMinimapWaypoints(Minecraft mc, GuiGraphics g, int cx, int cy, int maxOffset,

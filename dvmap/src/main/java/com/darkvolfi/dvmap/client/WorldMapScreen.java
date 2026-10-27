@@ -342,7 +342,7 @@ public class WorldMapScreen extends Screen {
                 hoveredPoint = p;
             }
         }
-        MapMarkers.drawAll(g, markers, points, 10, Mth.lerp(partialTick, minecraft.player.yo, minecraft.player.getY()));
+        MapMarkers.drawAll(g, markers, points, 8,Mth.lerp(partialTick, minecraft.player.yo, minecraft.player.getY()));
         for (int i = 0; i < markers.size(); i++) {
             MapMarkers.Marker m = markers.get(i);
             if (m.kind() == MapMarkers.Kind.PLAYER && m.name() != null && m != hovered) {

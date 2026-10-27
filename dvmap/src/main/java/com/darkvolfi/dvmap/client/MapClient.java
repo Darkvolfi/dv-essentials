@@ -10,6 +10,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.client.event.RenderGuiOverlayEvent;
+import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -39,6 +42,7 @@ public final class MapClient {
     );
 
     private static int autosaveTicks;
+    private static boolean effectsShifted;
 
     private MapClient() {}
 
@@ -106,6 +110,25 @@ public final class MapClient {
         Player old = event.getOldPlayer();
         if (!MapConfig.DEATH_WAYPOINT.get() || !old.isDeadOrDying()) return;
         WaypointManager.recordDeath(old.level().dimension(), old.blockPosition());
+    }
+
+    /** Potion effect icons sit in the top-right corner too: move them left of the minimap, along the top. */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onOverlayPre(RenderGuiOverlayEvent.Pre event) {
+        if (event.getOverlay() != VanillaGuiOverlay.POTION_ICONS.type()) return;
+        int shift = MinimapOverlay.topRightWidth();
+        effectsShifted = shift > 0;
+        if (effectsShifted) {
+            event.getGuiGraphics().pose().pushPose();
+            event.getGuiGraphics().pose().translate(-shift, 0, 0);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onOverlayPost(RenderGuiOverlayEvent.Post event) {
+        if (event.getOverlay() != VanillaGuiOverlay.POTION_ICONS.type() || !effectsShifted) return;
+        event.getGuiGraphics().pose().popPose();
+        effectsShifted = false;
     }
 
     @SubscribeEvent

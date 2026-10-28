@@ -23,6 +23,7 @@ import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.decoration.Painting;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.BeehiveBlock;
 import net.minecraft.world.level.block.NoteBlock;
 import net.minecraft.world.level.block.TntBlock;
@@ -147,6 +148,7 @@ record LensInfo(ItemStack icon, LivingEntity face, List<Component> lines, List<B
                 }
             }
         }
+        if (LightMarkers.shown()) light(level, hit, lines);
         if (LensConfig.SHOW_LAND.get() && ModList.get().isLoaded("dvteam")) {
             Component land = TeamLand.owner(level, pos);
             if (land != null) lines.add(land);
@@ -155,6 +157,19 @@ record LensInfo(ItemStack icon, LivingEntity face, List<Component> lines, List<B
             lines.add(modName(ForgeRegistries.BLOCKS.getKey(state.getBlock())));
         }
         return new LensInfo(icon, null, lines, bars, tool, toolOk, items);
+    }
+
+    /** With the light overlay on: the light in front of the looked-at face, and whether mobs spawn on top of the block. */
+    private static void light(ClientLevel level, BlockHitResult hit, List<Component> lines) {
+        BlockPos front = hit.getBlockPos().relative(hit.getDirection());
+        int block = level.getBrightness(LightLayer.BLOCK, front);
+        int sky = level.getBrightness(LightLayer.SKY, front);
+        lines.add(Component.translatable("dvlens.light", block, sky).withStyle(ChatFormatting.GRAY));
+        LightMarkers.Spawn spawn = LightMarkers.spawnAt(level, hit.getBlockPos().above());
+        if (spawn != LightMarkers.Spawn.NONE) {
+            lines.add(Component.translatable(spawn == LightMarkers.Spawn.ALWAYS ? "dvlens.light.spawn_always" : "dvlens.light.spawn_night")
+                    .withStyle(spawn == LightMarkers.Spawn.ALWAYS ? ChatFormatting.RED : ChatFormatting.YELLOW));
+        }
     }
 
     private static LensInfo forEntity(Minecraft mc, Entity entity) {

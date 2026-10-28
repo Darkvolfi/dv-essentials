@@ -21,6 +21,8 @@ public final class LensConfig {
     public static final ForgeConfigSpec.BooleanValue SHOW_BREAK_PROGRESS;
     public static final ForgeConfigSpec.BooleanValue SHOW_MACHINES;
     public static final ForgeConfigSpec.BooleanValue SHOW_LAND;
+    public static final ForgeConfigSpec.IntValue LIGHT_RADIUS;
+    public static final ForgeConfigSpec.BooleanValue LIGHT_NIGHT_MARKS;
 
     public static final ForgeConfigSpec SERVER_SPEC;
     public static final ForgeConfigSpec.BooleanValue SHARE_CONTENTS;
@@ -61,6 +63,10 @@ public final class LensConfig {
                 .define("showMachines", true);
         SHOW_LAND = b.comment("With DV Team: show which clan and settlement the block you look at belongs to.")
                 .define("showLand", true);
+        LIGHT_RADIUS = b.comment("Light overlay (DV Lens light key): how far around you blocks are checked.")
+                .defineInRange("lightRadius", 16, 4, 32);
+        LIGHT_NIGHT_MARKS = b.comment("Light overlay: also mark spots where mobs spawn only at night (yellow). Red marks, where they spawn even by day, always show.")
+                .define("lightNightMarks", true);
         SPEC = b.build();
 
         ForgeConfigSpec.Builder s = new ForgeConfigSpec.Builder();

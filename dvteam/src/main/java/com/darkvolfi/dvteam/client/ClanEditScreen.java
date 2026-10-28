@@ -1,12 +1,12 @@
 package com.darkvolfi.dvteam.client;
 
-import com.darkvolfi.dvlib.client.DVTheme;
+import com.darkvolfi.dvlib.client.DVButton;
+import com.darkvolfi.dvlib.client.DVUi;
 import com.darkvolfi.dvteam.data.BannerData;
 import com.darkvolfi.dvteam.data.ClanData;
 import com.darkvolfi.dvteam.network.ClanActionPacket;
 import com.darkvolfi.dvteam.network.TeamNetwork;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.Holder;
@@ -97,33 +97,33 @@ public class ClanEditScreen extends Screen {
 
         // Flag: base colour, then up to six pattern layers.
         int r = left() + 176;
-        addRenderableWidget(Button.builder(Component.translatable("dvteam.edit.base"), b -> {
+        addRenderableWidget(DVButton.builder(Component.translatable("dvteam.edit.base"), b -> {
             base = DyeColor.byId((base.getId() + 1) % 16);
         }).bounds(r + 30, t + 10, 120, 18).build());
 
         for (int i = 0; i < layers.size(); i++) {
             int idx = i;
             int y = t + 32 + i * 20;
-            addRenderableWidget(Button.builder(Component.literal("◀"), b -> cyclePattern(idx, -1)).bounds(r + 30, y, 14, 18).build());
-            addRenderableWidget(Button.builder(Component.literal("▶"), b -> cyclePattern(idx, 1)).bounds(r + 46, y, 14, 18).build());
-            addRenderableWidget(Button.builder(Component.empty(), b -> {
+            addRenderableWidget(DVButton.builder(Component.literal("◀"), b -> cyclePattern(idx, -1)).bounds(r + 30, y, 14, 18).build());
+            addRenderableWidget(DVButton.builder(Component.literal("▶"), b -> cyclePattern(idx, 1)).bounds(r + 46, y, 14, 18).build());
+            addRenderableWidget(DVButton.builder(Component.empty(), b -> {
                 layers.get(idx)[1] = (layers.get(idx)[1] + 1) % 16;
             }).bounds(r + 62, y, 18, 18).build());
-            addRenderableWidget(Button.builder(Component.literal("×"), b -> {
+            addRenderableWidget(DVButton.builder(Component.literal("×"), b -> {
                 layers.remove(idx);
                 rebuildWidgets();
             }).bounds(r + 156, y, 14, 18).build());
         }
         if (layers.size() < BannerData.MAX_LAYERS) {
-            addRenderableWidget(Button.builder(Component.translatable("dvteam.edit.add_layer"), b -> {
+            addRenderableWidget(DVButton.builder(Component.translatable("dvteam.edit.add_layer"), b -> {
                 layers.add(new int[]{0, DyeColor.BLACK.getId()});
                 rebuildWidgets();
             }).bounds(r + 30, t + 32 + layers.size() * 20, 140, 18).build());
         }
 
-        addRenderableWidget(Button.builder(editing == null ? Component.translatable("dvteam.edit.found") : CommonComponents.GUI_DONE,
+        addRenderableWidget(DVButton.builder(editing == null ? Component.translatable("dvteam.edit.found") : CommonComponents.GUI_DONE,
                 b -> save()).bounds(width / 2 - 104, top() + PANEL_H - 26, 100, 20).build());
-        addRenderableWidget(Button.builder(CommonComponents.GUI_CANCEL, b -> onClose())
+        addRenderableWidget(DVButton.builder(CommonComponents.GUI_CANCEL, b -> onClose())
                 .bounds(width / 2 + 4, top() + PANEL_H - 26, 100, 20).build());
     }
 
@@ -148,7 +148,7 @@ public class ClanEditScreen extends Screen {
         renderBackground(g);
         int l = left();
         int t = top();
-        g.fill(l, t, l + PANEL_W, t + PANEL_H, DVTheme.shade(0xEE1C1A26));
+        DVUi.panel(g, l, t, PANEL_W, PANEL_H, false);
         g.renderOutline(l, t, PANEL_W, PANEL_H, 0xFF000000 | color);
         g.drawCenteredString(font, title, width / 2, t + 8, 0xFFFFFF);
 

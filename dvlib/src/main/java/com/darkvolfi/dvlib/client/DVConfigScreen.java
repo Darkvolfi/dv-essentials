@@ -1,19 +1,19 @@
 package com.darkvolfi.dvlib.client;
 
+import com.darkvolfi.dvlib.DVLib;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraftforge.client.ConfigScreenHandler;
 import net.minecraftforge.client.settings.KeyModifier;
@@ -31,13 +31,16 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * One config screen for every DV mod: a row per option, on/off buttons for booleans,
- * text boxes for numbers, the spec comment as tooltip. Changes apply on Done.
- * A search box at the top hides the rows whose label doesn't match.
+ * One config screen for every DV mod, in DV's panel look: a row per option with a switch for on/off, a slider for
+ * small number ranges, a text box for the rest, and the spec comment as tooltip. Server options and key bindings
+ * get their own headed sections. Changes apply with the check mark; a search box hides rows that don't match.
  */
 public class DVConfigScreen extends Screen {
-    private static final int ROW_HEIGHT = 24;
-    private static final int TOP = 46;
+    private static final int ROW_HEIGHT = 22;
+    private static final int PAD = 12;
+    private static final int CONTROL_WIDTH = 120;
+    /** Number ranges up to this wide get a slider; wider ones (e.g. 1 to 100000) a text box. */
+    private static final int SLIDER_MAX_SPAN = 200;
 
     private final Screen parent;
     private final String modId;
@@ -47,25 +50,33 @@ public class DVConfigScreen extends Screen {
 
     private final List<Row> rows = new ArrayList<>();
     private final Map<ForgeConfigSpec.ConfigValue<?>, Object> pending = new LinkedHashMap<>();
-    private final Map<KeyMapping, Button> keyButtons = new LinkedHashMap<>();
+    private final Map<KeyMapping, DVButton> keyButtons = new LinkedHashMap<>();
     private KeyMapping selectingKey;
-    private Component notice;
-    private int noticeBaseY;
-    private Button doneButton;
-    private EditBox search;
+    private DVIconButton doneButton;
     private String query;
     private int scrollOffset;
     private int maxScroll;
 
+    /** An option row, or a section header when {@code widget} is null. */
     private static final class Row {
         final Component label;
         final AbstractWidget widget;
+        final String[] icon;
         int baseY;
         boolean shown;
 
         Row(Component label, AbstractWidget widget) {
+            this(label, widget, null);
+        }
+
+        Row(Component label, AbstractWidget widget, String[] icon) {
             this.label = label;
             this.widget = widget;
+            this.icon = icon;
+        }
+
+        boolean header() {
+            return widget == null;
         }
     }
 
@@ -97,11 +108,45 @@ public class DVConfigScreen extends Screen {
         this.query = query;
     }
 
+    private int panelWidth() {
+        return Math.min(width - 20, 340);
+    }
+
+    private int left() {
+        return (width - panelWidth()) / 2;
+    }
+
+    private int top() {
+        return 8;
+    }
+
+    private int bottom() {
+        return height - 8;
+    }
+
+    /** Where option rows start and end (scrolled between these). */
+    private int viewTop() {
+        return top() + 48;
+    }
+
+    private int viewBottom() {
+        return bottom() - 6;
+    }
+
+    private int controlX() {
+        return left() + panelWidth() - PAD - 6 - CONTROL_WIDTH;
+    }
+
     @Override
     protected void init() {
         rows.clear();
-        notice = null;
-        search = addRenderableWidget(new EditBox(font, width / 2 - 155, 22, 310, 16, Component.translatable("dvlib.search")));
+        int l = left();
+        int w = panelWidth();
+
+        doneButton = addRenderableWidget(new DVIconButton(l + w - 38, top() + 6, 14, DVUi.CHECK, CommonComponents.GUI_DONE, this::save));
+        addRenderableWidget(new DVIconButton(l + w - 20, top() + 6, 14, DVUi.CLOSE, CommonComponents.GUI_CANCEL, this::onClose));
+
+        EditBox search = addRenderableWidget(new EditBox(font, l + PAD + 14, top() + 26, w - 2 * PAD - 14, 16, Component.translatable("dvlib.search")));
         search.setHint(Component.translatable("dvlib.search").withStyle(ChatFormatting.DARK_GRAY));
         search.setValue(query);
         search.setResponder(text -> {
@@ -112,38 +157,28 @@ public class DVConfigScreen extends Screen {
 
         addSpec(clientSpec);
         if (serverSpec != null) {
-            boolean editable = serverSpec.isLoaded() && Minecraft.getInstance().hasSingleplayerServer();
-            if (editable) {
+            rows.add(new Row(Component.translatable("dvlib.config.server"), null, DVUi.SERVER));
+            if (serverSpec.isLoaded() && Minecraft.getInstance().hasSingleplayerServer()) {
                 addSpec(serverSpec);
             } else {
-                notice = Component.translatable("dvlib.config.server_in_world").withStyle(ChatFormatting.GRAY);
+                rows.add(new Row(Component.translatable("dvlib.config.server_in_world").withStyle(ChatFormatting.GRAY), null));
             }
         }
         addKeys();
-
-        doneButton = addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, b -> save())
-                .bounds(width / 2 - 155, height - 28, 150, 20).build());
-        addRenderableWidget(Button.builder(CommonComponents.GUI_CANCEL, b -> onClose())
-                .bounds(width / 2 + 5, height - 28, 150, 20).build());
         layout();
         updateDone();
     }
 
-    /** Stacks the rows matching the search from the top and recomputes the scroll range. */
+    /** Stacks the rows matching the search from the top and recomputes the scroll range. Headers show only unfiltered. */
     private void layout() {
-        int y = TOP;
+        int y = viewTop();
         for (Row row : rows) {
-            row.shown = query.isEmpty() || DVMods.contains(row.label.getString(), query);
+            row.shown = row.header() ? query.isEmpty() : query.isEmpty() || DVMods.contains(row.label.getString(), query);
             if (!row.shown) continue;
             row.baseY = y;
             y += ROW_HEIGHT;
         }
-        if (notice != null && query.isEmpty()) {
-            noticeBaseY = y;
-            y += ROW_HEIGHT;
-        }
-        int viewBottom = height - 34;
-        maxScroll = Math.max(0, y - viewBottom);
+        maxScroll = Math.max(0, y - viewBottom());
         scrollOffset = Mth.clamp(scrollOffset, 0, maxScroll);
         updateScroll();
     }
@@ -154,24 +189,24 @@ public class DVConfigScreen extends Screen {
             if (!(entry instanceof ForgeConfigSpec.ConfigValue<?> value)) continue;
             ForgeConfigSpec.ValueSpec valueSpec = spec.getSpec().get(value.getPath());
             String name = DVMods.optionName(value);
+            Component label = Component.literal(DVMods.optionLabel(modId, name));
             Tooltip tooltip = valueSpec.getComment() == null ? null : Tooltip.create(Component.literal(valueSpec.getComment()));
-            int x = width / 2 + 5;
             AbstractWidget widget;
 
             if (value instanceof ForgeConfigSpec.BooleanValue bool) {
-                widget = addRenderableWidget(CycleButton.onOffBuilder((Boolean) pendingOr(bool))
-                        .displayOnlyValue()
-                        .withTooltip(v -> tooltip)
-                        .create(x, 0, 150, 20, Component.empty(), (button, v) -> pending.put(bool, v)));
+                widget = new DVSwitch(left() + panelWidth() - PAD - 6 - DVSwitch.WIDTH, 0, label, (Boolean) pendingOr(bool), v -> pending.put(bool, v));
             } else if (value instanceof ForgeConfigSpec.EnumValue<?> enumVal) {
-                widget = addRenderableWidget(createEnumButton(enumVal, name, tooltip, x));
+                widget = createEnumButton(enumVal, name);
+            } else if (value instanceof ForgeConfigSpec.IntValue intVal && smallRange(valueSpec)) {
+                ForgeConfigSpec.Range<Integer> range = valueSpec.getRange();
+                widget = new DVSlider(controlX(), 0, CONTROL_WIDTH, range.getMin(), range.getMax(), (Integer) pendingOr(intVal),
+                        v -> pending.put(intVal, v));
             } else {
-                EditBox box = new EditBox(font, x + 1, 0, 148, 18, Component.literal(name));
+                EditBox box = new EditBox(font, controlX() + 1, 0, CONTROL_WIDTH - 2, 16, label);
                 box.setMaxLength(1024);
                 Object current = pendingOr(value);
                 box.setValue(current instanceof List<?> list
                         ? String.join(", ", list.stream().map(String::valueOf).toList()) : String.valueOf(current));
-                box.setTooltip(tooltip);
                 box.setResponder(text -> {
                     Object parsed = parse(value, text);
                     boolean valid = parsed != null && valueSpec.test(parsed);
@@ -180,22 +215,27 @@ public class DVConfigScreen extends Screen {
                     else pending.put(value, Invalid.INSTANCE);
                     updateDone();
                 });
-                widget = addRenderableWidget(box);
+                widget = box;
             }
-            rows.add(new Row(Component.literal(DVMods.optionLabel(modId, name)), widget));
+            widget.setTooltip(tooltip);
+            rows.add(new Row(label, addRenderableWidget(widget)));
         }
     }
 
+    private static boolean smallRange(ForgeConfigSpec.ValueSpec spec) {
+        ForgeConfigSpec.Range<Integer> range = spec.getRange();
+        return range != null && range.getMax() - range.getMin() <= SLIDER_MAX_SPAN;
+    }
+
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private CycleButton<?> createEnumButton(ForgeConfigSpec.EnumValue enumVal, String optionName, Tooltip tooltip, int x) {
+    private DVButton createEnumButton(ForgeConfigSpec.EnumValue enumVal, String optionName) {
         Enum<?> current = (Enum<?>) pendingOr(enumVal);
         Enum<?>[] constants = current.getDeclaringClass().getEnumConstants();
-        return CycleButton.<Enum<?>>builder(val -> enumLabel(optionName, val))
-                .withValues(constants)
-                .withInitialValue(current)
-                .displayOnlyValue()
-                .withTooltip(v -> tooltip)
-                .create(x, 0, 150, 20, Component.empty(), (button, v) -> pending.put(enumVal, v));
+        return new DVButton(controlX(), 0, CONTROL_WIDTH, 16, enumLabel(optionName, current), b -> {
+            Enum<?> next = constants[(((Enum<?>) pendingOr(enumVal)).ordinal() + 1) % constants.length];
+            pending.put(enumVal, next);
+            b.setMessage(enumLabel(optionName, next));
+        });
     }
 
     private Component enumLabel(String optionName, Enum<?> val) {
@@ -209,12 +249,17 @@ public class DVConfigScreen extends Screen {
     private void addKeys() {
         keyButtons.clear();
         selectingKey = null;
+        boolean first = true;
         for (KeyMapping key : minecraft.options.keyMappings) {
             if (!key.getName().startsWith("key." + modId + ".")) continue;
-            Button button = addRenderableWidget(Button.builder(Component.empty(), b -> {
+            if (first) {
+                rows.add(new Row(Component.translatable("dvlib.config.keys"), null, DVUi.KEY));
+                first = false;
+            }
+            DVButton button = addRenderableWidget(new DVButton(controlX(), 0, CONTROL_WIDTH, 16, Component.empty(), b -> {
                 selectingKey = key;
                 refreshKeyButtons();
-            }).bounds(width / 2 + 5, 0, 150, 20).build());
+            }));
             keyButtons.put(key, button);
             rows.add(new Row(Component.translatable(key.getName()), button));
         }
@@ -222,7 +267,7 @@ public class DVConfigScreen extends Screen {
     }
 
     private void refreshKeyButtons() {
-        for (Map.Entry<KeyMapping, Button> e : keyButtons.entrySet()) {
+        for (Map.Entry<KeyMapping, DVButton> e : keyButtons.entrySet()) {
             KeyMapping key = e.getKey();
             Component text = key.getTranslatedKeyMessage();
             if (key == selectingKey) {
@@ -275,14 +320,13 @@ public class DVConfigScreen extends Screen {
         return super.mouseScrolled(mouseX, mouseY, delta);
     }
 
+    /** Places each control vertically centred in its row; rows outside the view are hidden. */
     private void updateScroll() {
-        int viewTop = TOP - 4;
-        int viewBottom = height - 34;
         for (Row row : rows) {
+            if (row.header()) continue;
             int y = row.baseY - scrollOffset;
-            int offset = row.widget instanceof EditBox ? 1 : 0;
-            row.widget.setY(y + offset);
-            row.widget.visible = row.shown && y >= viewTop && y + 20 <= viewBottom;
+            row.widget.setY(y + (ROW_HEIGHT - row.widget.getHeight()) / 2);
+            row.widget.visible = row.shown && y >= viewTop() && y + ROW_HEIGHT <= viewBottom();
         }
     }
 
@@ -325,35 +369,48 @@ public class DVConfigScreen extends Screen {
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         renderBackground(g);
-        g.drawCenteredString(font, title, width / 2, 8, 0xFFFFFF);
-        int viewTop = TOP - 4;
-        int viewBottom = height - 34;
+        int l = left();
+        int w = panelWidth();
+        DVUi.panel(g, l, top(), w, bottom() - top(), false);
+        g.blit(new ResourceLocation(DVLib.MOD_ID, "textures/gui/mods/" + modId + ".png"), l + PAD - 2, top() + 5, 16, 16, 0, 0, 32, 32, 32, 32);
+        g.drawString(font, title, l + PAD + 18, top() + 9, 0xFFE6E6F0);
+        DVUi.icon(g, DVUi.SEARCH, l + PAD + 5, top() + 34, 1, 0xFF8A80A8);
+
+        g.enableScissor(l + 1, viewTop(), l + w - 1, viewBottom());
         boolean any = false;
         for (Row row : rows) {
             if (!row.shown) continue;
-            any = true;
-            if (!row.widget.visible) continue;
             int y = row.baseY - scrollOffset;
-            g.drawString(font, row.label, width / 2 - 155, y + 6, 0xFFFFFF);
+            if (!row.header()) any = true;
+            if (y + ROW_HEIGHT < viewTop() || y > viewBottom()) continue;
+            if (row.header()) {
+                int textX = l + PAD;
+                if (row.icon != null) {
+                    DVUi.icon(g, row.icon, l + PAD + 3, y + 11, 1, DVUi.accent());
+                    textX += 12;
+                    g.hLine(l + PAD, l + w - PAD, y + ROW_HEIGHT - 3, 0xFF3A3548);
+                }
+                g.drawString(font, row.label, textX, y + 7, row.icon != null ? DVUi.accent() : 0xFFA0A0A0);
+                continue;
+            }
+            if (mouseY >= y && mouseY < y + ROW_HEIGHT && mouseX >= l && mouseX < l + w) {
+                g.fill(l + 4, y + 1, l + w - 4, y + ROW_HEIGHT - 1, 0x22FFFFFF);
+            }
+            g.drawString(font, row.label, l + PAD, y + 7, 0xFFE6E6F0);
         }
         if (!any && !query.isEmpty()) {
-            g.drawCenteredString(font, Component.translatable("dvlib.search.none"), width / 2, TOP + 6, 0xA0A0A0);
+            g.drawCenteredString(font, Component.translatable("dvlib.search.none"), l + w / 2, viewTop() + 7, 0xA0A0A0);
         }
-        if (notice != null && query.isEmpty()) {
-            int y = noticeBaseY - scrollOffset;
-            if (y >= viewTop && y + 20 <= viewBottom) {
-                g.drawString(font, notice, width / 2 - 155, y + 6, 0xA0A0A0);
-            }
-        }
+        g.disableScissor();
+
         if (maxScroll > 0) {
-            int trackTop = TOP;
-            int trackBottom = height - 36;
-            int trackHeight = Math.max(20, trackBottom - trackTop);
+            int trackTop = viewTop();
+            int trackHeight = viewBottom() - trackTop;
             int thumbHeight = Math.max(16, trackHeight * trackHeight / (trackHeight + maxScroll));
             int thumbY = trackTop + (trackHeight - thumbHeight) * scrollOffset / maxScroll;
-            int barX = width / 2 + 160;
-            g.fill(barX, trackTop, barX + 3, trackBottom, 0x55000000);
-            g.fill(barX, thumbY, barX + 3, thumbY + thumbHeight, 0xFFA0A0A0);
+            int barX = l + w - 6;
+            g.fill(barX, trackTop, barX + 2, viewBottom(), 0x55000000);
+            g.fill(barX, thumbY, barX + 2, thumbY + thumbHeight, DVUi.accent());
         }
         super.render(g, mouseX, mouseY, partialTick);
     }

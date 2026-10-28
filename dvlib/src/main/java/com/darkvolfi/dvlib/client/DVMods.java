@@ -40,7 +40,22 @@ public final class DVMods {
         }
     }
 
+    /** Every DV mod, installed or not, in menu order. Each has a logo in assets/dvlib/textures/gui/mods. */
+    public static final List<String> KNOWN = List.of("dvzoom", "dvfood", "dvlens", "dvvein", "dvslots", "dvdark", "dvmap", "dvteam");
+
+    /** Download pages, once the mods are published; until then the menu says "coming soon". */
+    private static final Map<String, String> PAGES = Map.of();
+
     private static final Map<String, Mod> MODS = new TreeMap<>();
+
+    /** The registered mod, or null when it isn't installed (or has no settings). */
+    public static Mod get(String modId) {
+        return MODS.get(modId);
+    }
+
+    public static String page(String modId) {
+        return PAGES.get(modId);
+    }
 
     private DVMods() {}
 

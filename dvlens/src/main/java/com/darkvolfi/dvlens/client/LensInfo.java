@@ -54,6 +54,7 @@ import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.common.ForgeSpawnEggItem;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -70,10 +71,26 @@ import java.util.UUID;
  * armor stand gear). Built from client-side data, plus what the server
  * sent for the looked-at entity or block when it has DV Lens.
  */
-record LensInfo(ItemStack icon, LivingEntity face, List<Component> lines, ItemStack tool, boolean toolOk, List<ItemStack> items) {
+record LensInfo(ItemStack icon, LivingEntity face, List<Component> lines, List<Bar> bars, ItemStack tool, boolean toolOk,
+                List<ItemStack> items) {
+    /** A value shown as a filled bar with its text inside (health, growth, energy...). */
+    record Bar(int color, float fraction, Component text) {
+        Bar {
+            fraction = Math.max(0.0f, Math.min(1.0f, fraction));
+        }
+    }
+
     /** Note block note 0 is F♯; the names repeat every octave. */
     private static final String[] NOTE_NAMES = {"F♯", "G", "G♯", "A", "A♯", "B", "C", "C♯", "D", "D♯", "E", "F"};
     private static final int MAX_COMMAND = 40;
+    private static final int HEALTH = 0xFFC62828;
+    private static final int GROWTH = 0xFF43A047;
+    private static final int PROGRESS = 0xFF9E9E9E;
+    private static final int FUEL = 0xFFEF6C00;
+    private static final int ENERGY = 0xFFD84315;
+    private static final int WATER = 0xFF3F76E4;
+    private static final int HONEY = 0xFFF9A825;
+    private static final int STRESS = 0xFF8D6E63;
 
     static LensInfo lookAt(Minecraft mc) {
         HitResult hit = mc.hitResult;
@@ -94,12 +111,10 @@ record LensInfo(ItemStack icon, LivingEntity face, List<Component> lines, ItemSt
 
         ItemStack icon = state.getCloneItemStack(hit, level, pos, player);
         List<Component> lines = new ArrayList<>();
+        List<Bar> bars = new ArrayList<>();
         lines.add(icon.isEmpty() ? state.getBlock().getName() : icon.getHoverName());
 
-        if (LensConfig.SHOW_GROWTH.get()) {
-            Component growth = growth(state);
-            if (growth != null) lines.add(growth);
-        }
+        if (LensConfig.SHOW_GROWTH.get()) growth(state, lines, bars);
         if (LensConfig.SHOW_REDSTONE.get()) redstone(level, pos, state, lines);
         if (LensConfig.SHOW_SPAWNER.get() && level.getBlockEntity(pos) instanceof SpawnerBlockEntity spawner) {
             Entity mob = spawner.getSpawner().getOrCreateDisplayEntity(level, level.getRandom(), pos);
@@ -108,13 +123,13 @@ record LensInfo(ItemStack icon, LivingEntity face, List<Component> lines, ItemSt
             }
         }
         BlockInfoReply server = ServerInfo.get(pos);
-        if (LensConfig.SHOW_DETAILS.get()) blockDetails(state, server, lines);
+        if (LensConfig.SHOW_DETAILS.get()) blockDetails(state, server, lines, bars);
         List<ItemStack> items = List.of();
         if (LensConfig.SHOW_CONTENTS.get() && server != null) {
             items = server.items();
-            progressLines(server, lines);
+            progressBars(server, lines, bars);
         }
-        if (LensConfig.SHOW_MACHINES.get() && server != null) machineLines(server.machine(), lines);
+        if (LensConfig.SHOW_MACHINES.get() && server != null) machineBars(server.machine(), lines, bars);
 
         ItemStack tool = ItemStack.EMPTY;
         boolean toolOk = false;
@@ -135,11 +150,12 @@ record LensInfo(ItemStack icon, LivingEntity face, List<Component> lines, ItemSt
         if (LensConfig.SHOW_MOD_NAME.get()) {
             lines.add(modName(ForgeRegistries.BLOCKS.getKey(state.getBlock())));
         }
-        return new LensInfo(icon, null, lines, tool, toolOk, items);
+        return new LensInfo(icon, null, lines, bars, tool, toolOk, items);
     }
 
     private static LensInfo forEntity(Minecraft mc, Entity entity) {
         List<Component> lines = new ArrayList<>();
+        List<Bar> bars = new ArrayList<>();
         ItemStack icon = ItemStack.EMPTY;
         LivingEntity face = null;
 
@@ -172,8 +188,8 @@ record LensInfo(ItemStack icon, LivingEntity face, List<Component> lines, ItemSt
             lines.add(villagerLine(villager.getVillagerData()));
         }
         if (LensConfig.SHOW_HEALTH.get() && entity instanceof LivingEntity living) {
-            lines.add(Component.literal("❤ " + format(living.getHealth()) + " / " + format(living.getMaxHealth()))
-                    .withStyle(ChatFormatting.RED));
+            bars.add(new Bar(HEALTH, living.getHealth() / Math.max(1.0f, living.getMaxHealth()),
+                    Component.literal("❤ " + format(living.getHealth()) + " / " + format(living.getMaxHealth()))));
         }
         if (LensConfig.SHOW_EFFECTS.get() && server != null) {
             for (MobEffectInstance effect : server.effects()) lines.add(EffectText.line(effect, 1.0f));
@@ -196,10 +212,10 @@ record LensInfo(ItemStack icon, LivingEntity face, List<Component> lines, ItemSt
         if (LensConfig.SHOW_MOD_NAME.get()) {
             lines.add(modName(ForgeRegistries.ENTITY_TYPES.getKey(entity.getType())));
         }
-        return new LensInfo(icon, face, lines, ItemStack.EMPTY, false, items);
+        return new LensInfo(icon, face, lines, bars, ItemStack.EMPTY, false, items);
     }
 
-    private static void blockDetails(BlockState state, BlockInfoReply server, List<Component> lines) {
+    private static void blockDetails(BlockState state, BlockInfoReply server, List<Component> lines, List<Bar> bars) {
         if (state.getBlock() instanceof NoteBlock) {
             int note = state.getValue(NoteBlock.NOTE);
             String instrument = state.getValue(NoteBlock.INSTRUMENT).getSerializedName();
@@ -208,8 +224,9 @@ record LensInfo(ItemStack icon, LivingEntity face, List<Component> lines, ItemSt
         } else if (state.getBlock() instanceof TntBlock && state.getValue(TntBlock.UNSTABLE)) {
             lines.add(Component.translatable("dvlens.tnt.unstable").withStyle(ChatFormatting.RED));
         } else if (state.getBlock() instanceof BeehiveBlock) {
-            lines.add(Component.translatable("dvlens.honey", state.getValue(BeehiveBlock.HONEY_LEVEL), BeehiveBlock.MAX_HONEY_LEVELS)
-                    .withStyle(ChatFormatting.GOLD));
+            int honey = state.getValue(BeehiveBlock.HONEY_LEVEL);
+            bars.add(new Bar(HONEY, honey / (float) BeehiveBlock.MAX_HONEY_LEVELS,
+                    Component.translatable("dvlens.honey", honey, BeehiveBlock.MAX_HONEY_LEVELS)));
             if (server != null && server.bees() >= 0) {
                 lines.add(Component.translatable("dvlens.bees", server.bees(), BeehiveBlockEntity.MAX_OCCUPANTS).withStyle(ChatFormatting.YELLOW));
             }
@@ -222,34 +239,41 @@ record LensInfo(ItemStack icon, LivingEntity face, List<Component> lines, ItemSt
     }
 
     /** Furnace cooking / brewing progress and the fuel left. */
-    private static void progressLines(BlockInfoReply server, List<Component> lines) {
+    private static void progressBars(BlockInfoReply server, List<Component> lines, List<Bar> bars) {
         if (server.progressMax() > 0 && server.progress() > 0) {
-            lines.add(Component.translatable("dvlens.progress", server.progress() * 100 / server.progressMax()).withStyle(ChatFormatting.GRAY));
+            int percent = server.progress() * 100 / server.progressMax();
+            bars.add(new Bar(PROGRESS, percent / 100f, Component.translatable("dvlens.progress", percent)));
         }
         if (server.fuel() > 0) {
-            Object fuel = server.fuelMax() > 0 ? server.fuel() + "/" + server.fuelMax() : StringUtil.formatTickDuration(server.fuel());
-            lines.add(Component.translatable("dvlens.fuel", fuel).withStyle(ChatFormatting.GRAY));
+            if (server.fuelMax() > 0) {
+                bars.add(new Bar(FUEL, server.fuel() / (float) server.fuelMax(),
+                        Component.translatable("dvlens.fuel", server.fuel() + "/" + server.fuelMax())));
+            } else {
+                lines.add(Component.translatable("dvlens.fuel", StringUtil.formatTickDuration(server.fuel())).withStyle(ChatFormatting.GRAY));
+            }
         }
     }
 
     /** Forge Energy, fluid tanks and Create rotation / stress, for any mod's machines. */
-    private static void machineLines(MachineInfo machine, List<Component> lines) {
+    private static void machineBars(MachineInfo machine, List<Component> lines, List<Bar> bars) {
         NumberFormat numbers = NumberFormat.getIntegerInstance();
         if (machine.energyMax() > 0) {
-            lines.add(Component.translatable("dvlens.energy", numbers.format(machine.energy()), numbers.format(machine.energyMax()))
-                    .withStyle(ChatFormatting.RED));
+            bars.add(new Bar(ENERGY, machine.energy() / (float) machine.energyMax(),
+                    Component.translatable("dvlens.energy", numbers.format(machine.energy()), numbers.format(machine.energyMax()))));
         }
         for (MachineInfo.Tank tank : machine.tanks()) {
             Component fluid = tank.fluid().isEmpty() ? Component.translatable("dvlens.fluid.empty") : tank.fluid().getDisplayName();
-            lines.add(Component.translatable("dvlens.fluid", fluid, numbers.format(tank.fluid().getAmount()), numbers.format(tank.capacity()))
-                    .withStyle(ChatFormatting.AQUA));
+            int color = tank.fluid().isEmpty() ? WATER
+                    : 0xFF000000 | IClientFluidTypeExtensions.of(tank.fluid().getFluid()).getTintColor(tank.fluid());
+            bars.add(new Bar(color, tank.capacity() > 0 ? tank.fluid().getAmount() / (float) tank.capacity() : 0,
+                    Component.translatable("dvlens.fluid", fluid, numbers.format(tank.fluid().getAmount()), numbers.format(tank.capacity()))));
         }
         if (!Float.isNaN(machine.rpm())) {
             lines.add(Component.translatable("dvlens.create.speed", format(Math.abs(machine.rpm()))).withStyle(ChatFormatting.GOLD));
             if (machine.capacity() > 0) {
                 boolean overstressed = machine.stress() > machine.capacity();
-                lines.add(Component.translatable("dvlens.create.stress", numbers.format(machine.stress()), numbers.format(machine.capacity()))
-                        .withStyle(overstressed ? ChatFormatting.RED : ChatFormatting.GRAY));
+                bars.add(new Bar(overstressed ? HEALTH : STRESS, machine.stress() / (float) machine.capacity(),
+                        Component.translatable("dvlens.create.stress", numbers.format(machine.stress()), numbers.format(machine.capacity()))));
             }
         }
     }
@@ -338,18 +362,21 @@ record LensInfo(ItemStack icon, LivingEntity face, List<Component> lines, ItemSt
                 - 0.343930367);
     }
 
-    /** Crops and similar blocks expose their growth as an "age" property. */
-    private static Component growth(BlockState state) {
+    /** Crops and similar blocks expose their growth as an "age" property: a bar while growing, a line once ripe. */
+    private static void growth(BlockState state, List<Component> lines, List<Bar> bars) {
         for (Property<?> property : state.getProperties()) {
             if (property instanceof IntegerProperty age && property.getName().equals("age")) {
                 int max = age.getPossibleValues().stream().mapToInt(Integer::intValue).max().orElse(0);
-                if (max == 0) return null;
+                if (max == 0) return;
                 int value = state.getValue(age);
-                if (value >= max) return Component.translatable("dvlens.growth.mature").withStyle(ChatFormatting.GREEN);
-                return Component.translatable("dvlens.growth", value * 100 / max).withStyle(ChatFormatting.GRAY);
+                if (value >= max) {
+                    lines.add(Component.translatable("dvlens.growth.mature").withStyle(ChatFormatting.GREEN));
+                } else {
+                    bars.add(new Bar(GROWTH, value / (float) max, Component.translatable("dvlens.growth", value * 100 / max)));
+                }
+                return;
             }
         }
-        return null;
     }
 
     /** The weakest vanilla tool that harvests the block, or null when it isn't mined with a tool type we know. */

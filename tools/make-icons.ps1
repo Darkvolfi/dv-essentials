@@ -215,7 +215,11 @@ function Scale($bmp, [int]$size) {
 $sheet = New-Object System.Drawing.Bitmap((256 * $icons.Count), 256)
 $sg = [System.Drawing.Graphics]::FromImage($sheet); $sg.InterpolationMode = 'NearestNeighbor'; $sg.PixelOffsetMode = 'Half'; $sg.Clear([System.Drawing.Color]::White)
 $i = 0
+# DV Lib's menu shows every DV mod, installed or not, so it carries all logos at their native 32 px.
+$guiMods = Join-Path $root 'dvlib\src\main\resources\assets\dvlib\textures\gui\mods'
+New-Item -ItemType Directory -Force $guiMods | Out-Null
 foreach ($id in $icons.Keys) {
+    $icons[$id].Save((Join-Path $guiMods "$id.png"), [System.Drawing.Imaging.ImageFormat]::Png)
     (Scale $icons[$id] 512).Save((Join-Path $out "$id.png"), [System.Drawing.Imaging.ImageFormat]::Png)
     (Scale $icons[$id] 128).Save((Join-Path $root "$id\src\main\resources\${id}_logo.png"), [System.Drawing.Imaging.ImageFormat]::Png)
     $sg.DrawImage($icons[$id], $i * 256, 0, 256, 256)

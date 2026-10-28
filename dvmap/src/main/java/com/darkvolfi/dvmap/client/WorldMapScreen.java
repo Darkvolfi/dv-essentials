@@ -1,14 +1,14 @@
 package com.darkvolfi.dvmap.client;
 
 import com.darkvolfi.dvlib.client.DVConfigScreen;
-import com.darkvolfi.dvlib.client.DVTheme;
+import com.darkvolfi.dvlib.client.DVIconButton;
+import com.darkvolfi.dvlib.client.DVUi;
 import com.darkvolfi.dvmap.DVMap;
 import com.darkvolfi.dvmap.MapConfig;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
@@ -29,9 +29,10 @@ import java.util.Locale;
 public class WorldMapScreen extends Screen {
     public static final int TOP_BAR_HEIGHT = 28;
     private static final int STATUS_HEIGHT = 18;
-    private static final int TOGGLE_HEIGHT = 18;
+    private static final int TOOL_SIZE = 18;
+    private static final int TOGGLE_SIZE = 16;
 
-    private int bottomBarHeight = STATUS_HEIGHT + TOGGLE_HEIGHT + 4;
+    private int bottomBarHeight = STATUS_HEIGHT + TOGGLE_SIZE + 6;
     /** Bottom-bar toggles and how to relabel them after any click (one may depend on another). */
     private final List<Runnable> toggleRefreshers = new ArrayList<>();
 
@@ -56,59 +57,48 @@ public class WorldMapScreen extends Screen {
         }
 
         int x = 6;
-        int y = 4;
+        int y = 5;
+        int step = TOOL_SIZE + 3;
 
-        // 1. Center on player
-        addRenderableWidget(Button.builder(Component.translatable("dvmap.screen.center"), b -> {
+        addRenderableWidget(new DVIconButton(x, y, TOOL_SIZE, MapIcons.CENTER, Component.translatable("dvmap.screen.center"), () -> {
             if (minecraft.player != null) {
                 viewX = minecraft.player.getX();
                 viewZ = minecraft.player.getZ();
             }
-        }).bounds(x, y, 52, 20).build());
-        x += 55;
+        }));
+        x += step;
 
-        // 2. Layer mode
-        addRenderableWidget(Button.builder(layerButtonLabel(), b -> {
+        DVIconButton[] layer = new DVIconButton[1];
+        layer[0] = addRenderableWidget(new DVIconButton(x, y, TOOL_SIZE, MapIcons.LAYERS, layerButtonLabel(), () -> {
             MapConfig.LayerMode[] modes = MapConfig.LayerMode.values();
-            MapConfig.LayerMode next = modes[(MapConfig.LAYER_MODE.get().ordinal() + 1) % modes.length];
-            MapConfig.LAYER_MODE.set(next);
+            MapConfig.LAYER_MODE.set(modes[(MapConfig.LAYER_MODE.get().ordinal() + 1) % modes.length]);
             MapConfig.SPEC.save();
-            b.setMessage(layerButtonLabel());
-        }).bounds(x, y, 76, 20).build());
-        x += 79;
+            layer[0].setTooltip(Tooltip.create(layerButtonLabel()));
+        }));
+        x += step;
 
-        // 3. Chunk grid toggle
-        addRenderableWidget(Button.builder(gridButtonLabel(), b -> {
-            boolean next = !MapConfig.SHOW_CHUNK_GRID.get();
-            MapConfig.SHOW_CHUNK_GRID.set(next);
+        DVIconButton[] grid = new DVIconButton[1];
+        grid[0] = addRenderableWidget(new DVIconButton(x, y, TOOL_SIZE, MapIcons.GRID, gridButtonLabel(), () -> {
+            MapConfig.SHOW_CHUNK_GRID.set(!MapConfig.SHOW_CHUNK_GRID.get());
             MapConfig.SPEC.save();
-            b.setMessage(gridButtonLabel());
-        }).bounds(x, y, 64, 20).build());
-        x += 67;
+            grid[0].selected(MapConfig.SHOW_CHUNK_GRID.get()).setTooltip(Tooltip.create(gridButtonLabel()));
+        }).selected(MapConfig.SHOW_CHUNK_GRID.get()));
+        x += step;
 
-        // 4. Waypoints list
-        addRenderableWidget(Button.builder(Component.translatable("dvmap.screen.waypoints"), b ->
-                minecraft.setScreen(new WaypointListScreen(this)))
-                .bounds(x, y, 68, 20).build());
-        x += 71;
+        addRenderableWidget(new DVIconButton(x, y, TOOL_SIZE, MapIcons.PIN, Component.translatable("dvmap.screen.waypoints"),
+                () -> minecraft.setScreen(new WaypointListScreen(this))));
+        x += step;
 
-        // 5. Quick add waypoint at player
-        addRenderableWidget(Button.builder(Component.literal("+"), b -> {
+        addRenderableWidget(new DVIconButton(x, y, TOOL_SIZE, DVUi.PLUS, Component.translatable("dvmap.waypoint.add"), () -> {
             if (minecraft.player != null && minecraft.level != null) {
                 minecraft.setScreen(new WaypointEditScreen(this, null,
                         minecraft.player.getBlockX(), minecraft.player.getBlockY(), minecraft.player.getBlockZ(),
                         minecraft.level.dimension().location().toString()));
             }
-        }).bounds(x, y, 20, 20)
-                .tooltip(Tooltip.create(Component.translatable("dvmap.waypoint.add")))
-                .build());
+        }));
 
-        // Settings button on top-right
-        addRenderableWidget(Button.builder(Component.literal("⚙"), b ->
-                minecraft.setScreen(new DVConfigScreen(this, DVMap.MOD_ID, MapConfig.SPEC, null, null)))
-                .bounds(width - 26, y, 20, 20)
-                .tooltip(Tooltip.create(Component.translatable("dvmap.screen.settings")))
-                .build());
+        addRenderableWidget(new DVIconButton(width - TOOL_SIZE - 6, y, TOOL_SIZE, DVUi.GEAR, Component.translatable("dvmap.screen.settings"),
+                () -> minecraft.setScreen(new DVConfigScreen(this, DVMap.MOD_ID, MapConfig.SPEC, null, null))));
 
         // Allow hooks (e.g., DV Team) to add toolbar buttons
         for (MapOverlayHook hook : MapOverlayHook.HOOKS) {
@@ -118,75 +108,59 @@ public class WorldMapScreen extends Screen {
         initToggles();
     }
 
-    /** Quick on/off settings along the bottom; wraps to a second row on narrow screens. */
+    /** Quick on/off settings as a centred row of icons along the bottom; lit while on. */
     private void initToggles() {
         toggleRefreshers.clear();
         boolean server = RemotePlayers.serverHasMod();
-        Tooltip needServer = server ? null : Tooltip.create(Component.translatable("dvmap.bar.need_server"));
-        List<Button> buttons = new ArrayList<>();
-        buttons.add(toggle("dvmap.bar.hostiles", MapConfig.SHOW_HOSTILES, null, null));
-        buttons.add(toggle("dvmap.bar.animals", MapConfig.SHOW_ANIMALS, null, null));
-        buttons.add(toggle("dvmap.bar.players", MapConfig.SHOW_PLAYERS, null, null));
-        buttons.add(toggle("dvmap.bar.day_night", MapConfig.DAY_NIGHT, null, null));
-        buttons.add(toggle("dvmap.bar.hide_me", MapConfig.HIDE_ME, needServer, null));
+        Component needServer = server ? null : Component.translatable("dvmap.bar.need_server");
+        List<DVIconButton> buttons = new ArrayList<>();
+        buttons.add(toggle(MapIcons.HOSTILE, "dvmap.bar.hostiles", MapConfig.SHOW_HOSTILES, null, null));
+        buttons.add(toggle(MapIcons.ANIMAL, "dvmap.bar.animals", MapConfig.SHOW_ANIMALS, null, null));
+        buttons.add(toggle(MapIcons.PLAYER, "dvmap.bar.players", MapConfig.SHOW_PLAYERS, null, null));
+        buttons.add(toggle(MapIcons.SUN, "dvmap.bar.day_night", MapConfig.DAY_NIGHT, null, null));
+        buttons.add(toggle(MapIcons.FLAG, "dvmap.bar.structures", MapConfig.SHOW_STRUCTURES, needServer, null));
+        buttons.add(toggle(MapIcons.HIDE, "dvmap.bar.hide_me", MapConfig.HIDE_ME, needServer, null));
         // Hidden on the map means the name is hidden too: shown as on and locked.
-        buttons.add(toggle("dvmap.bar.hide_name", MapConfig.HIDE_MY_NAME, needServer, MapConfig.HIDE_ME));
-        buttons.add(toggle("dvmap.bar.structures", MapConfig.SHOW_STRUCTURES, needServer, null));
-        Component export = Component.translatable("dvmap.bar.export");
-        buttons.add(Button.builder(export, b -> MapExport.export(minecraft))
-                .size(font.width(export) + 12, TOGGLE_HEIGHT)
-                .tooltip(Tooltip.create(Component.translatable("dvmap.bar.export.tooltip"))).build());
+        buttons.add(toggle(MapIcons.TAG, "dvmap.bar.hide_name", MapConfig.HIDE_MY_NAME, needServer, MapConfig.HIDE_ME));
+        DVIconButton export = new DVIconButton(0, 0, TOGGLE_SIZE, MapIcons.IMAGE, Component.translatable("dvmap.bar.export"),
+                () -> MapExport.export(minecraft));
+        export.setTooltip(Tooltip.create(Component.translatable("dvmap.bar.export").withStyle(ChatFormatting.BOLD)
+                .append(Component.literal("\n")).append(Component.translatable("dvmap.bar.export.tooltip")
+                        .withStyle(s -> s.withBold(false).withColor(ChatFormatting.GRAY)))));
+        buttons.add(export);
 
         int gap = 3;
-        List<List<Button>> rows = new ArrayList<>();
-        List<Button> row = new ArrayList<>();
-        int rowWidth = 0;
-        for (Button b : buttons) {
-            if (!row.isEmpty() && rowWidth + gap + b.getWidth() > width - 12) {
-                rows.add(row);
-                row = new ArrayList<>();
-                rowWidth = 0;
-            }
-            rowWidth += (row.isEmpty() ? 0 : gap) + b.getWidth();
-            row.add(b);
-        }
-        rows.add(row);
-
-        bottomBarHeight = STATUS_HEIGHT + rows.size() * (TOGGLE_HEIGHT + 2) + 2;
-        int y = height - bottomBarHeight + STATUS_HEIGHT;
-        for (List<Button> r : rows) {
-            int total = -gap;
-            for (Button b : r) total += b.getWidth() + gap;
-            int x = (width - total) / 2;
-            for (Button b : r) {
-                b.setPosition(x, y);
-                x += b.getWidth() + gap;
-                addRenderableWidget(b);
-            }
-            y += TOGGLE_HEIGHT + 2;
+        bottomBarHeight = STATUS_HEIGHT + TOGGLE_SIZE + 6;
+        int x = (width - buttons.size() * (TOGGLE_SIZE + gap) + gap) / 2;
+        int y = height - TOGGLE_SIZE - 4;
+        for (DVIconButton b : buttons) {
+            b.setPosition(x, y);
+            x += TOGGLE_SIZE + gap;
+            addRenderableWidget(b);
         }
     }
 
-    private Button toggle(String key, ForgeConfigSpec.BooleanValue value, Tooltip tooltip, ForgeConfigSpec.BooleanValue forcedBy) {
-        Button button = Button.builder(toggleLabel(key, true), b -> {
+    private DVIconButton toggle(String[] icon, String key, ForgeConfigSpec.BooleanValue value, Component note, ForgeConfigSpec.BooleanValue forcedBy) {
+        DVIconButton button = new DVIconButton(0, 0, TOGGLE_SIZE, icon, Component.translatable(key), () -> {
             value.set(!value.get());
             MapConfig.SPEC.save();
             toggleRefreshers.forEach(Runnable::run);
-        }).size(font.width(toggleLabel(key, true)) + 12, TOGGLE_HEIGHT).tooltip(tooltip).build();
+        });
         toggleRefreshers.add(() -> {
             boolean forced = forcedBy != null && forcedBy.get();
+            boolean on = forced || value.get();
             button.active = !forced;
-            button.setMessage(toggleLabel(key, forced || value.get()));
-            if (forced) button.setTooltip(Tooltip.create(Component.translatable("dvmap.bar.name_auto")));
-            else button.setTooltip(tooltip);
+            button.selected(on);
+            MutableComponent tip = Component.translatable(key).withStyle(ChatFormatting.BOLD)
+                    .append(Component.literal("\n"))
+                    .append(Component.translatable(on ? "options.on" : "options.off")
+                            .withStyle(s -> s.withBold(false).withColor(on ? ChatFormatting.GREEN : ChatFormatting.GRAY)));
+            Component extra = forced ? Component.translatable("dvmap.bar.name_auto") : note;
+            if (extra != null) tip.append(Component.literal("\n")).append(extra.copy().withStyle(s -> s.withBold(false).withColor(ChatFormatting.GOLD)));
+            button.setTooltip(Tooltip.create(tip));
         });
         toggleRefreshers.get(toggleRefreshers.size() - 1).run();
         return button;
-    }
-
-    private static Component toggleLabel(String key, boolean on) {
-        return Component.literal(on ? "✔ " : "✘ ").withStyle(on ? ChatFormatting.GREEN : ChatFormatting.DARK_GRAY)
-                .append(Component.translatable(key).withStyle(on ? ChatFormatting.WHITE : ChatFormatting.GRAY));
     }
 
     private Component layerButtonLabel() {
@@ -240,11 +214,11 @@ public class WorldMapScreen extends Screen {
         }
 
         // Top and bottom bars
-        g.fill(0, 0, width, TOP_BAR_HEIGHT, DVTheme.shade(0xEE1C1A26));
-        g.hLine(0, width, TOP_BAR_HEIGHT - 1, 0xFF3E3852);
+        g.fill(0, 0, width, TOP_BAR_HEIGHT, DVUi.PANEL);
+        g.hLine(0, width, TOP_BAR_HEIGHT - 1, DVUi.rim());
 
-        g.fill(0, mapBottom(), width, height, DVTheme.shade(0xEE1C1A26));
-        g.hLine(0, width, mapBottom(), 0xFF3E3852);
+        g.fill(0, mapBottom(), width, height, DVUi.PANEL);
+        g.hLine(0, width, mapBottom(), DVUi.rim());
 
         renderBottomStatus(g, mouseX, mouseY);
 

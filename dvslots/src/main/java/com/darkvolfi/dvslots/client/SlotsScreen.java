@@ -8,8 +8,12 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
-/** Drawn with plain fills in the vanilla container colours, so no texture is shipped. */
+import java.util.Map;
+
+/** Drawn with plain fills in the vanilla container colours (it sits next to the inventory), so no texture is shipped. */
 public class SlotsScreen extends AbstractContainerScreen<SlotsMenu> {
     private static final int PANEL = 0xFFC6C6C6;
     private static final int LIGHT = 0xFFFFFFFF;
@@ -21,11 +25,21 @@ public class SlotsScreen extends AbstractContainerScreen<SlotsMenu> {
         super(menu, inventory, title);
     }
 
+    private static final Map<SlotType, ItemStack> GHOSTS = Map.of(
+            SlotType.BACK, new ItemStack(Items.ELYTRA),
+            SlotType.SADDLE, new ItemStack(Items.SADDLE));
+
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         renderBackground(g);
         super.render(g, mouseX, mouseY, partialTick);
         renderTooltip(g, mouseX, mouseY);
+        for (SlotType type : SlotType.values()) {
+            Slot slot = slotOf(type);
+            if (slot != null && slot == hoveredSlot && !slot.hasItem() && menu.getCarried().isEmpty()) {
+                g.renderTooltip(font, Component.translatable("dvslots.slot." + type.id()), mouseX, mouseY);
+            }
+        }
     }
 
     @Override
@@ -48,12 +62,25 @@ public class SlotsScreen extends AbstractContainerScreen<SlotsMenu> {
         }
     }
 
+    /** Empty DV slots show a faded picture of what goes in them (like vanilla's armour slots); the name is on hover. */
     @Override
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
         super.renderLabels(g, mouseX, mouseY);
         for (SlotType type : SlotType.values()) {
-            g.drawString(font, Component.translatable("dvslots.slot." + type.id()),
-                    SlotsMenu.slotX(type) + 20, SlotsMenu.slotY(type) + 5, 0x404040, false);
+            Slot slot = slotOf(type);
+            if (slot == null || slot.hasItem()) continue;
+            g.renderFakeItem(GHOSTS.get(type), slot.x, slot.y);
+            g.pose().pushPose();
+            g.pose().translate(0, 0, 200);
+            g.fill(slot.x, slot.y, slot.x + 16, slot.y + 16, 0xA0000000 | (DVTheme.shade(SLOT_BG) & 0xFFFFFF));
+            g.pose().popPose();
         }
+    }
+
+    private Slot slotOf(SlotType type) {
+        for (Slot slot : menu.slots) {
+            if (slot.x == SlotsMenu.slotX(type) && slot.y == SlotsMenu.slotY(type)) return slot;
+        }
+        return null;
     }
 }

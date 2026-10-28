@@ -40,7 +40,6 @@
 
   "dvmap.waypoint.shape": "Shape",
   "dvmap.waypoint.category": "Category",
-  "dvmap.waypoint.filter": "Category: %s",
   "dvmap.category.all": "All",
   "dvmap.category.general": "General",
   "dvmap.category.home": "Home",
@@ -78,7 +77,6 @@
   "dvmap.waypoint.color": "Colour",
   "dvmap.waypoint.visible": "Visible",
   "dvmap.waypoint.teleport": "Teleport",
-  "dvmap.waypoint.tp_short": "TP",
   "dvmap.waypoint.edit_short": "Edit",
   "dvmap.waypoint.delete": "Delete",
   "dvmap.waypoint.add": "Add Waypoint",

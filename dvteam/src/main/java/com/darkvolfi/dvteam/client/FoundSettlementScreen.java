@@ -1,13 +1,12 @@
 package com.darkvolfi.dvteam.client;
 
-import com.darkvolfi.dvlib.client.DVTheme;
+import com.darkvolfi.dvlib.client.DVButton;
+import com.darkvolfi.dvlib.client.DVUi;
 import com.darkvolfi.dvteam.data.ClanData;
 import com.darkvolfi.dvteam.data.ClanTypes.SettlementType;
 import com.darkvolfi.dvteam.network.ChunkClaimActionPacket;
 import com.darkvolfi.dvteam.network.TeamNetwork;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
@@ -28,7 +27,7 @@ public class FoundSettlementScreen extends Screen {
     private final boolean capital;
     private String name = "";
     private SettlementType type = SettlementType.VILLAGE;
-    private Button foundButton;
+    private DVButton foundButton;
 
     public FoundSettlementScreen(Screen parent, String dimension, int chunkX, int chunkZ) {
         super(Component.translatable("dvteam.found.title"));
@@ -38,6 +37,10 @@ public class FoundSettlementScreen extends Screen {
         this.chunkZ = chunkZ;
         ClanData.Clan mine = ClientClanCache.myClan();
         this.capital = mine != null && ClientClanCache.settlementCount(mine.id, SettlementType.CAPITAL) == 0;
+    }
+
+    private Component typeLabel() {
+        return Component.translatable("dvteam.found.type").append(": ").append(Component.translatable(type.translationKey()));
     }
 
     @Override
@@ -55,19 +58,19 @@ public class FoundSettlementScreen extends Screen {
         setInitialFocus(nameBox);
 
         if (!capital) {
-            addRenderableWidget(CycleButton.<SettlementType>builder(st -> Component.translatable(st.translationKey()))
-                    .withValues(SettlementType.VILLAGE, SettlementType.TRADE)
-                    .withInitialValue(type)
-                    .create(l + 10, t + 48, PANEL_W - 20, 18, Component.translatable("dvteam.found.type"), (b, v) -> type = v));
+            addRenderableWidget(DVButton.builder(typeLabel(), b -> {
+                type = type == SettlementType.VILLAGE ? SettlementType.TRADE : SettlementType.VILLAGE;
+                b.setMessage(typeLabel());
+            }).bounds(l + 10, t + 48, PANEL_W - 20, 18).build());
         }
 
-        foundButton = addRenderableWidget(Button.builder(Component.translatable("dvteam.edit.found"), b -> {
+        foundButton = addRenderableWidget(DVButton.builder(Component.translatable("dvteam.edit.found"), b -> {
             TeamNetwork.CHANNEL.sendToServer(new ChunkClaimActionPacket(ChunkClaimActionPacket.Action.CLAIM,
                     dimension, chunkX, chunkZ, name.trim(), type));
             onClose();
         }).bounds(width / 2 - 104, t + PANEL_H - 26, 100, 20).build());
         foundButton.active = name.trim().length() >= 3;
-        addRenderableWidget(Button.builder(CommonComponents.GUI_CANCEL, b -> onClose())
+        addRenderableWidget(DVButton.builder(CommonComponents.GUI_CANCEL, b -> onClose())
                 .bounds(width / 2 + 4, t + PANEL_H - 26, 100, 20).build());
     }
 
@@ -77,7 +80,7 @@ public class FoundSettlementScreen extends Screen {
         int l = (width - PANEL_W) / 2;
         int t = (height - PANEL_H) / 2;
         ClanData.Clan mine = ClientClanCache.myClan();
-        g.fill(l, t, l + PANEL_W, t + PANEL_H, DVTheme.shade(0xEE1C1A26));
+        DVUi.panel(g, l, t, PANEL_W, PANEL_H, false);
         g.renderOutline(l, t, PANEL_W, PANEL_H, 0xFF000000 | (mine == null ? 0xFFFFFF : mine.color));
         Component heading = capital ? Component.translatable("dvteam.found.capital") : title;
         g.drawCenteredString(font, heading, width / 2, t + 9, 0xFFFFFF);

@@ -3,13 +3,13 @@ package com.darkvolfi.dvlens.client;
 import com.darkvolfi.dvlens.DVLens;
 import com.darkvolfi.dvlens.LensConfig;
 import com.darkvolfi.dvlib.DVLib;
+import com.darkvolfi.dvlib.client.DVUi;
 import com.darkvolfi.dvlib.client.MobFace;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.tooltip.TooltipRenderUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
@@ -22,19 +22,23 @@ import net.minecraftforge.fml.common.Mod;
 
 import java.util.Locale;
 
-/** Info box at the top centre of the screen, drawn in the vanilla tooltip style. */
+/** Info box at the top centre of the screen, in DV's panel look; values like health are bars. */
 @Mod.EventBusSubscriber(modid = DVLens.MOD_ID, value = Dist.CLIENT)
 public final class LensOverlay {
     public static final KeyMapping TOGGLE_KEY = new KeyMapping("key.dvlens.toggle",
             KeyConflictContext.IN_GAME, InputConstants.UNKNOWN, DVLib.KEY_CATEGORY);
 
-    private static final int TOP = 6;
+    private static final int TOP = 8;
     private static final int ICON_SIZE = 16;
     private static final int ICON_GAP = 4;
     private static final int LINE_HEIGHT = 10;
     private static final int ITEMS_PER_ROW = 9;
     private static final int ITEM_ROWS = 3;
     private static final int ITEM_STEP = 18;
+    private static final int BAR_HEIGHT = 10;
+    private static final int MIN_BAR_WIDTH = 100;
+    /** Space between the panel rim and its contents. */
+    private static final int PAD = 4;
 
     private LensOverlay() {}
 
@@ -55,6 +59,8 @@ public final class LensOverlay {
         Font font = mc.font;
         int textWidth = 0;
         for (Component line : info.lines()) textWidth = Math.max(textWidth, font.width(line));
+        int barsWidth = info.bars().isEmpty() ? 0 : MIN_BAR_WIDTH;
+        for (LensInfo.Bar bar : info.bars()) barsWidth = Math.max(barsWidth, font.width(bar.text()) + 8);
         boolean hasIcon = info.face() != null || !info.icon().isEmpty();
         boolean hasTool = !info.tool().isEmpty();
         int textX = hasIcon ? ICON_SIZE + ICON_GAP : 0;
@@ -62,13 +68,14 @@ public final class LensOverlay {
         int itemRows = (itemCount + ITEMS_PER_ROW - 1) / ITEMS_PER_ROW;
         int itemsWidth = Math.min(itemCount, ITEMS_PER_ROW) * ITEM_STEP;
         int headerHeight = Math.max(hasIcon || hasTool ? ICON_SIZE : 0, info.lines().size() * LINE_HEIGHT - 2);
-        int boxWidth = Math.max(textX + textWidth + (hasTool ? ICON_GAP + ICON_SIZE : 0), itemsWidth);
-        int boxHeight = headerHeight + (itemRows > 0 ? 2 + itemRows * ITEM_STEP : 0);
+        int barsHeight = info.bars().size() * (BAR_HEIGHT + 2);
+        int boxWidth = Math.max(Math.max(textX + textWidth + (hasTool ? ICON_GAP + ICON_SIZE : 0), itemsWidth), barsWidth);
+        int boxHeight = headerHeight + (barsHeight > 0 ? 3 + barsHeight - 2 : 0) + (itemRows > 0 ? 2 + itemRows * ITEM_STEP : 0);
 
         int x = (width - boxWidth) / 2;
         int y = TOP;
         int iconY = y + (headerHeight - ICON_SIZE) / 2;
-        TooltipRenderUtil.renderTooltipBackground(g, x, y, boxWidth, boxHeight, 0);
+        DVUi.panel(g, x - PAD, y - PAD, boxWidth + 2 * PAD, boxHeight + 2 * PAD, false);
         if (info.face() != null) {
             MobFace.draw(g, info.face(), x + ICON_SIZE / 2, iconY + ICON_SIZE / 2, ICON_SIZE);
         } else if (hasIcon) {
@@ -78,15 +85,33 @@ public final class LensOverlay {
             g.drawString(font, info.lines().get(i), x + textX, y + i * LINE_HEIGHT, 0xFFFFFF);
         }
         if (hasTool) drawTool(g, font, info, x + boxWidth - ICON_SIZE, iconY);
+        int barY = y + headerHeight + 3;
+        for (LensInfo.Bar bar : info.bars()) {
+            drawBar(g, font, bar, x, barY, boxWidth);
+            barY += BAR_HEIGHT + 2;
+        }
+        int itemsTop = y + headerHeight + (barsHeight > 0 ? 3 + barsHeight - 2 : 0);
         for (int i = 0; i < itemCount; i++) {
             int ix = x + (i % ITEMS_PER_ROW) * ITEM_STEP;
-            int iy = y + headerHeight + 2 + (i / ITEMS_PER_ROW) * ITEM_STEP;
+            int iy = itemsTop + 2 + (i / ITEMS_PER_ROW) * ITEM_STEP;
             g.renderItem(info.items().get(i), ix, iy);
             g.renderItemDecorations(font, info.items().get(i), ix, iy, count(info.items().get(i).getCount()));
         }
         if (LensConfig.SHOW_BREAK_PROGRESS.get() && mc.gameMode != null && mc.gameMode.isDestroying()) {
-            drawBreakProgress(g, mc.gameMode.getDestroyStage(), x, y + boxHeight + 3, boxWidth);
+            drawBreakProgress(g, mc.gameMode.getDestroyStage(), x - PAD, y + boxHeight + PAD + 2, boxWidth + 2 * PAD);
         }
+    }
+
+    /** A value bar: dark track, coloured fill up to the value, its text centred on top. */
+    private static void drawBar(GuiGraphics g, Font font, LensInfo.Bar bar, int x, int y, int width) {
+        g.fill(x, y, x + width, y + BAR_HEIGHT, 0xFF000000);
+        g.fill(x + 1, y + 1, x + width - 1, y + BAR_HEIGHT - 1, 0xFF2A2633);
+        int filled = Math.round((width - 2) * bar.fraction());
+        if (filled > 0) {
+            g.fill(x + 1, y + 1, x + 1 + filled, y + BAR_HEIGHT - 1, bar.color());
+            g.fill(x + 1, y + 1, x + 1 + filled, y + 2, 0x40FFFFFF); // top highlight
+        }
+        g.drawCenteredString(font, bar.text(), x + width / 2, y + 1, 0xFFFFFFFF);
     }
 
     /** Thin bar under the box; the destroy stage goes 0..9 as the block cracks. */

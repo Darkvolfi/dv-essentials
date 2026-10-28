@@ -40,7 +40,6 @@
 
   "dvmap.waypoint.shape": "Şekil",
   "dvmap.waypoint.category": "Sınıf",
-  "dvmap.waypoint.filter": "Sınıf: %s",
   "dvmap.category.all": "Hepsi",
   "dvmap.category.general": "Genel",
   "dvmap.category.home": "Ev",
@@ -78,7 +77,6 @@
   "dvmap.waypoint.color": "Renk",
   "dvmap.waypoint.visible": "Görünür",
   "dvmap.waypoint.teleport": "Işınlan",
-  "dvmap.waypoint.tp_short": "Işınlan",
   "dvmap.waypoint.edit_short": "Düzenle",
   "dvmap.waypoint.delete": "Sil",
   "dvmap.waypoint.add": "İşaret Ekle",

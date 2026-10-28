@@ -1,6 +1,7 @@
 package com.darkvolfi.dvteam.client;
 
-import com.darkvolfi.dvlib.client.DVTheme;
+import com.darkvolfi.dvlib.client.DVButton;
+import com.darkvolfi.dvlib.client.DVUi;
 import com.darkvolfi.dvteam.data.ClanData;
 import com.darkvolfi.dvteam.data.ClanTypes.Perm;
 import com.darkvolfi.dvteam.data.ClanTypes.Rank;
@@ -8,7 +9,6 @@ import com.darkvolfi.dvteam.network.ClanActionPacket;
 import com.darkvolfi.dvteam.network.TeamNetwork;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.nbt.CompoundTag;
@@ -56,11 +56,11 @@ public class SettlementScreen extends Screen {
         for (int i = 0; i < perms.length; i++) {
             Perm p = perms[i];
             int y = t + 62 + i * 20;
-            Button ally = addRenderableWidget(Button.builder(mark(p.in(allyPerms)), b -> {
+            DVButton ally = addRenderableWidget(DVButton.builder(mark(p.in(allyPerms)), b -> {
                 allyPerms ^= p.bit();
                 b.setMessage(mark(p.in(allyPerms)));
             }).bounds(l + 170, y, 50, 18).build());
-            Button pub = addRenderableWidget(Button.builder(mark(p.in(publicPerms)), b -> {
+            DVButton pub = addRenderableWidget(DVButton.builder(mark(p.in(publicPerms)), b -> {
                 publicPerms ^= p.bit();
                 b.setMessage(mark(p.in(publicPerms)));
             }).bounds(l + 230, y, 50, 18).build());
@@ -69,9 +69,9 @@ public class SettlementScreen extends Screen {
         }
 
         int by = t + panelHeight() - 26;
-        addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, b -> save()).bounds(width / 2 - 104, by, 100, 20).build())
+        addRenderableWidget(DVButton.builder(CommonComponents.GUI_DONE, b -> save()).bounds(width / 2 - 104, by, 100, 20).build())
                 .active = officer;
-        addRenderableWidget(Button.builder(CommonComponents.GUI_CANCEL, b -> onClose()).bounds(width / 2 + 4, by, 100, 20).build());
+        addRenderableWidget(DVButton.builder(CommonComponents.GUI_CANCEL, b -> onClose()).bounds(width / 2 + 4, by, 100, 20).build());
     }
 
     private static Component mark(boolean on) {
@@ -97,7 +97,7 @@ public class SettlementScreen extends Screen {
         int t = (height - panelHeight()) / 2;
         ClanData.Clan clan = ClientClanCache.clan(settlement.clanId);
         int color = clan == null ? 0xFFFFFF : clan.color;
-        g.fill(l, t, l + PANEL_W, t + panelHeight(), DVTheme.shade(0xEE1C1A26));
+        DVUi.panel(g, l, t, PANEL_W, panelHeight(), false);
         g.renderOutline(l, t, PANEL_W, panelHeight(), 0xFF000000 | color);
         g.drawString(font, Component.translatable(settlement.type.translationKey()).withStyle(ChatFormatting.GRAY), l + 10, t + 8, 0xFFFFFF);
         g.drawString(font, Component.translatable("dvteam.settlement.chunks", ClientClanCache.settlementChunks(settlement.id)),

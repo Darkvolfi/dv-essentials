@@ -1,6 +1,7 @@
 package com.darkvolfi.dvteam.client;
 
-import com.darkvolfi.dvlib.client.DVTheme;
+import com.darkvolfi.dvlib.client.DVIconButton;
+import com.darkvolfi.dvlib.client.DVUi;
 import com.darkvolfi.dvmap.MapConfig;
 import com.darkvolfi.dvmap.client.MapOverlayHook;
 import com.darkvolfi.dvmap.client.WorldMapScreen;
@@ -15,7 +16,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -34,15 +35,22 @@ public final class TeamMapIntegration implements MapOverlayHook {
 
     private boolean claimMode;
 
+    /** Toolbar icons: the clan screen, and claim mode (a dashed selection). */
+    static final String[] SHIELD = {"#######", "#######", "##.#.##", "###.###", ".#####.", "..###..", "...#..."};
+    private static final String[] CLAIM = {"#.#.#.#", ".......", "#.###.#", "..###..", "#.###.#", ".......", "#.#.#.#"};
+
     @Override
     public void onWorldMapInit(WorldMapScreen screen, Consumer<AbstractWidget> addWidget) {
-        int rightX = screen.width - 30;
-        addWidget.accept(Button.builder(Component.translatable("dvteam.map.team_button"), b ->
-                Minecraft.getInstance().setScreen(new ClanScreen(screen))).bounds(rightX - 60, 4, 56, 20).build());
-        addWidget.accept(Button.builder(claimModeLabel(), b -> {
+        // Left of DV Map's settings gear (18 px, 6 from the edge).
+        int x = screen.width - 24 - 21;
+        addWidget.accept(new DVIconButton(x, 5, 18, SHIELD, Component.translatable("dvteam.map.team_button"),
+                () -> Minecraft.getInstance().setScreen(new ClanScreen(screen))));
+        DVIconButton[] claim = new DVIconButton[1];
+        claim[0] = new DVIconButton(x - 21, 5, 18, CLAIM, claimModeLabel(), () -> {
             claimMode = !claimMode;
-            b.setMessage(claimModeLabel());
-        }).bounds(rightX - 154, 4, 90, 20).build());
+            claim[0].selected(claimMode).setTooltip(Tooltip.create(claimModeLabel()));
+        }).selected(claimMode);
+        addWidget.accept(claim[0]);
     }
 
     private Component claimModeLabel() {
@@ -207,7 +215,7 @@ public final class TeamMapIntegration implements MapOverlayHook {
     public void renderWorldMapExtra(GuiGraphics g, WorldMapScreen screen, int mouseX, int mouseY) {
         if (!claimMode) return;
         int barY = WorldMapScreen.TOP_BAR_HEIGHT;
-        g.fill(0, barY, screen.width, barY + 18, DVTheme.shade(0xDD221E30));
+        g.fill(0, barY, screen.width, barY + 18, DVUi.PANEL);
         g.hLine(0, screen.width, barY + 18, 0xFF4A4266);
         Font font = Minecraft.getInstance().font;
 

@@ -1,10 +1,10 @@
 package com.darkvolfi.dvmap.client;
 
-import com.darkvolfi.dvlib.client.DVTheme;
+import com.darkvolfi.dvlib.client.DVButton;
+import com.darkvolfi.dvlib.client.DVSwitch;
+import com.darkvolfi.dvlib.client.DVUi;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
@@ -34,7 +34,7 @@ public class WaypointEditScreen extends Screen {
     private EditBox xBox;
     private EditBox yBox;
     private EditBox zBox;
-    private Button saveButton;
+    private DVButton saveButton;
 
     public WaypointEditScreen(Screen parent, Waypoint existing, int defaultX, int defaultY, int defaultZ, String dimension) {
         super(Component.translatable(existing == null ? "dvmap.waypoint.new_title" : "dvmap.waypoint.edit_title"));
@@ -113,54 +113,54 @@ public class WaypointEditScreen extends Screen {
         addRenderableWidget(zBox);
 
         // Shape: icon preview drawn over the right side of the button in render()
-        addRenderableWidget(Button.builder(Component.translatable("dvmap.waypoint.shape"), b -> {
+        addRenderableWidget(new DVButton(cx - 100, top + 78, 96, 16, Component.translatable("dvmap.waypoint.shape"), b -> {
             Waypoint.Shape[] all = Waypoint.Shape.values();
             shapeValue = all[(shapeValue.ordinal() + 1) % all.length];
-        }).bounds(cx - 100, top + 76, 96, 20).build());
+        }));
 
-        addRenderableWidget(CycleButton.<Waypoint.Category>builder(c -> Component.translatable(c.translationKey()))
-                .withValues(Waypoint.Category.values())
-                .withInitialValue(categoryValue)
-                .create(cx + 4, top + 76, 96, 20, Component.translatable("dvmap.waypoint.category"), (b, val) -> categoryValue = val));
+        addRenderableWidget(new DVButton(cx + 4, top + 78, 96, 16, Component.translatable(categoryValue.translationKey()), b -> {
+            Waypoint.Category[] all = Waypoint.Category.values();
+            categoryValue = all[(categoryValue.ordinal() + 1) % all.length];
+            b.setMessage(Component.translatable(categoryValue.translationKey()));
+        })).setTooltip(Tooltip.create(Component.translatable("dvmap.waypoint.category")));
 
-        addRenderableWidget(Button.builder(Component.translatable("dvmap.waypoint.color"), b -> {
-            colorIndex = (colorIndex + 1) % Waypoint.PALETTE.length;
-        }).bounds(cx - 100, top + 102, 96, 20).build());
+        addRenderableWidget(new DVButton(cx - 100, top + 104, 96, 16, Component.translatable("dvmap.waypoint.color"), b ->
+                colorIndex = (colorIndex + 1) % Waypoint.PALETTE.length));
 
-        addRenderableWidget(CycleButton.onOffBuilder(enabledValue)
-                .create(cx + 4, top + 102, 96, 20, Component.translatable("dvmap.waypoint.visible"), (b, val) -> enabledValue = val));
+        addRenderableWidget(new DVSwitch(cx + 100 - DVSwitch.WIDTH, top + 106, Component.translatable("dvmap.waypoint.visible"),
+                enabledValue, v -> enabledValue = v));
 
         int actionY = top + 130;
         if (existing != null) {
-            List<Button> actions = new ArrayList<>();
+            List<DVButton> actions = new ArrayList<>();
             if (WaypointManager.canTeleport(minecraft)) {
-                actions.add(Button.builder(Component.translatable("dvmap.waypoint.teleport"), b -> {
+                actions.add(new DVButton(0, 0, 0, 16, Component.translatable("dvmap.waypoint.teleport"), b -> {
                     WaypointManager.teleportTo(minecraft, existing);
                     minecraft.setScreen(null);
-                }).build());
+                }));
             }
-            actions.add(Button.builder(Component.translatable("dvmap.waypoint.share"), b -> {
+            DVButton share = new DVButton(0, 0, 0, 16, Component.translatable("dvmap.waypoint.share"), b -> {
                 WaypointShare.share(minecraft, existing);
                 minecraft.setScreen(null);
-            }).tooltip(Tooltip.create(Component.translatable("dvmap.waypoint.share.tooltip"))).build());
-            actions.add(Button.builder(Component.translatable("dvmap.waypoint.delete"), b -> {
+            });
+            share.setTooltip(Tooltip.create(Component.translatable("dvmap.waypoint.share.tooltip")));
+            actions.add(share);
+            actions.add(new DVButton(0, 0, 0, 16, Component.translatable("dvmap.waypoint.delete"), b -> {
                 WaypointManager.remove(existing);
                 onClose();
-            }).build());
+            }));
             int w = (200 - 4 * (actions.size() - 1)) / actions.size();
             for (int i = 0; i < actions.size(); i++) {
-                Button b = actions.get(i);
+                DVButton b = actions.get(i);
                 b.setPosition(cx - 100 + i * (w + 4), actionY);
                 b.setWidth(w);
                 addRenderableWidget(b);
             }
-            actionY += 26;
+            actionY += 24;
         }
 
-        saveButton = addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, b -> saveAndClose())
-                .bounds(cx - 100, actionY, 96, 20).build());
-        addRenderableWidget(Button.builder(CommonComponents.GUI_CANCEL, b -> onClose())
-                .bounds(cx + 4, actionY, 96, 20).build());
+        saveButton = addRenderableWidget(new DVButton(cx - 100, actionY, 96, 16, CommonComponents.GUI_DONE, b -> saveAndClose()));
+        addRenderableWidget(new DVButton(cx + 4, actionY, 96, 16, CommonComponents.GUI_CANCEL, b -> onClose()));
 
         setInitialFocus(nameBox);
         validateInputs();
@@ -219,16 +219,16 @@ public class WaypointEditScreen extends Screen {
         renderBackground(g);
         int cx = width / 2;
         int top = height / 2 - 74;
-        int boxBottom = existing != null ? top + 188 : top + 162;
+        int boxBottom = existing != null ? top + 178 : top + 154;
 
-        g.fill(cx - 112, top - 16, cx + 112, boxBottom, DVTheme.shade(0xDD1E1E28));
-        g.renderOutline(cx - 112, top - 16, 224, boxBottom - (top - 16), 0xFF4A4A5A);
+        DVUi.panel(g, cx - 112, top - 16, 224, boxBottom - (top - 16), false);
 
         g.drawCenteredString(font, title, cx, top - 8, 0xFFFFFF);
         g.drawString(font, Component.translatable("dvmap.waypoint.name"), cx - 100, top + 5, 0xCCCCCC);
         g.drawString(font, Component.literal("X"), cx - 100, top + 39, 0xCCCCCC);
         g.drawString(font, Component.literal("Y"), cx - 31, top + 39, 0xCCCCCC);
         g.drawString(font, Component.literal("Z"), cx + 38, top + 39, 0xCCCCCC);
+        g.drawString(font, Component.translatable("dvmap.waypoint.visible"), cx + 4, top + 108, 0xCCCCCC);
 
         super.render(g, mouseX, mouseY, partialTick);
 

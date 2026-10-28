@@ -1,6 +1,8 @@
 package com.darkvolfi.dvteam.client;
 
-import com.darkvolfi.dvlib.client.DVTheme;
+import com.darkvolfi.dvlib.client.DVButton;
+import com.darkvolfi.dvlib.client.DVIconButton;
+import com.darkvolfi.dvlib.client.DVUi;
 import com.darkvolfi.dvteam.data.ClanData;
 import com.darkvolfi.dvteam.data.ClanLevel;
 import com.darkvolfi.dvteam.data.ClanTypes.Rank;
@@ -10,7 +12,6 @@ import com.darkvolfi.dvteam.network.ClanActionPacket.Action;
 import com.darkvolfi.dvteam.network.TeamNetwork;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
@@ -31,12 +32,26 @@ public class ClanScreen extends Screen {
     private static final int PANEL_H = 240;
     private static final int ROW_H = 22;
     private static final int ROWS_TOP = 52;
+    private static final int FLAG_BOX_W = 36;
 
-    private enum Tab { GENERAL, MEMBERS, SETTLEMENTS, DIPLOMACY, INVITE }
+    private enum Tab {
+        GENERAL(TeamMapIntegration.SHIELD),
+        MEMBERS(new String[]{"##...##", "##...##", ".......", "###.###", "###.###", "###.###", "#.#.#.#"}),
+        SETTLEMENTS(new String[]{"...#...", "..###..", ".#####.", "#######", ".##.##.", ".##.##.", ".#####."}),
+        DIPLOMACY(new String[]{"#.....#", ".#...#.", "..#.#..", "...#...", "..#.#..", ".#...#.", "##...##"}),
+        INVITE(new String[]{".##....", ".##..#.", ".....#.", "###.###", "###..#.", "###..#.", "#.#...."});
+
+        /** 7×7 pattern, '#' filled. */
+        final String[] icon;
+
+        Tab(String[] icon) {
+            this.icon = icon;
+        }
+    }
 
     private static Tab tab = Tab.GENERAL;
 
-    private record Row(Component label, List<Button> buttons) {}
+    private record Row(Component label, List<DVButton> buttons) {}
 
     private final Screen parent;
     private final List<Row> rows = new ArrayList<>();
@@ -68,8 +83,8 @@ public class ClanScreen extends Screen {
         TeamNetwork.CHANNEL.sendToServer(packet);
     }
 
-    private static Button button(Component label, int width, Button.OnPress press) {
-        return Button.builder(label, press).size(width, 18).build();
+    private static DVButton button(Component label, int width, java.util.function.Consumer<DVButton> press) {
+        return DVButton.builder(label, press).size(width, 18).build();
     }
 
     private void confirm(Component question, Runnable onYes) {
@@ -88,20 +103,22 @@ public class ClanScreen extends Screen {
         if (!ClientClanCache.ready()) return;
 
         if (clan == null) {
-            addRenderableWidget(Button.builder(Component.translatable("dvteam.screen.found"), b ->
+            addRenderableWidget(DVButton.builder(Component.translatable("dvteam.screen.found"), b ->
                     minecraft.setScreen(new ClanEditScreen(this, null))).bounds(l + 10, t + 24, PANEL_W - 20, 20).build());
             buildNoClanRows();
         } else {
+            // Tabs are icons in a centred row; the selected one is lit, its name is the tooltip.
             Tab[] tabs = Tab.values();
-            int w = (PANEL_W - 20) / tabs.length;
+            int size = 18;
+            int x0 = l + (PANEL_W - tabs.length * (size + 3) + 3) / 2;
             for (int i = 0; i < tabs.length; i++) {
                 Tab tb = tabs[i];
-                Button b = addRenderableWidget(Button.builder(Component.translatable("dvteam.tab." + tb.name().toLowerCase(Locale.ROOT)), x -> {
+                addRenderableWidget(new DVIconButton(x0 + i * (size + 3), t + 24, size, tb.icon,
+                        Component.translatable("dvteam.tab." + tb.name().toLowerCase(Locale.ROOT)), () -> {
                     tab = tb;
                     scroll = 0;
                     rebuildWidgets();
-                }).bounds(l + 10 + i * w, t + 24, w - 2, 20).build());
-                b.active = tab != tb;
+                }).selected(tab == tb));
             }
             switch (tab) {
                 case GENERAL -> buildGeneral(clan);
@@ -117,7 +134,7 @@ public class ClanScreen extends Screen {
             Row row = rows.get(i + scroll);
             int x = l + PANEL_W - 10;
             for (int j = row.buttons.size() - 1; j >= 0; j--) {
-                Button b = row.buttons.get(j);
+                DVButton b = row.buttons.get(j);
                 x -= b.getWidth();
                 b.setPosition(x, t + ROWS_TOP + i * ROW_H);
                 addRenderableWidget(b);
@@ -152,26 +169,26 @@ public class ClanScreen extends Screen {
         Component levelLabel = next < 0
                 ? Component.translatable("dvteam.screen.level_max", level, ClientClanCache.points(clan))
                 : Component.translatable("dvteam.screen.level", level, ClientClanCache.points(clan), next);
-        Button vault = button(Component.translatable("dvteam.screen.vault"), 50, b -> send(ClanActionPacket.of(Action.VAULT_OPEN)));
+        DVButton vault = button(Component.translatable("dvteam.screen.vault"), 50, b -> send(ClanActionPacket.of(Action.VAULT_OPEN)));
         vault.active = ClientClanCache.iAm(clan.vaultAccess);
         vault.setTooltip(Tooltip.create(Component.translatable("dvteam.screen.vault.tooltip")));
-        Button access = button(Component.translatable("dvteam.screen.vault_access", Component.translatable(clan.vaultAccess.translationKey())), 110, b -> {
+        DVButton access = button(Component.translatable("dvteam.screen.vault_access", Component.translatable(clan.vaultAccess.translationKey())), 110, b -> {
             Rank nextRank = Rank.values()[(clan.vaultAccess.ordinal() + Rank.values().length - 1) % Rank.values().length];
             send(new ClanActionPacket(Action.VAULT_ACCESS, clan.id, "", nextRank.ordinal(), new CompoundTag()));
         });
         access.active = leader;
         rows.add(new Row(levelLabel, List.of(access, vault)));
-        Button ff = button(onOff("dvteam.screen.friendly_fire", clan.friendlyFire), 120, b -> {
+        DVButton ff = button(onOff("dvteam.screen.friendly_fire", clan.friendlyFire), 120, b -> {
             CompoundTag fields = new CompoundTag();
             fields.putBoolean("FriendlyFire", !clan.friendlyFire);
             send(ClanActionPacket.fields(Action.EDIT, fields));
         });
         ff.active = leader;
-        Button edit = button(Component.translatable("dvteam.screen.edit"), 60, b -> minecraft.setScreen(new ClanEditScreen(this, clan)));
+        DVButton edit = button(Component.translatable("dvteam.screen.edit"), 60, b -> minecraft.setScreen(new ClanEditScreen(this, clan)));
         edit.active = leader;
         rows.add(new Row(Component.empty(), List.of(edit, ff,
                 button(Component.translatable("dvteam.screen.get_banner"), 100, b -> send(ClanActionPacket.of(Action.GET_BANNER))))));
-        List<Button> danger = new ArrayList<>();
+        List<DVButton> danger = new ArrayList<>();
         if (leader) {
             danger.add(button(Component.translatable("dvteam.screen.unclaim_all"), 90, b -> confirm(
                     Component.translatable("dvteam.confirm.unclaim_all"), () -> send(ClanActionPacket.of(Action.UNCLAIM_ALL)))));
@@ -193,7 +210,7 @@ public class ClanScreen extends Screen {
             MutableComponent label = Component.literal((rank == Rank.LEADER ? "★ " : rank == Rank.OFFICER ? "◆ " : "• ") + ClientClanCache.playerName(id))
                     .withStyle(online ? ChatFormatting.WHITE : ChatFormatting.GRAY)
                     .append(Component.literal("  ").append(Component.translatable(rank.translationKey())).withStyle(ChatFormatting.DARK_GRAY));
-            List<Button> buttons = new ArrayList<>();
+            List<DVButton> buttons = new ArrayList<>();
             if (mine == Rank.LEADER && rank != Rank.LEADER) {
                 Rank next = rank == Rank.OFFICER ? Rank.MEMBER : Rank.OFFICER;
                 buttons.add(button(Component.translatable(rank == Rank.OFFICER ? "dvteam.action.demote" : "dvteam.action.promote"), 60, b ->
@@ -227,7 +244,7 @@ public class ClanScreen extends Screen {
         for (ClanData.Clan other : ClientClanCache.clans()) {
             if (other.id.equals(clan.id)) continue;
             MutableComponent label = clanLabel(other);
-            List<Button> buttons = new ArrayList<>();
+            List<DVButton> buttons = new ArrayList<>();
             ClanData.War war = ClientClanCache.warBetween(clan.id, other.id);
             if (war != null) {
                 boolean active = war.active(now);
@@ -236,7 +253,7 @@ public class ClanScreen extends Screen {
                         formatTime(left))).withStyle(ChatFormatting.RED));
                 if (leader) {
                     boolean offered = war.attacker.equals(clan.id) ? war.attackerPeace : war.defenderPeace;
-                    Button peace = button(Component.translatable(offered ? "dvteam.war.peace_offered" : "dvteam.war.offer_peace"), 70, b ->
+                    DVButton peace = button(Component.translatable(offered ? "dvteam.war.peace_offered" : "dvteam.war.offer_peace"), 70, b ->
                             send(ClanActionPacket.target(Action.WAR_PEACE, other.id)));
                     peace.active = !offered;
                     buttons.add(peace);
@@ -252,7 +269,7 @@ public class ClanScreen extends Screen {
                     } else if (other.allyRequests.contains(clan.id)) {
                         buttons.add(button(Component.translatable("dvteam.diplo.accept"), 70, b -> send(ClanActionPacket.target(Action.ALLY_REQUEST, other.id))));
                     } else {
-                        Button ally = button(Component.translatable(clan.allyRequests.contains(other.id) ? "dvteam.diplo.requested" : "dvteam.diplo.request"), 70, b ->
+                        DVButton ally = button(Component.translatable(clan.allyRequests.contains(other.id) ? "dvteam.diplo.requested" : "dvteam.diplo.request"), 70, b ->
                                 send(ClanActionPacket.target(Action.ALLY_REQUEST, other.id)));
                         ally.active = !clan.allyRequests.contains(other.id);
                         buttons.add(ally);
@@ -274,7 +291,7 @@ public class ClanScreen extends Screen {
             UUID id = e.getKey();
             if (!ClientClanCache.online(id) || ClientClanCache.clanOf(id) != null) continue;
             boolean invited = clan.invited.contains(id);
-            Button b = button(Component.translatable(invited ? "dvteam.action.invited" : "dvteam.action.invite"), 70, x ->
+            DVButton b = button(Component.translatable(invited ? "dvteam.action.invited" : "dvteam.action.invite"), 70, x ->
                     send(ClanActionPacket.target(Action.INVITE, id)));
             b.active = officer && !invited;
             rows.add(new Row(Component.literal(e.getValue()), List.of(b)));
@@ -323,7 +340,7 @@ public class ClanScreen extends Screen {
         int t = top();
         ClanData.Clan clan = ClientClanCache.myClan();
         int accent = clan == null ? 0x6A5ACD : clan.color;
-        g.fill(l, t, l + PANEL_W, t + PANEL_H, DVTheme.shade(0xEE1C1A26));
+        DVUi.panel(g, l, t, PANEL_W, PANEL_H, false);
         g.renderOutline(l, t, PANEL_W, PANEL_H, 0xFF000000 | accent);
         g.drawCenteredString(font, title, width / 2, t + 8, 0xFFFFFF);
 
@@ -332,13 +349,23 @@ public class ClanScreen extends Screen {
         } else if (clan == null && rows.isEmpty()) {
             g.drawCenteredString(font, Component.translatable("dvteam.screen.no_clan_hint"), width / 2, t + ROWS_TOP + 6, 0xAAAAAA);
         }
+        // On the general tab the flag sits in its own frame beside the first three rows (which have no buttons).
+        boolean flag = clan != null && tab == Tab.GENERAL && scroll == 0;
+        int flagX = l + PANEL_W - 10 - FLAG_BOX_W;
         for (int i = 0; i < visibleRows() && i + scroll < rows.size(); i++) {
             Row row = rows.get(i + scroll);
             int y = t + ROWS_TOP + i * ROW_H;
-            if (i % 2 == 0) g.fill(l + 6, y - 2, l + PANEL_W - 6, y + 20, 0x18FFFFFF);
+            int stripeRight = flag && i < 3 ? flagX - 4 : l + PANEL_W - 6;
+            if (i % 2 == 0) g.fill(l + 6, y - 2, stripeRight, y + 20, 0x18FFFFFF);
             g.drawString(font, row.label, l + 12, y + 5, 0xFFFFFF);
         }
-        if (clan != null && tab == Tab.GENERAL) BannerView.draw(g, clan.banner, l + PANEL_W - 40, t + ROWS_TOP, 56);
+        if (flag) {
+            int flagY = t + ROWS_TOP - 2;
+            int boxH = 3 * ROW_H - 2;
+            DVUi.panel(g, flagX, flagY, FLAG_BOX_W, boxH, false);
+            int flagH = boxH - 8;
+            BannerView.draw(g, clan.banner, flagX + (FLAG_BOX_W - flagH / 2) / 2, flagY + 4, flagH);
+        }
 
         super.render(g, mouseX, mouseY, partialTick);
     }

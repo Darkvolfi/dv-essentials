@@ -1,14 +1,13 @@
 package com.darkvolfi.dvslots.client;
 
 import com.darkvolfi.dvlib.DVLib;
+import com.darkvolfi.dvlib.client.DVIconButton;
 import com.darkvolfi.dvslots.DVSlots;
 import com.darkvolfi.dvslots.network.OpenSlotsPacket;
 import com.darkvolfi.dvslots.network.SlotsNetwork;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -34,7 +33,10 @@ public final class SlotsClient {
     private static final int BUTTON_X = 126;
     private static final int BUTTON_Y = 61;
 
-    private static Button inventoryButton;
+    /** A pair of elytra wings, 7×7. */
+    private static final String[] WINGS = {"##...##", "###.###", "#######", "###.###", "##...##", "#.....#", "#.....#"};
+
+    private static DVIconButton inventoryButton;
 
     private SlotsClient() {}
 
@@ -58,10 +60,8 @@ public final class SlotsClient {
     @SubscribeEvent
     public static void onScreenInit(ScreenEvent.Init.Post event) {
         if (!(event.getScreen() instanceof InventoryScreen screen) || !serverHasMod()) return;
-        inventoryButton = Button.builder(Component.literal("DV"), b -> requestOpen())
-                .bounds(screen.getGuiLeft() + BUTTON_X, screen.getGuiTop() + BUTTON_Y, 20, 18)
-                .tooltip(Tooltip.create(Component.translatable("container.dvslots")))
-                .build();
+        inventoryButton = new DVIconButton(screen.getGuiLeft() + BUTTON_X, screen.getGuiTop() + BUTTON_Y, 18, WINGS,
+                Component.translatable("container.dvslots"), SlotsClient::requestOpen);
         event.addListener(inventoryButton);
     }
 

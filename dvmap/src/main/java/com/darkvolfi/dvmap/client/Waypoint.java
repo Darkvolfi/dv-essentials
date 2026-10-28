@@ -34,6 +34,10 @@ public final class Waypoint {
         CROSS("##...##", "###.###", ".#####.", "..###..", ".#####.", "###.###", "##...##");
 
         public static final int SIZE = 7;
+
+        public String translationKey() {
+            return "dvmap.shape." + name().toLowerCase(Locale.ROOT);
+        }
         private final String[] rows;
 
         Shape(String... rows) {

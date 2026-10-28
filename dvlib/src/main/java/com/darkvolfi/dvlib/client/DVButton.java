@@ -12,6 +12,7 @@ import java.util.function.Consumer;
 /** A text button in DV's panel look, for the few places that need words (a choice, a key name). */
 public class DVButton extends AbstractButton {
     private final Consumer<DVButton> onPress;
+    private boolean menu;
 
     public DVButton(int x, int y, int width, int height, Component message, Consumer<DVButton> onPress) {
         super(x, y, width, height, message);
@@ -58,6 +59,12 @@ public class DVButton extends AbstractButton {
         }
     }
 
+    /** Marks the button as opening a menu: a small down arrow on its right. */
+    public DVButton menu() {
+        this.menu = true;
+        return this;
+    }
+
     @Override
     public void onPress() {
         onPress.accept(this);
@@ -67,7 +74,15 @@ public class DVButton extends AbstractButton {
     protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         DVUi.panel(g, getX(), getY(), width, height, isHoveredOrFocused());
         var font = Minecraft.getInstance().font;
-        g.drawCenteredString(font, getMessage(), getX() + width / 2, getY() + (height - 8) / 2, active ? 0xFFE6E6F0 : 0xFF6A6478);
+        int textColor = active ? 0xFFE6E6F0 : 0xFF6A6478;
+        if (menu) {
+            int ax = getX() + width - 9;
+            int ay = getY() + height / 2 - 1;
+            for (int i = 0; i < 3; i++) g.fill(ax + i, ay + i, ax + 5 - i, ay + i + 1, textColor);
+            g.drawCenteredString(font, getMessage(), getX() + (width - 8) / 2, getY() + (height - 8) / 2, textColor);
+        } else {
+            g.drawCenteredString(font, getMessage(), getX() + width / 2, getY() + (height - 8) / 2, textColor);
+        }
     }
 
     @Override

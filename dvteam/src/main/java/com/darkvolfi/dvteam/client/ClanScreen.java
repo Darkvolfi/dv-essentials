@@ -1,6 +1,7 @@
 package com.darkvolfi.dvteam.client;
 
 import com.darkvolfi.dvlib.client.DVButton;
+import com.darkvolfi.dvlib.client.DVChoicePopup;
 import com.darkvolfi.dvlib.client.DVIconButton;
 import com.darkvolfi.dvlib.client.DVUi;
 import com.darkvolfi.dvteam.data.ClanData;
@@ -173,9 +174,11 @@ public class ClanScreen extends Screen {
         vault.active = ClientClanCache.iAm(clan.vaultAccess);
         vault.setTooltip(Tooltip.create(Component.translatable("dvteam.screen.vault.tooltip")));
         DVButton access = button(Component.translatable("dvteam.screen.vault_access", Component.translatable(clan.vaultAccess.translationKey())), 110, b -> {
-            Rank nextRank = Rank.values()[(clan.vaultAccess.ordinal() + Rank.values().length - 1) % Rank.values().length];
-            send(new ClanActionPacket(Action.VAULT_ACCESS, clan.id, "", nextRank.ordinal(), new CompoundTag()));
-        });
+            List<DVChoicePopup.Option<Rank>> options = new ArrayList<>();
+            for (Rank r : Rank.values()) options.add(new DVChoicePopup.Option<>(r, Component.translatable(r.translationKey())));
+            DVChoicePopup.open(b, options, clan.vaultAccess,
+                    picked -> send(new ClanActionPacket(Action.VAULT_ACCESS, clan.id, "", picked.ordinal(), new CompoundTag())));
+        }).menu();
         access.active = leader;
         rows.add(new Row(levelLabel, List.of(access, vault)));
         DVButton ff = button(onOff("dvteam.screen.friendly_fire", clan.friendlyFire), 120, b -> {

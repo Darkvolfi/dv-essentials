@@ -1,4 +1,4 @@
-package com.darkvolfi.dvteam.client;
+package com.darkvolfi.dvlib.client;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -13,7 +13,7 @@ import java.util.function.IntConsumer;
  * Free colour choice: a saturation (→) / brightness (↓) square for the current hue, and a hue bar under it.
  * Click or drag either one.
  */
-public class ColorPicker extends AbstractWidget {
+public class DVColorPicker extends AbstractWidget {
     private static final int HUE_HEIGHT = 8;
     private static final int GAP = 3;
 
@@ -23,7 +23,7 @@ public class ColorPicker extends AbstractWidget {
     private boolean draggingHue;
     private final IntConsumer onChange;
 
-    public ColorPicker(int x, int y, int width, int height, int rgb, IntConsumer onChange) {
+    public DVColorPicker(int x, int y, int width, int height, int rgb, IntConsumer onChange) {
         super(x, y, width, height, Component.empty());
         this.onChange = onChange;
         setColor(rgb);

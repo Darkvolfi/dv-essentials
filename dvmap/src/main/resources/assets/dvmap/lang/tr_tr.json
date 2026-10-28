@@ -39,6 +39,13 @@
   "dvmap.config.hideMyName": "İsmimi diğer oyuncuların haritasında gizle",
 
   "dvmap.waypoint.shape": "Şekil",
+  "dvmap.shape.star": "Yıldız",
+  "dvmap.shape.circle": "Daire",
+  "dvmap.shape.square": "Kare",
+  "dvmap.shape.diamond": "Elmas",
+  "dvmap.shape.triangle": "Üçgen",
+  "dvmap.shape.heart": "Kalp",
+  "dvmap.shape.cross": "Çarpı",
   "dvmap.waypoint.category": "Sınıf",
   "dvmap.category.all": "Hepsi",
   "dvmap.category.general": "Genel",

@@ -1,6 +1,7 @@
 package com.darkvolfi.dvteam.client;
 
 import com.darkvolfi.dvlib.client.DVButton;
+import com.darkvolfi.dvlib.client.DVChoicePopup;
 import com.darkvolfi.dvlib.client.DVUi;
 import com.darkvolfi.dvteam.data.ClanData;
 import com.darkvolfi.dvteam.data.ClanTypes.SettlementType;
@@ -11,6 +12,8 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
+
+import java.util.List;
 
 /**
  * Asked when a claim on the map founds a new settlement: its name and, unless it's the capital,
@@ -59,9 +62,14 @@ public class FoundSettlementScreen extends Screen {
 
         if (!capital) {
             addRenderableWidget(DVButton.builder(typeLabel(), b -> {
-                type = type == SettlementType.VILLAGE ? SettlementType.TRADE : SettlementType.VILLAGE;
-                b.setMessage(typeLabel());
-            }).bounds(l + 10, t + 48, PANEL_W - 20, 18).build());
+                List<DVChoicePopup.Option<SettlementType>> options = List.of(
+                        new DVChoicePopup.Option<>(SettlementType.VILLAGE, Component.translatable(SettlementType.VILLAGE.translationKey())),
+                        new DVChoicePopup.Option<>(SettlementType.TRADE, Component.translatable(SettlementType.TRADE.translationKey())));
+                DVChoicePopup.open(b, options, type, picked -> {
+                    type = picked;
+                    b.setMessage(typeLabel());
+                });
+            }).bounds(l + 10, t + 48, PANEL_W - 20, 18).build().menu());
         }
 
         foundButton = addRenderableWidget(DVButton.builder(Component.translatable("dvteam.edit.found"), b -> {

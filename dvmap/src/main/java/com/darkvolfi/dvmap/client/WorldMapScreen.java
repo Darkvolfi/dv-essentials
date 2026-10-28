@@ -1,6 +1,7 @@
 package com.darkvolfi.dvmap.client;
 
 import com.darkvolfi.dvlib.client.DVConfigScreen;
+import com.darkvolfi.dvlib.client.DVChoicePopup;
 import com.darkvolfi.dvlib.client.DVIconButton;
 import com.darkvolfi.dvlib.client.DVUi;
 import com.darkvolfi.dvmap.DVMap;
@@ -70,10 +71,16 @@ public class WorldMapScreen extends Screen {
 
         DVIconButton[] layer = new DVIconButton[1];
         layer[0] = addRenderableWidget(new DVIconButton(x, y, TOOL_SIZE, MapIcons.LAYERS, layerButtonLabel(), () -> {
-            MapConfig.LayerMode[] modes = MapConfig.LayerMode.values();
-            MapConfig.LAYER_MODE.set(modes[(MapConfig.LAYER_MODE.get().ordinal() + 1) % modes.length]);
-            MapConfig.SPEC.save();
-            layer[0].setTooltip(Tooltip.create(layerButtonLabel()));
+            List<DVChoicePopup.Option<MapConfig.LayerMode>> options = new ArrayList<>();
+            for (MapConfig.LayerMode mode : MapConfig.LayerMode.values()) {
+                String key = "dvmap.config.layerMode." + mode.name().toLowerCase(Locale.ROOT);
+                options.add(new DVChoicePopup.Option<>(mode, Component.translatable(key)));
+            }
+            DVChoicePopup.open(layer[0], options, MapConfig.LAYER_MODE.get(), mode -> {
+                MapConfig.LAYER_MODE.set(mode);
+                MapConfig.SPEC.save();
+                layer[0].setTooltip(Tooltip.create(layerButtonLabel()));
+            });
         }));
         x += step;
 

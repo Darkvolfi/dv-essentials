@@ -53,7 +53,7 @@ public final class DarkClient {
         // Only vanilla's purple tooltip; items with their own tooltip colours keep them.
         if (event.getOriginalBackgroundStart() != VANILLA_TOOLTIP_BACKGROUND) return;
         event.setBackground(DVTheme.shade(0xF0606060));
-        int accent = DarkConfig.ACCENT.get().rgb;
+        int accent = DarkConfig.accent();
         int border = accent < 0 ? 0xFF505050 : 0xFF000000 | accent;
         event.setBorderStart(border);
         event.setBorderEnd((border & 0xFEFEFEFE) >>> 1 | 0xFF000000);
@@ -72,13 +72,13 @@ public final class DarkClient {
     private static void updateTheme() {
         DVTheme.dark = DarkConfig.enabled();
         DVTheme.scale = 1 - DarkConfig.DARKNESS.get() / 100f;
-        DVTheme.tint = DarkConfig.ACCENT.get().rgb;
+        DVTheme.tint = DarkConfig.accent();
     }
 
     /** Everything that changes how textures load; the tooltip setting doesn't need a reload. */
     private static String state() {
         if (!DarkConfig.enabled()) return "off";
-        return DarkConfig.DARKNESS.get() + "/" + DarkConfig.ACCENT.get() + "/" + DarkConfig.EXCEPTIONS.get();
+        return DarkConfig.DARKNESS.get() + "/" + DarkConfig.accent() + "/" + DarkConfig.EXCEPTIONS.get();
     }
 
     @Mod.EventBusSubscriber(modid = DVDark.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)

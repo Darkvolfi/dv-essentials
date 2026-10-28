@@ -1,8 +1,10 @@
 {
   "key.dvvein.vein": "Damar kır, toplu hasat ve kırpma (basılı tut, tekerlek = şekil)",
+  "key.dvvein.shape": "Damar şekil çarkı (basılı tut, fareyi çevir, bırak)",
   "dvvein.count": "%s blok",
   "dvvein.shape_hint": "%s  (fare tekerleği)",
   "dvvein.shape.shapeless": "Damar",
+  "dvvein.wheel.hint": "Fareyi bir şekle çevir, tuşu bırak",
   "dvvein.shape.small_tunnel": "Küçük tünel",
   "dvvein.shape.mining_tunnel": "Maden tüneli",
   "dvvein.shape.large_tunnel": "Büyük tünel",

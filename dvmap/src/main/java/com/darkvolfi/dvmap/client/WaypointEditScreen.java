@@ -1,6 +1,8 @@
 package com.darkvolfi.dvmap.client;
 
 import com.darkvolfi.dvlib.client.DVButton;
+import com.darkvolfi.dvlib.client.DVChoicePopup;
+import com.darkvolfi.dvlib.client.DVColorButton;
 import com.darkvolfi.dvlib.client.DVSwitch;
 import com.darkvolfi.dvlib.client.DVUi;
 import net.minecraft.client.Minecraft;
@@ -23,7 +25,7 @@ public class WaypointEditScreen extends Screen {
     private int xValue;
     private int yValue;
     private int zValue;
-    private int colorIndex;
+    private int color;
     private boolean enabledValue;
     private Waypoint.Shape shapeValue;
     private Waypoint.Category categoryValue;
@@ -47,7 +49,7 @@ public class WaypointEditScreen extends Screen {
             this.yValue = existing.y;
             this.zValue = existing.z;
             this.enabledValue = existing.enabled;
-            this.colorIndex = findColorIndex(existing.color);
+            this.color = existing.color & 0xFFFFFF;
             // A death point becomes a normal waypoint once edited, so offer the regular default shape.
             this.shapeValue = existing.deathPoint ? Waypoint.Shape.STAR : existing.shape();
             this.categoryValue = existing.category();
@@ -59,7 +61,7 @@ public class WaypointEditScreen extends Screen {
             this.yValue = defaultY;
             this.zValue = defaultZ;
             this.enabledValue = true;
-            this.colorIndex = (int) (Math.abs(defaultX * 31L + defaultZ) % Waypoint.PALETTE.length);
+            this.color = Waypoint.PALETTE[(int) (Math.abs(defaultX * 31L + defaultZ) % Waypoint.PALETTE.length)];
         }
         this.initialY = this.yValue;
         this.autoY = existing != null && existing.autoY;
@@ -74,13 +76,6 @@ public class WaypointEditScreen extends Screen {
     public WaypointEditScreen withName(String name) {
         this.nameValue = name;
         return this;
-    }
-
-    private static int findColorIndex(int rgb) {
-        for (int i = 0; i < Waypoint.PALETTE.length; i++) {
-            if (Waypoint.PALETTE[i] == (rgb & 0xFFFFFF)) return i;
-        }
-        return 0;
     }
 
     @Override
@@ -114,18 +109,27 @@ public class WaypointEditScreen extends Screen {
 
         // Shape: icon preview drawn over the right side of the button in render()
         addRenderableWidget(new DVButton(cx - 100, top + 78, 96, 16, Component.translatable("dvmap.waypoint.shape"), b -> {
-            Waypoint.Shape[] all = Waypoint.Shape.values();
-            shapeValue = all[(shapeValue.ordinal() + 1) % all.length];
-        }));
+            List<DVChoicePopup.Option<Waypoint.Shape>> options = new ArrayList<>();
+            for (Waypoint.Shape s : Waypoint.Shape.values()) {
+                options.add(new DVChoicePopup.Option<>(s, Component.translatable(s.translationKey()),
+                        (gr, x, y) -> s.draw(gr, x, y, 2, color)));
+            }
+            DVChoicePopup.openGrid(b, options, shapeValue, options.size(), s -> shapeValue = s);
+        }).menu());
 
         addRenderableWidget(new DVButton(cx + 4, top + 78, 96, 16, Component.translatable(categoryValue.translationKey()), b -> {
-            Waypoint.Category[] all = Waypoint.Category.values();
-            categoryValue = all[(categoryValue.ordinal() + 1) % all.length];
-            b.setMessage(Component.translatable(categoryValue.translationKey()));
-        })).setTooltip(Tooltip.create(Component.translatable("dvmap.waypoint.category")));
+            List<DVChoicePopup.Option<Waypoint.Category>> options = new ArrayList<>();
+            for (Waypoint.Category c : Waypoint.Category.values()) {
+                options.add(new DVChoicePopup.Option<>(c, Component.translatable(c.translationKey())));
+            }
+            DVChoicePopup.open(b, options, categoryValue, c -> {
+                categoryValue = c;
+                b.setMessage(Component.translatable(c.translationKey()));
+            });
+        }).menu()).setTooltip(Tooltip.create(Component.translatable("dvmap.waypoint.category")));
 
-        addRenderableWidget(new DVButton(cx - 100, top + 104, 96, 16, Component.translatable("dvmap.waypoint.color"), b ->
-                colorIndex = (colorIndex + 1) % Waypoint.PALETTE.length));
+        addRenderableWidget(new DVColorButton(cx - 100, top + 104, 96, 16, color, c -> color = c))
+                .setTooltip(Tooltip.create(Component.translatable("dvmap.waypoint.color")));
 
         addRenderableWidget(new DVSwitch(cx + 100 - DVSwitch.WIDTH, top + 106, Component.translatable("dvmap.waypoint.visible"),
                 enabledValue, v -> enabledValue = v));
@@ -190,7 +194,7 @@ public class WaypointEditScreen extends Screen {
     }
 
     private void saveAndClose() {
-        int rgb = Waypoint.PALETTE[colorIndex];
+        int rgb = color;
         boolean keepAuto = autoY && yValue == initialY;
         if (existing != null) {
             existing.autoY = keepAuto;
@@ -232,11 +236,8 @@ public class WaypointEditScreen extends Screen {
 
         super.render(g, mouseX, mouseY, partialTick);
 
-        // Shape preview and colour swatch inside their buttons
-        shapeValue.draw(g, cx - 14, top + 86, 1, Waypoint.PALETTE[colorIndex]);
-        int swatchColor = 0xFF000000 | Waypoint.PALETTE[colorIndex];
-        g.fill(cx - 20, top + 106, cx - 8, top + 118, swatchColor);
-        g.renderOutline(cx - 21, top + 105, 14, 14, 0xFF000000);
+        // Shape preview inside its button
+        shapeValue.draw(g, cx - 20, top + 86, 1, color);
     }
 
     @Override

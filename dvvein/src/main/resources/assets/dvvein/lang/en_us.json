@@ -1,8 +1,10 @@
 {
   "key.dvvein.vein": "Vein mine, harvest and shear all (hold, wheel = shape)",
+  "key.dvvein.shape": "Vein shape wheel (hold, move the mouse, let go)",
   "dvvein.count": "%s blocks",
   "dvvein.shape_hint": "%s  (mouse wheel)",
   "dvvein.shape.shapeless": "Vein",
+  "dvvein.wheel.hint": "Move the mouse to a shape, let go of the key",
   "dvvein.shape.small_tunnel": "Small tunnel",
   "dvvein.shape.mining_tunnel": "Mining tunnel",
   "dvvein.shape.large_tunnel": "Large tunnel",

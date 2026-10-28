@@ -9,12 +9,19 @@ import com.darkvolfi.dvvein.network.BlacklistPacket;
 import com.darkvolfi.dvvein.network.VeinKeyPacket;
 import com.darkvolfi.dvvein.network.VeinNetwork;
 import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
@@ -49,6 +56,9 @@ import java.util.Set;
 public final class VeinClient {
     public static final KeyMapping VEIN_KEY = new KeyMapping("key.dvvein.vein",
             KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_GRAVE_ACCENT, DVLib.KEY_CATEGORY);
+    /** Hold to open the shape wheel. */
+    public static final KeyMapping SHAPE_KEY = new KeyMapping("key.dvvein.shape",
+            KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, DVLib.KEY_CATEGORY);
 
     private static boolean held;
     private static VeinShape shape = VeinShape.SHAPELESS;
@@ -75,6 +85,9 @@ public final class VeinClient {
         if (event.phase != TickEvent.Phase.END) return;
         Minecraft mc = Minecraft.getInstance();
         held = serverHasMod() && VEIN_KEY.isDown() && mc.screen == null;
+        while (SHAPE_KEY.consumeClick()) {
+            if (serverHasMod() && mc.screen == null) mc.setScreen(new VeinShapeWheel());
+        }
 
         if (held != sentHeld || shape != sentShape) {
             VeinNetwork.CHANNEL.sendToServer(new VeinKeyPacket(held, shape));
@@ -94,6 +107,14 @@ public final class VeinClient {
             sentBlacklist = List.copyOf(blacklist);
         }
         updatePreview(mc);
+    }
+
+    static VeinShape shape() {
+        return shape;
+    }
+
+    static void setShape(VeinShape picked) {
+        shape = picked;
     }
 
     /** Client side: whether the vein key is held (and the server has DV Vein). */
@@ -165,18 +186,19 @@ public final class VeinClient {
         previewSet = new HashSet<>(preview);
     }
 
+    /** Pushes outline edges this far off the block faces, like vanilla's block outline, so they don't flicker into them. */
+    private static final double INFLATE = 0.002;
+
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS || preview.size() < 2) return;
         Vec3 cam = event.getCamera().getPosition();
         PoseStack pose = event.getPoseStack();
-        MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
-        VertexConsumer lines = buffers.getBuffer(RenderType.lines());
-
-        pose.pushPose();
-        pose.translate(-cam.x, -cam.y, -cam.z);
         Matrix4f matrix = pose.last().pose();
         Matrix3f normal = pose.last().normal();
+
+        // Edges relative to the camera: world coordinates in floats lose precision far from 0,0 and the lines shake.
+        List<float[]> edges = new ArrayList<>();
         Direction.Axis[] axes = Direction.Axis.values();
         for (BlockPos pos : preview) {
             for (Direction.Axis axis : axes) {
@@ -186,17 +208,35 @@ public final class VeinClient {
                 for (int u = 0; u <= 1; u++) {
                     for (int v = 0; v <= 1; v++) {
                         if (!isOutline(pos, a, u, b, v)) continue;
-                        int[] start = {pos.getX(), pos.getY(), pos.getZ()};
-                        start[a.ordinal()] += u;
-                        start[b.ordinal()] += v;
-                        int[] end = start.clone();
-                        end[axis.ordinal()] += 1;
-                        line(lines, matrix, normal, start, end, axis);
+                        double[] start = {pos.getX() + 0.5 - cam.x, pos.getY() + 0.5 - cam.y, pos.getZ() + 0.5 - cam.z};
+                        start[a.ordinal()] += (u - 0.5) * (1 + 2 * INFLATE);
+                        start[b.ordinal()] += (v - 0.5) * (1 + 2 * INFLATE);
+                        double[] end = start.clone();
+                        start[axis.ordinal()] -= 0.5 + INFLATE;
+                        end[axis.ordinal()] += 0.5 + INFLATE;
+                        edges.add(new float[]{(float) start[0], (float) start[1], (float) start[2],
+                                (float) end[0], (float) end[1], (float) end[2], axis.ordinal()});
                     }
                 }
             }
         }
-        pose.popPose();
+
+        // Faint pass without depth test: the parts hidden inside walls still show where the shape goes.
+        RenderSystem.disableDepthTest();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShader(GameRenderer::getRendertypeLinesShader);
+        RenderSystem.lineWidth(Math.max(2.5f, Minecraft.getInstance().getWindow().getWidth() / 1920f * 2.5f));
+        BufferBuilder hidden = Tesselator.getInstance().getBuilder();
+        hidden.begin(VertexFormat.Mode.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL);
+        for (float[] e : edges) line(hidden, matrix, normal, e, 0.25f);
+        BufferUploader.drawWithShader(hidden.end());
+        RenderSystem.enableDepthTest();
+
+        // Bright pass with depth test: the edges you can actually see.
+        MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
+        VertexConsumer lines = buffers.getBuffer(RenderType.lines());
+        for (float[] e : edges) line(lines, matrix, normal, e, 0.95f);
         buffers.endBatch(RenderType.lines());
     }
 
@@ -214,12 +254,13 @@ public final class VeinClient {
         return hasA == hasB ? !(hasA && hasDiagonal) : hasDiagonal;
     }
 
-    private static void line(VertexConsumer lines, Matrix4f matrix, Matrix3f normal, int[] from, int[] to, Direction.Axis axis) {
-        float nx = axis == Direction.Axis.X ? 1 : 0;
-        float ny = axis == Direction.Axis.Y ? 1 : 0;
-        float nz = axis == Direction.Axis.Z ? 1 : 0;
-        lines.vertex(matrix, from[0], from[1], from[2]).color(1f, 0.82f, 0.25f, 0.9f).normal(normal, nx, ny, nz).endVertex();
-        lines.vertex(matrix, to[0], to[1], to[2]).color(1f, 0.82f, 0.25f, 0.9f).normal(normal, nx, ny, nz).endVertex();
+    /** One edge {x1, y1, z1, x2, y2, z2, axis}. */
+    private static void line(VertexConsumer lines, Matrix4f matrix, Matrix3f normal, float[] e, float alpha) {
+        float nx = e[6] == 0 ? 1 : 0;
+        float ny = e[6] == 1 ? 1 : 0;
+        float nz = e[6] == 2 ? 1 : 0;
+        lines.vertex(matrix, e[0], e[1], e[2]).color(1f, 0.82f, 0.25f, alpha).normal(normal, nx, ny, nz).endVertex();
+        lines.vertex(matrix, e[3], e[4], e[5]).color(1f, 0.82f, 0.25f, alpha).normal(normal, nx, ny, nz).endVertex();
     }
 
     /** Under the crosshair while the key is held: the shape (wheel to change) and the block count. */
@@ -239,6 +280,7 @@ public final class VeinClient {
         @SubscribeEvent
         public static void onRegisterKeys(RegisterKeyMappingsEvent event) {
             event.register(VEIN_KEY);
+            event.register(SHAPE_KEY);
         }
 
         @SubscribeEvent

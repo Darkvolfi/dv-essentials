@@ -1,6 +1,8 @@
 package com.darkvolfi.dvteam.client;
 
 import com.darkvolfi.dvlib.client.DVButton;
+import com.darkvolfi.dvlib.client.DVChoicePopup;
+import com.darkvolfi.dvlib.client.DVColorPicker;
 import com.darkvolfi.dvlib.client.DVUi;
 import com.darkvolfi.dvteam.data.BannerData;
 import com.darkvolfi.dvteam.data.ClanData;
@@ -93,22 +95,34 @@ public class ClanEditScreen extends Screen {
         tagBox.setResponder(v -> tag = v.toUpperCase(Locale.ROOT));
         addRenderableWidget(tagBox);
 
-        addRenderableWidget(new ColorPicker(l, t + 76, 150, 92, color, c -> color = c));
+        addRenderableWidget(new DVColorPicker(l, t + 76, 150, 92, color, c -> color = c));
 
         // Flag: base colour, then up to six pattern layers.
         int r = left() + 176;
-        addRenderableWidget(DVButton.builder(Component.translatable("dvteam.edit.base"), b -> {
-            base = DyeColor.byId((base.getId() + 1) % 16);
-        }).bounds(r + 30, t + 10, 120, 18).build());
+        addRenderableWidget(DVButton.builder(Component.translatable("dvteam.edit.base"), b ->
+                DVChoicePopup.openGrid(b, dyeOptions(), base, 8, picked -> base = picked))
+                .bounds(r + 30, t + 10, 100, 18).build().menu());
 
         for (int i = 0; i < layers.size(); i++) {
             int idx = i;
             int y = t + 32 + i * 20;
-            addRenderableWidget(DVButton.builder(Component.literal("◀"), b -> cyclePattern(idx, -1)).bounds(r + 30, y, 14, 18).build());
-            addRenderableWidget(DVButton.builder(Component.literal("▶"), b -> cyclePattern(idx, 1)).bounds(r + 46, y, 14, 18).build());
-            addRenderableWidget(DVButton.builder(Component.empty(), b -> {
-                layers.get(idx)[1] = (layers.get(idx)[1] + 1) % 16;
-            }).bounds(r + 62, y, 18, 18).build());
+            addRenderableWidget(DVButton.builder(layerLabel(layers.get(idx)), b -> {
+                List<DVChoicePopup.Option<Integer>> options = new ArrayList<>();
+                DyeColor dye = DyeColor.byId(layers.get(idx)[1]);
+                for (int p = 0; p < patterns.size(); p++) {
+                    options.add(new DVChoicePopup.Option<>(p, patternName(patterns.get(p), dye)));
+                }
+                DVChoicePopup.open(b, options, layers.get(idx)[0], picked -> {
+                    layers.get(idx)[0] = picked;
+                    b.setMessage(layerLabel(layers.get(idx)));
+                });
+            }).bounds(r + 30, y, 98, 18).build().menu());
+            addRenderableWidget(DVButton.builder(Component.empty(), b ->
+                    DVChoicePopup.openGrid(b, dyeOptions(), DyeColor.byId(layers.get(idx)[1]), 8, picked -> {
+                        layers.get(idx)[1] = picked.getId();
+                        // The pattern button's label names the colour too.
+                        rebuildWidgets();
+                    })).bounds(r + 130, y, 18, 18).build());
             addRenderableWidget(DVButton.builder(Component.literal("×"), b -> {
                 layers.remove(idx);
                 rebuildWidgets();
@@ -127,9 +141,20 @@ public class ClanEditScreen extends Screen {
                 .bounds(width / 2 + 4, top() + PANEL_H - 26, 100, 20).build());
     }
 
-    private void cyclePattern(int layer, int step) {
-        int[] l = layers.get(layer);
-        l[0] = Math.floorMod(l[0] + step, patterns.size());
+    /** The 16 dye colours as swatches. */
+    private static List<DVChoicePopup.Option<DyeColor>> dyeOptions() {
+        List<DVChoicePopup.Option<DyeColor>> options = new ArrayList<>();
+        for (DyeColor dye : DyeColor.values()) {
+            int rgb = 0xFF000000 | dye.getTextColor();
+            options.add(new DVChoicePopup.Option<>(dye, Component.translatable("color.minecraft." + dye.getName()),
+                    (g, cx, cy) -> g.fill(cx - 6, cy - 6, cx + 6, cy + 6, rgb)));
+        }
+        return options;
+    }
+
+    private Component layerLabel(int[] layer) {
+        Component name = patternName(patterns.get(layer[0]), DyeColor.byId(layer[1]));
+        return Component.literal(font.plainSubstrByWidth(name.getString(), 72));
     }
 
     private void save() {
@@ -169,9 +194,7 @@ public class ClanEditScreen extends Screen {
             int[] layer = layers.get(i);
             DyeColor dye = DyeColor.byId(layer[1]);
             int ly = y + 32 + i * 20;
-            g.fill(r + 65, ly + 3, r + 77, ly + 15, 0xFF000000 | dye.getTextColor());
-            Component label = patternName(patterns.get(layer[0]), dye);
-            g.drawString(font, font.plainSubstrByWidth(label.getString(), 72), r + 83, ly + 5, 0xFFFFFF);
+            g.fill(r + 133, ly + 3, r + 145, ly + 15, 0xFF000000 | dye.getTextColor());
         }
     }
 

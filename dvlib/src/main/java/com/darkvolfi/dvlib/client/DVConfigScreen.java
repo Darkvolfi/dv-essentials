@@ -197,6 +197,12 @@ public class DVConfigScreen extends Screen {
                 widget = new DVSwitch(left() + panelWidth() - PAD - 6 - DVSwitch.WIDTH, 0, label, (Boolean) pendingOr(bool), v -> pending.put(bool, v));
             } else if (value instanceof ForgeConfigSpec.EnumValue<?> enumVal) {
                 widget = createEnumButton(enumVal, name);
+            } else if (valueSpec.getDefault() instanceof String def && DVColorPopup.parseHex(def) >= 0
+                    && pendingOr(value) instanceof String current) {
+                // A "#RRGGBB" text option is a colour: pick it instead of typing it.
+                int rgb = DVColorPopup.parseHex(current);
+                widget = new DVColorButton(controlX(), 0, CONTROL_WIDTH, 16, rgb < 0 ? DVColorPopup.parseHex(def) : rgb,
+                        c -> pending.put(value, DVColorPopup.hex(c)));
             } else if (value instanceof ForgeConfigSpec.IntValue intVal && smallRange(valueSpec)) {
                 ForgeConfigSpec.Range<Integer> range = valueSpec.getRange();
                 widget = new DVSlider(controlX(), 0, CONTROL_WIDTH, range.getMin(), range.getMax(), (Integer) pendingOr(intVal),
@@ -231,11 +237,13 @@ public class DVConfigScreen extends Screen {
     private DVButton createEnumButton(ForgeConfigSpec.EnumValue enumVal, String optionName) {
         Enum<?> current = (Enum<?>) pendingOr(enumVal);
         Enum<?>[] constants = current.getDeclaringClass().getEnumConstants();
-        return new DVButton(controlX(), 0, CONTROL_WIDTH, 16, enumLabel(optionName, current), b -> {
-            Enum<?> next = constants[(((Enum<?>) pendingOr(enumVal)).ordinal() + 1) % constants.length];
-            pending.put(enumVal, next);
-            b.setMessage(enumLabel(optionName, next));
-        });
+        List<DVChoicePopup.Option<Enum<?>>> options = new ArrayList<>();
+        for (Enum<?> c : constants) options.add(new DVChoicePopup.Option<>(c, enumLabel(optionName, c)));
+        return new DVButton(controlX(), 0, CONTROL_WIDTH, 16, enumLabel(optionName, current), b ->
+                DVChoicePopup.open(b, options, (Enum<?>) pendingOr(enumVal), picked -> {
+                    pending.put(enumVal, picked);
+                    b.setMessage(enumLabel(optionName, picked));
+                })).menu();
     }
 
     private Component enumLabel(String optionName, Enum<?> val) {

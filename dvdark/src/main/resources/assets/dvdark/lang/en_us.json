@@ -2,13 +2,8 @@
   "key.dvdark.toggle": "Toggle DV Dark",
   "dvdark.config.enabled": "Dark mode",
   "dvdark.config.darkness": "Darkness (%%)",
+  "dvdark.config.tint": "Tint menus",
   "dvdark.config.accent": "Accent colour",
-  "dvdark.config.accent.none": "None",
-  "dvdark.config.accent.blue": "Blue",
-  "dvdark.config.accent.purple": "Purple",
-  "dvdark.config.accent.green": "Green",
-  "dvdark.config.accent.red": "Red",
-  "dvdark.config.accent.orange": "Orange",
   "dvdark.config.darkTooltips": "Dark tooltips",
   "dvdark.config.exceptions": "Don't darken (mod ids)"
 }

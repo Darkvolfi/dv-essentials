@@ -2,13 +2,8 @@
   "key.dvdark.toggle": "DV Dark aç/kapa",
   "dvdark.config.enabled": "Koyu mod",
   "dvdark.config.darkness": "Koyuluk (%%)",
+  "dvdark.config.tint": "Menüleri renklendir",
   "dvdark.config.accent": "Vurgu rengi",
-  "dvdark.config.accent.none": "Yok",
-  "dvdark.config.accent.blue": "Mavi",
-  "dvdark.config.accent.purple": "Mor",
-  "dvdark.config.accent.green": "Yeşil",
-  "dvdark.config.accent.red": "Kırmızı",
-  "dvdark.config.accent.orange": "Turuncu",
   "dvdark.config.darkTooltips": "Koyu ipuçları",
   "dvdark.config.exceptions": "Koyulaştırma (mod kimlikleri)"
 }

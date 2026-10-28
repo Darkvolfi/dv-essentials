@@ -39,6 +39,13 @@
   "dvmap.config.hideMyName": "Hide my name on other players' maps",
 
   "dvmap.waypoint.shape": "Shape",
+  "dvmap.shape.star": "Star",
+  "dvmap.shape.circle": "Circle",
+  "dvmap.shape.square": "Square",
+  "dvmap.shape.diamond": "Diamond",
+  "dvmap.shape.triangle": "Triangle",
+  "dvmap.shape.heart": "Heart",
+  "dvmap.shape.cross": "Cross",
   "dvmap.waypoint.category": "Category",
   "dvmap.category.all": "All",
   "dvmap.category.general": "General",

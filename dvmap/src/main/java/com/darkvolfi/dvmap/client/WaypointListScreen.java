@@ -1,6 +1,7 @@
 package com.darkvolfi.dvmap.client;
 
 import com.darkvolfi.dvlib.client.DVButton;
+import com.darkvolfi.dvlib.client.DVChoicePopup;
 import com.darkvolfi.dvlib.client.DVIconButton;
 import com.darkvolfi.dvlib.client.DVUi;
 import net.minecraft.client.Minecraft;
@@ -67,12 +68,17 @@ public class WaypointListScreen extends Screen {
             }
         }));
         addRenderableWidget(new DVButton(r - 42 - 90, top + 5, 88, 16, filterLabel(), b -> {
-            Waypoint.Category[] all = Waypoint.Category.values();
-            int next = filter == null ? 0 : filter.ordinal() + 1;
-            filter = next < all.length ? all[next] : null;
-            scrollOffset = 0;
-            init();
-        }));
+            List<DVChoicePopup.Option<Waypoint.Category>> options = new ArrayList<>();
+            options.add(new DVChoicePopup.Option<>(null, Component.translatable("dvmap.category.all")));
+            for (Waypoint.Category c : Waypoint.Category.values()) {
+                options.add(new DVChoicePopup.Option<>(c, Component.translatable(c.translationKey())));
+            }
+            DVChoicePopup.open(b, options, filter, c -> {
+                filter = c;
+                scrollOffset = 0;
+                init();
+            });
+        }).menu());
 
         maxScroll = Math.max(0, waypoints.size() - maxRows());
         scrollOffset = Mth.clamp(scrollOffset, 0, maxScroll);

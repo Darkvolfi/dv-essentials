@@ -204,6 +204,16 @@ Part (RectS 9 13 14 2) '#FFD54F'                                  # gold horizon
 Part (Disc 16 14 2.5) '#FFF1C1'                                   # emblem core
 Save-Icon 'dvteam'
 
+# ---------- DV Grave: rounded gravestone on a grassy mound, with a carved cross
+New-Icon '#9E9E9E'
+Part (RectS 6 23 20 4) '#5D8A3A'                                  # grass mound
+Paint (Mask (RectS 6 25 20 2)) (Col '#4A6E2E')                    # mound shade
+Part (Poly @(10, 24, 10, 11, 12, 7, 16, 5.5, 20, 7, 22, 11, 22, 24)) '#A8A8B0' # stone
+Paint (Mask (Poly @(17, 6.5, 20, 7.5, 21.5, 11, 21.5, 23.5, 17, 23.5))) (Col '#8C8C96') # right side shade
+Paint (Mask (RectS 15 9 2 11)) (Col '#4A4A54')                    # carved cross, upright
+Paint (Mask (RectS 12 12 8 2)) (Col '#4A4A54')                     # carved cross, arms
+Save-Icon 'dvgrave'
+
 # ---------- write files (nearest-neighbour scaling keeps the pixels sharp)
 function Scale($bmp, [int]$size) {
     $big = New-Object System.Drawing.Bitmap($size, $size)

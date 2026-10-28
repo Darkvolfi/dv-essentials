@@ -36,6 +36,8 @@
   "dvlib.mod.dvmap.desc": "Minimap, dünya haritası ve waypoint'ler.",
   "dvlib.mod.dvteam.name": "DV Team",
   "dvlib.mod.dvteam.desc": "Klanlar, yerleşimler, ittifaklar ve savaşlar.",
+  "dvlib.mod.dvgrave.name": "DV Grave",
+  "dvlib.mod.dvgrave.desc": "Ölünce eşyalarını ve deneyimini bir mezar taşı saklar.",
   "dvlib.config.server": "Sunucu",
   "dvlib.config.keys": "Tuşlar"
 }

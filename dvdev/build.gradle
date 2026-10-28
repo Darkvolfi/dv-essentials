@@ -1,10 +1,13 @@
 // Not a mod: a development run that loads every DV mod together (gradlew :dvdev:runClient).
+// With -Pcompat it also loads other mods from CurseForge, to test DV's compatibility with them
+// (gradlew :dvdev:runClient -Pcompat). They run in run-compat/ and are never a dependency of a DV mod.
 plugins {
     id 'net.minecraftforge.gradle'
 }
 
-def dvMods = ['dvlib', 'dvzoom', 'dvfood', 'dvlens', 'dvvein', 'dvslots', 'dvdark', 'dvmap', 'dvteam']
+def dvMods = ['dvlib', 'dvzoom', 'dvfood', 'dvlens', 'dvvein', 'dvslots', 'dvdark', 'dvmap', 'dvteam', 'dvgrave']
 def mixinConfigs = ['dvslots.mixins.json', 'dvdark.mixins.json']
+def compat = project.hasProperty('compat')
 dvMods.each { evaluationDependsOn(":$it") }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
@@ -15,9 +18,14 @@ minecraft {
 
     runs {
         configureEach {
-            workingDirectory rootProject.file('run')
+            workingDirectory rootProject.file(compat ? 'run-compat' : 'run')
             property 'forge.logging.console.level', 'debug'
             mixinConfigs.each { args '--mixin.config', it }
+            if (compat) {
+                // Third-party mods ship SRG refmaps; remap them to the dev (official) names
+                property 'mixin.env.remapRefMap', 'true'
+                property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+            }
             mods {
                 dvMods.each { name ->
                     "${name}" {
@@ -33,9 +41,38 @@ minecraft {
     }
 }
 
+configurations {
+    // The run's classpath comes from the mods above, not from dependencies: these go into run-compat/mods instead.
+    compatMods { transitive = false }
+}
+
+if (compat) {
+    repositories {
+        maven {
+            url = 'https://cursemaven.com'
+            content { includeGroup 'curse.maven' }
+        }
+    }
+}
+
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     dvMods.each { implementation project(":$it") }
+    if (compat) {
+        compatMods fg.deobf("curse.maven:curios-309927:6418456")                    // Curios 5.14.1
+        compatMods fg.deobf("curse.maven:cosmetic-armor-reworked-237307:4600191")    // 1.20.1-v1a
+        compatMods fg.deobf("curse.maven:sophisticated-core-618298:9341400")        // 1.5.17.2435
+        compatMods fg.deobf("curse.maven:sophisticated-backpacks-422301:9341433")   // 3.26.17.2231
+        compatMods fg.deobf("curse.maven:travelers-backpack-321117:9297040")        // 9.1.58
+    }
+}
+
+def copyCompatMods = tasks.register('copyCompatMods', Sync) {
+    from configurations.compatMods
+    into rootProject.file('run-compat/mods')
+}
+if (compat) {
+    tasks.matching { it.name.startsWith('prepareRun') }.configureEach { dependsOn copyCompatMods }
 }
 
 tasks.named('jar') { enabled = false }

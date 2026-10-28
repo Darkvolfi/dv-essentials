@@ -1,0 +1,18 @@
+{
+  "block.dvgrave.grave": "Grave",
+  "dvgrave.title": "%s's grave",
+  "dvgrave.died": "Your grave is at %s, %s, %s (%s).",
+  "dvgrave.locked": "%s's grave: only they and their clan can open it for %s more minutes.",
+  "dvgrave.locked_forever": "%s's grave: only they can open it.",
+  "dvgrave.take_all": "Take all",
+  "dvgrave.take_all.tooltip": "Everything goes back where it was: armour, hotbar, other mods' slots. What doesn't fit goes into your inventory.",
+  "dvgrave.page.previous": "Previous page",
+  "dvgrave.page.next": "Next page",
+  "dvgrave.xp": "%s XP",
+  "dvgrave.config.privateMinutes": "Private for (minutes)",
+  "dvgrave.config.clanAccess": "Clan mates may open it",
+  "dvgrave.config.experience": "Experience kept",
+  "dvgrave.config.experience.all": "All",
+  "dvgrave.config.experience.vanilla": "As much as vanilla drops",
+  "dvgrave.config.experience.none": "None (drops as usual)"
+}

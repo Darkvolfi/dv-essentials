@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=south": { "model": "dvgrave:block/grave" },
+    "facing=west": { "model": "dvgrave:block/grave", "y": 90 },
+    "facing=north": { "model": "dvgrave:block/grave", "y": 180 },
+    "facing=east": { "model": "dvgrave:block/grave", "y": 270 }
+  }
+}

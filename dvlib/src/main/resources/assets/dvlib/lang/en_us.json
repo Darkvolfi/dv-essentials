@@ -36,6 +36,8 @@
   "dvlib.mod.dvmap.desc": "Minimap, world map and waypoints.",
   "dvlib.mod.dvteam.name": "DV Team",
   "dvlib.mod.dvteam.desc": "Clans, settlements, alliances and wars.",
+  "dvlib.mod.dvgrave.name": "DV Grave",
+  "dvlib.mod.dvgrave.desc": "A gravestone keeps your items and experience when you die.",
   "dvlib.config.server": "Server",
   "dvlib.config.keys": "Keys"
 }

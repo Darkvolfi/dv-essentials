@@ -1,0 +1,18 @@
+{
+  "block.dvgrave.grave": "Mezar",
+  "dvgrave.title": "%s adlı oyuncunun mezarı",
+  "dvgrave.died": "Mezarın: %s, %s, %s (%s).",
+  "dvgrave.locked": "%s adlı oyuncunun mezarı: %s dakika daha yalnızca kendisi ve klanı açabilir.",
+  "dvgrave.locked_forever": "%s adlı oyuncunun mezarı: yalnızca kendisi açabilir.",
+  "dvgrave.take_all": "Hepsini al",
+  "dvgrave.take_all.tooltip": "Her şey eski yerine döner: zırh, hızlı çubuk, diğer modların slotları. Sığmayan envantere gelir.",
+  "dvgrave.page.previous": "Önceki sayfa",
+  "dvgrave.page.next": "Sonraki sayfa",
+  "dvgrave.xp": "%s XP",
+  "dvgrave.config.privateMinutes": "Özel kalma süresi (dakika)",
+  "dvgrave.config.clanAccess": "Klan arkadaşları açabilsin",
+  "dvgrave.config.experience": "Saklanan deneyim",
+  "dvgrave.config.experience.all": "Tamamı",
+  "dvgrave.config.experience.vanilla": "Vanilyada düşen kadar",
+  "dvgrave.config.experience.none": "Hiç (normal düşer)"
+}

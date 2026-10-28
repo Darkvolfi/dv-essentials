@@ -1,0 +1,11 @@
+plugins {
+    id 'net.minecraftforge.gradle'
+}
+
+apply from: rootProject.file('gradle/dv-mod.gradle')
+
+dependencies {
+    // Optional: DV Slots items go back to their slots, DV Team clan mates may open the grave.
+    compileOnly project(':dvslots')
+    compileOnly project(':dvteam')
+}

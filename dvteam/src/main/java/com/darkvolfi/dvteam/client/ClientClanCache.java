@@ -1,6 +1,7 @@
 package com.darkvolfi.dvteam.client;
 
 import com.darkvolfi.dvteam.data.ClanData;
+import com.darkvolfi.dvteam.data.ClanLevel;
 import com.darkvolfi.dvteam.data.ClanTypes.Rank;
 import com.darkvolfi.dvteam.data.ClanTypes.SettlementType;
 import net.minecraft.client.Minecraft;
@@ -144,6 +145,23 @@ public final class ClientClanCache {
             if (s != null && s.clanId.equals(clanId)) n += (int) e.getValue()[2];
         }
         return n;
+    }
+
+    public static int points(ClanData.Clan clan) {
+        return ClanLevel.points(clan.members.size(), chunkCount(clan.id));
+    }
+
+    public static int level(ClanData.Clan clan) {
+        return ClanLevel.level(points(clan));
+    }
+
+    /** The clan's chunk limit at its level. */
+    public static int maxChunks(ClanData.Clan clan) {
+        return snapshot == null ? 0 : ClanLevel.chunkLimit(snapshot.maxChunks(), level(clan));
+    }
+
+    public static int maxForced(ClanData.Clan clan) {
+        return snapshot == null ? 0 : ClanLevel.forcedLimit(snapshot.maxForced(), level(clan));
     }
 
     public static int settlementChunks(UUID settlementId) {

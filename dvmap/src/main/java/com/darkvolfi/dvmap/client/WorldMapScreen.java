@@ -131,6 +131,11 @@ public class WorldMapScreen extends Screen {
         buttons.add(toggle("dvmap.bar.hide_me", MapConfig.HIDE_ME, needServer, null));
         // Hidden on the map means the name is hidden too: shown as on and locked.
         buttons.add(toggle("dvmap.bar.hide_name", MapConfig.HIDE_MY_NAME, needServer, MapConfig.HIDE_ME));
+        buttons.add(toggle("dvmap.bar.structures", MapConfig.SHOW_STRUCTURES, needServer, null));
+        Component export = Component.translatable("dvmap.bar.export");
+        buttons.add(Button.builder(export, b -> MapExport.export(minecraft))
+                .size(font.width(export) + 12, TOGGLE_HEIGHT)
+                .tooltip(Tooltip.create(Component.translatable("dvmap.bar.export.tooltip"))).build());
 
         int gap = 3;
         List<List<Button>> rows = new ArrayList<>();
@@ -316,7 +321,15 @@ public class WorldMapScreen extends Screen {
             g.renderOutline(sx, sy, sw, sw, 0x88FFFFFF);
         }
 
-        // 5. Waypoints
+        // 5. Structures, then waypoints on top
+        for (StructureMarkers.Entry s : StructureMarkers.forDimension(dim)) {
+            int sx = Math.round(worldToScreenX(s.x + 0.5));
+            int sy = Math.round(worldToScreenY(s.z + 0.5));
+            StructureMarkers.draw(g, sx, sy + 6, 2);
+            if (zoom >= 1.0f || isMouseNear(mouseX, mouseY, sx, sy, 8)) {
+                g.drawCenteredString(font, s.name(), sx, sy + 9, 0xFF000000 | StructureMarkers.color());
+            }
+        }
         List<Waypoint> waypoints = WaypointManager.forDimension(dim);
         for (Waypoint wp : waypoints) {
             if (!wp.enabled) continue;

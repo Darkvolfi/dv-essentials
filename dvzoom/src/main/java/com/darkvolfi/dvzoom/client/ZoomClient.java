@@ -10,6 +10,8 @@ import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.client.event.RenderGuiEvent;
+import net.minecraftforge.client.event.RenderHandEvent;
 import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.event.TickEvent;
@@ -30,6 +32,7 @@ public final class ZoomClient {
     private static double currentZoom = 1.0;
     private static double previousZoom = 1.0;
     private static boolean savedSmoothCamera;
+    private static Double savedSensitivity;
 
     private ZoomClient() {}
 
@@ -50,6 +53,18 @@ public final class ZoomClient {
         } else {
             currentZoom = target;
         }
+        if (savedSensitivity != null) mc.options.sensitivity().set(scaledSensitivity(savedSensitivity, currentZoom));
+    }
+
+    /**
+     * Vanilla turns the camera by (0.6 * s + 0.2)^3 * 8 per mouse unit; pick s so that this shrinks by
+     * zoom^(slowdown%), i.e. not at all at 0% and by the full zoom factor at 100%.
+     * The option can't go below 0, so very strong slowdowns bottom out at vanilla's slowest setting.
+     */
+    private static double scaledSensitivity(double sensitivity, double zoom) {
+        double strength = ZoomConfig.MOUSE_SLOWDOWN.get() / 100.0;
+        double factor = (0.6 * sensitivity + 0.2) / Math.cbrt(Math.pow(zoom, strength));
+        return Mth.clamp((factor - 0.2) / 0.6, 0.0, sensitivity);
     }
 
     private static void startZoom(Minecraft mc) {
@@ -59,6 +74,7 @@ public final class ZoomClient {
             savedSmoothCamera = mc.options.smoothCamera;
             mc.options.smoothCamera = true;
         }
+        if (ZoomConfig.SLOW_MOUSE.get()) savedSensitivity = mc.options.sensitivity().get();
     }
 
     private static void stopZoom(Minecraft mc) {
@@ -66,6 +82,20 @@ public final class ZoomClient {
         if (ZoomConfig.CINEMATIC_CAMERA.get()) {
             mc.options.smoothCamera = savedSmoothCamera;
         }
+        if (savedSensitivity != null) {
+            mc.options.sensitivity().set(savedSensitivity);
+            savedSensitivity = null;
+        }
+    }
+
+    @SubscribeEvent
+    public static void onRenderGui(RenderGuiEvent.Pre event) {
+        if (zooming && ZoomConfig.HIDE_HUD.get()) event.setCanceled(true);
+    }
+
+    @SubscribeEvent
+    public static void onRenderHand(RenderHandEvent event) {
+        if (zooming && ZoomConfig.HIDE_HAND.get()) event.setCanceled(true);
     }
 
     @SubscribeEvent

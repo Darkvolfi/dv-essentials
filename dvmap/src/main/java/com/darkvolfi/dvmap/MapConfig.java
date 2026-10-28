@@ -33,6 +33,7 @@ public final class MapConfig {
     public static final ForgeConfigSpec.BooleanValue BIOME_BLENDING;
     public static final ForgeConfigSpec.BooleanValue BLOCK_LIGHT_SHADING;
     public static final ForgeConfigSpec.BooleanValue SHOW_COORDINATES;
+    public static final ForgeConfigSpec.BooleanValue SHOW_PORTAL_COORDINATES;
     public static final ForgeConfigSpec.BooleanValue SHOW_BIOME;
     public static final ForgeConfigSpec.BooleanValue SHOW_TIME;
     public static final ForgeConfigSpec.BooleanValue SHOW_CHUNK_GRID;
@@ -47,6 +48,7 @@ public final class MapConfig {
     public static final ForgeConfigSpec.BooleanValue SHOW_WAYPOINTS_MINIMAP;
     public static final ForgeConfigSpec.BooleanValue SHOW_WAYPOINTS_WORLD;
     public static final ForgeConfigSpec.BooleanValue DEATH_WAYPOINT;
+    public static final ForgeConfigSpec.BooleanValue SHOW_STRUCTURES;
 
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
@@ -72,6 +74,8 @@ public final class MapConfig {
                 .define("blockLightShading", true);
         SHOW_COORDINATES = b.comment("Show X, Y, Z coordinates below the minimap.")
                 .define("showCoordinates", true);
+        SHOW_PORTAL_COORDINATES = b.comment("Below the coordinates: the matching Nether position in the Overworld (÷8), and the Overworld position in the Nether (×8).")
+                .define("showPortalCoordinates", true);
         SHOW_BIOME = b.comment("Show the current biome name below the minimap.")
                 .define("showBiome", true);
         SHOW_TIME = b.comment("Show in-game clock time below the minimap.")
@@ -100,6 +104,8 @@ public final class MapConfig {
                 .define("showWaypointsInWorld", true);
         DEATH_WAYPOINT = b.comment("Automatically create or update a waypoint where you last died.")
                 .define("deathWaypoint", true);
+        SHOW_STRUCTURES = b.comment("Mark villages, fortresses and other structures you've been inside (needs DV Map on the server).")
+                .define("showStructures", true);
         SPEC = b.build();
     }
 

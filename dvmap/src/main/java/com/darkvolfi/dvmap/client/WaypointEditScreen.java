@@ -6,9 +6,13 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class WaypointEditScreen extends Screen {
     private final Screen parent;
@@ -64,6 +68,12 @@ public class WaypointEditScreen extends Screen {
     /** The Y is a placeholder; it moves to the surface when the chunk loads, unless the player changes it. */
     public void autoHeight() {
         this.autoY = true;
+    }
+
+    /** A new waypoint's suggested name, e.g. from a shared one. */
+    public WaypointEditScreen withName(String name) {
+        this.nameValue = name;
+        return this;
     }
 
     private static int findColorIndex(int rgb) {
@@ -122,16 +132,28 @@ public class WaypointEditScreen extends Screen {
 
         int actionY = top + 130;
         if (existing != null) {
+            List<Button> actions = new ArrayList<>();
             if (WaypointManager.canTeleport(minecraft)) {
-                addRenderableWidget(Button.builder(Component.translatable("dvmap.waypoint.teleport"), b -> {
+                actions.add(Button.builder(Component.translatable("dvmap.waypoint.teleport"), b -> {
                     WaypointManager.teleportTo(minecraft, existing);
                     minecraft.setScreen(null);
-                }).bounds(cx - 100, actionY, 96, 20).build());
+                }).build());
             }
-            addRenderableWidget(Button.builder(Component.translatable("dvmap.waypoint.delete"), b -> {
+            actions.add(Button.builder(Component.translatable("dvmap.waypoint.share"), b -> {
+                WaypointShare.share(minecraft, existing);
+                minecraft.setScreen(null);
+            }).tooltip(Tooltip.create(Component.translatable("dvmap.waypoint.share.tooltip"))).build());
+            actions.add(Button.builder(Component.translatable("dvmap.waypoint.delete"), b -> {
                 WaypointManager.remove(existing);
                 onClose();
-            }).bounds(cx + 4, actionY, 96, 20).build());
+            }).build());
+            int w = (200 - 4 * (actions.size() - 1)) / actions.size();
+            for (int i = 0; i < actions.size(); i++) {
+                Button b = actions.get(i);
+                b.setPosition(cx - 100 + i * (w + 4), actionY);
+                b.setWidth(w);
+                addRenderableWidget(b);
+            }
             actionY += 26;
         }
 

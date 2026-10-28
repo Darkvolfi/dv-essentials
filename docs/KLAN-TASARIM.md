@@ -88,6 +88,15 @@ Durum: **onaylandı ve uygulandı** (2026-10-27), oyunda deneniyor. Kullanıcın
 - Mevcut müttefiklik kalır, karşılıklı olmalı: biri teklif eder, öteki kabul eder.
 - Müttefiklere dost ateşi klanın kendi ayarına uyar.
 
+## 5.1 Seviye, kasa, sohbet (2026-10-27)
+
+- **Seviye** (kullanıcının kararı: üye + toprak puanı): her üye 10, her chunk 1 puan. Eşikler 0 / 25 / 60 / 110 / 180 → Sv1–Sv5 (`ClanLevel`).
+  - Açtığı sınırlar (kullanıcının seçimi): toplam chunk sınırı (Sv1'de sunucu sınırının %40'ı, her seviye +%15, Sv5'te tamamı) ve yüklü tutulan chunk (her seviye sunucu sınırının beşte biri).
+  - Toprak bırakılıp seviye düşerse eski chunk'lar kalır, yalnızca yenisi alınamaz.
+- **Kasa:** 27 slotluk ortak sandık, klan verisinde durur (blok yok). Klan ekranındaki Kasa düğmesi ya da `/klan vault`; yalnızca kendi klanının arazisinde açılır, araziden çıkınca kapanır. Kimin açacağını lider seçer (üye+ / subay+ / lider; varsayılan subay+). Klan dağılınca içindekiler lidere verilir.
+- **Sohbet:** `/klan msg` klana, `/klan ally` klana ve karşılıklı müttefiklere yazar. `/klan chat clan|ally|all` normal sohbeti o kanala yönlendirir (çıkışta sıfırlanır).
+- **Sınır yazısı:** yerleşime girince adı ekranın ortasında büyük başlık olarak çıkar (ayarla eski hotbar üstü yazısına dönülebilir).
+
 ## 6. Ekranlar (Y)
 
 - **Klansızken:** Klan Kur düğmesi, gelen davetler (Katıl), herkese açık klan listesi (ad, renk, üye sayısı).

@@ -221,9 +221,9 @@ public final class TeamMapIntegration implements MapOverlayHook {
             ClanData.Snapshot lim = ClientClanCache.limits();
             text = Component.literal("[" + mine.tag + "] ").withStyle(s -> s.withColor(mine.color))
                     .append(Component.translatable("dvteam.map.banner_counts",
-                            ClientClanCache.chunkCount(mine.id), lim.maxChunks(),
+                            ClientClanCache.chunkCount(mine.id), ClientClanCache.maxChunks(mine),
                             ClientClanCache.settlementCount(mine.id, SettlementType.VILLAGE), lim.maxVillages(),
-                            ClientClanCache.forcedCount(mine.id), lim.maxForced()).withStyle(ChatFormatting.WHITE))
+                            ClientClanCache.forcedCount(mine.id), ClientClanCache.maxForced(mine)).withStyle(ChatFormatting.WHITE))
                     .append(Component.literal("   •   ").withStyle(ChatFormatting.GRAY))
                     .append(Component.translatable("dvteam.map.banner_help").withStyle(ChatFormatting.YELLOW));
         }

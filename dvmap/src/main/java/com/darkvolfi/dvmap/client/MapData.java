@@ -105,6 +105,7 @@ public final class MapData {
             scanCursor = 0;
             lastCaveBand = Integer.MIN_VALUE;
             WaypointManager.load(worldId);
+            StructureMarkers.load(worldId);
         }
     }
 
@@ -500,9 +501,13 @@ public final class MapData {
     }
 
     private static Path regionFile(String worldId, ResourceKey<Level> dimension, int rx, int rz) {
+        return dimensionFolder(worldId, dimension).resolve("r." + rx + "." + rz + ".png");
+    }
+
+    /** Where the surface region PNGs (r.X.Z.png) of a dimension are saved. */
+    static Path dimensionFolder(String worldId, ResourceKey<Level> dimension) {
         String dimFolder = sanitize(dimension.location().getNamespace() + "_" + dimension.location().getPath());
-        return FMLPaths.GAMEDIR.get().resolve("dvmap").resolve(worldId).resolve(dimFolder)
-                .resolve("r." + rx + "." + rz + ".png");
+        return FMLPaths.GAMEDIR.get().resolve("dvmap").resolve(worldId).resolve(dimFolder);
     }
 
     public static String resolveWorldId(Minecraft mc) {

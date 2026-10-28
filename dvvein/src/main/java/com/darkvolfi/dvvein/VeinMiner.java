@@ -1,12 +1,15 @@
 package com.darkvolfi.dvvein;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.event.TickEvent;
@@ -17,6 +20,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.items.ItemHandlerHelper;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,6 +34,7 @@ import java.util.UUID;
 public final class VeinMiner {
     private static final Set<UUID> keyHeld = new HashSet<>();
     private static final Map<UUID, VeinShape> shapes = new HashMap<>();
+    private static final Map<UUID, Set<Block>> blacklists = new HashMap<>();
 
     /** Set while breaking a vein: guards against our own break events. */
     private static Level miningLevel;
@@ -54,6 +59,20 @@ public final class VeinMiner {
         shapes.put(player.getUUID(), shape);
     }
 
+    public static void setBlacklist(ServerPlayer player, List<ResourceLocation> ids) {
+        Set<Block> blocks = new HashSet<>();
+        for (ResourceLocation id : ids) {
+            Block block = ForgeRegistries.BLOCKS.getValue(id);
+            if (block != null && block != Blocks.AIR) blocks.add(block);
+        }
+        blacklists.put(player.getUUID(), blocks);
+    }
+
+    /** Blocks this player never wants broken, planted on or tilled by the vein key. */
+    public static boolean isBlacklisted(Player player, BlockState state) {
+        return blacklists.getOrDefault(player.getUUID(), Set.of()).contains(state.getBlock());
+    }
+
     // Low priority: let protection mods cancel the original break first.
     @SubscribeEvent(priority = EventPriority.LOW)
     public static void onBreak(BlockEvent.BreakEvent event) {
@@ -62,7 +81,7 @@ public final class VeinMiner {
         if (!(event.getLevel() instanceof Level level)) return;
 
         BlockState origin = event.getState();
-        if (!canVein(player, origin)) return;
+        if (!canVein(player, origin) || isBlacklisted(player, origin)) return;
 
         VeinShape shape = shapes.getOrDefault(player.getUUID(), VeinShape.SHAPELESS);
         List<BlockPos> vein = shape.blocks(level, player, event.getPos(), origin, VeinConfig.MAX_BLOCKS.get(), VeinConfig.GROUP_ORES.get());
@@ -75,6 +94,7 @@ public final class VeinMiner {
         try {
             for (BlockPos pos : vein.subList(1, vein.size())) { // first entry is the block being broken now
                 if (!canContinue(player, player.getMainHandItem())) break;
+                if (isBlacklisted(player, level.getBlockState(pos))) continue; // shapes sweep through other blocks too
                 if (player.gameMode.destroyBlock(pos) && !player.isCreative()) {
                     player.causeFoodExhaustion(VeinConfig.EXHAUSTION_PER_BLOCK.get().floatValue());
                 }
@@ -126,5 +146,6 @@ public final class VeinMiner {
     public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         keyHeld.remove(event.getEntity().getUUID());
         shapes.remove(event.getEntity().getUUID());
+        blacklists.remove(event.getEntity().getUUID());
     }
 }

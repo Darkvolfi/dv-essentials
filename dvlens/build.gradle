@@ -3,3 +3,8 @@ plugins {
 }
 
 apply from: rootProject.file('gradle/dv-mod.gradle')
+
+dependencies {
+    // Optional: hide container contents in other clans' settlements when DV Team is installed.
+    compileOnly project(':dvteam')
+}

@@ -17,6 +17,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraftforge.common.util.FakePlayer;
@@ -60,9 +62,14 @@ public class ClanData extends SavedData {
         /** Clans this clan offered an alliance to. */
         public final Set<UUID> allyRequests = new LinkedHashSet<>();
         public boolean friendlyFire;
+        /** Lowest rank that may open the vault. */
+        public Rank vaultAccess = Rank.OFFICER;
+        /** Server side only; never synced. */
+        public final ClanVault vault;
 
         public Clan(UUID id, String name, String tag, int color, BannerData banner) {
             this.id = id;
+            this.vault = new ClanVault(id);
             this.name = name;
             this.tag = tag;
             this.color = color & 0xFFFFFF;
@@ -98,6 +105,7 @@ public class ClanData extends SavedData {
             writeIds(buf, allies);
             writeIds(buf, allyRequests);
             buf.writeBoolean(friendlyFire);
+            buf.writeEnum(vaultAccess);
         }
 
         static Clan read(FriendlyByteBuf buf) {
@@ -108,6 +116,7 @@ public class ClanData extends SavedData {
             c.allies.addAll(readIds(buf));
             c.allyRequests.addAll(readIds(buf));
             c.friendlyFire = buf.readBoolean();
+            c.vaultAccess = buf.readEnum(Rank.class);
             return c;
         }
 
@@ -130,6 +139,8 @@ public class ClanData extends SavedData {
             t.put("Allies", saveIds(allies));
             t.put("AllyRequests", saveIds(allyRequests));
             t.putBoolean("FriendlyFire", friendlyFire);
+            t.putString("VaultAccess", vaultAccess.name());
+            t.put("Vault", vault.createTag());
             return t;
         }
 
@@ -145,6 +156,8 @@ public class ClanData extends SavedData {
             c.allies.addAll(loadIds(t.getList("Allies", Tag.TAG_STRING)));
             c.allyRequests.addAll(loadIds(t.getList("AllyRequests", Tag.TAG_STRING)));
             c.friendlyFire = t.getBoolean("FriendlyFire");
+            if (t.contains("VaultAccess")) c.vaultAccess = Rank.valueOf(t.getString("VaultAccess"));
+            c.vault.fromTag(t.getList("Vault", Tag.TAG_COMPOUND));
             return c;
         }
     }
@@ -361,6 +374,10 @@ public class ClanData extends SavedData {
         return n;
     }
 
+    public int level(Clan clan) {
+        return ClanLevel.level(ClanLevel.points(clan.members.size(), chunkCount(clan.id)));
+    }
+
     public int forcedCount(UUID clanId) {
         int n = 0;
         for (Claim c : claims.values()) {
@@ -412,6 +429,7 @@ public class ClanData extends SavedData {
             if (c.tag.equalsIgnoreCase(t)) return "dvteam.err.tag_taken";
         }
         Clan clan = new Clan(UUID.randomUUID(), n, t, color, banner.validated());
+        clan.vault.addListener(v -> setDirty());
         clan.members.put(player.getUUID(), Rank.LEADER);
         clans.put(clan.id, clan);
         playerClan.put(player.getUUID(), clan.id);
@@ -421,6 +439,11 @@ public class ClanData extends SavedData {
     }
 
     public void disband(MinecraftServer server, Clan clan) {
+        // Disbanding is always done by the leader, who is online: the vault goes to them.
+        ServerPlayer leader = server.getPlayerList().getPlayer(clan.leader());
+        if (leader != null) {
+            for (ItemStack stack : clan.vault.removeAllItems()) ItemHandlerHelper.giveItemToPlayer(leader, stack);
+        }
         Iterator<Map.Entry<ChunkKey, Claim>> it = claims.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<ChunkKey, Claim> e = it.next();
@@ -629,6 +652,15 @@ public class ClanData extends SavedData {
         return null;
     }
 
+    public String setVaultAccess(ServerPlayer actor, Rank rank) {
+        Clan clan = clanOf(actor.getUUID());
+        if (clan == null) return "dvteam.err.no_clan";
+        if (clan.rank(actor.getUUID()) != Rank.LEADER) return "dvteam.err.rank";
+        clan.vaultAccess = rank;
+        setDirty();
+        return null;
+    }
+
     public String setPerms(ServerPlayer actor, UUID settlementId, int allyPerms, int publicPerms) {
         Settlement s = settlements.get(settlementId);
         Clan clan = clanOf(actor.getUUID());
@@ -655,7 +687,7 @@ public class ClanData extends SavedData {
             Settlement s = settlements.get(existing.settlementId);
             return s != null && s.clanId.equals(clan.id) ? "dvteam.err.already_yours" : "dvteam.err.taken";
         }
-        if (chunkCount(clan.id) >= TeamConfig.MAX_CHUNKS_PER_CLAN.get()) return "dvteam.err.limit_clan";
+        if (chunkCount(clan.id) >= ClanLevel.chunkLimit(TeamConfig.MAX_CHUNKS_PER_CLAN.get(), level(clan))) return "dvteam.err.limit_clan";
         if (tooCloseToOthers(clan.id, dim, cx, cz)) return "dvteam.err.too_close";
 
         Set<UUID> neighbours = neighbourSettlements(clan.id, dim, cx, cz);
@@ -711,7 +743,7 @@ public class ClanData extends SavedData {
         Settlement s = claim == null ? null : settlements.get(claim.settlementId);
         if (s == null || !s.clanId.equals(clan.id)) return "dvteam.err.not_yours";
         if (claim.forced == forced) return null;
-        if (forced && forcedCount(clan.id) >= TeamConfig.MAX_FORCE_LOADED.get()) return "dvteam.err.limit_forced";
+        if (forced && forcedCount(clan.id) >= ClanLevel.forcedLimit(TeamConfig.MAX_FORCE_LOADED.get(), level(clan))) return "dvteam.err.limit_forced";
         claim.forced = forced;
         setForced(server, key, forced);
         setDirty();
@@ -937,6 +969,7 @@ public class ClanData extends SavedData {
         ListTag clanList = root.getList("Clans", Tag.TAG_COMPOUND);
         for (int i = 0; i < clanList.size(); i++) {
             Clan c = Clan.load(clanList.getCompound(i));
+            c.vault.addListener(v -> data.setDirty());
             data.clans.put(c.id, c);
             for (UUID m : c.members.keySet()) data.playerClan.put(m, c.id);
         }

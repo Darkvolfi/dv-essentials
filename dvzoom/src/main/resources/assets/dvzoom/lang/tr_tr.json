@@ -3,5 +3,9 @@
   "dvzoom.config.zoomLevel": "Yakınlaştırma",
   "dvzoom.config.scrollAdjust": "Tekerlekle ayarla",
   "dvzoom.config.smoothTransition": "Yumuşak geçiş",
-  "dvzoom.config.cinematicCamera": "Sinematik kamera"
+  "dvzoom.config.cinematicCamera": "Sinematik kamera",
+  "dvzoom.config.slowMouse": "Fareyi yavaşlat",
+  "dvzoom.config.mouseSlowdown": "Yavaşlatma gücü (%%)",
+  "dvzoom.config.hideHud": "Arayüzü gizle",
+  "dvzoom.config.hideHand": "Eli gizle"
 }

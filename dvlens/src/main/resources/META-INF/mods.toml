@@ -32,3 +32,10 @@ displayTest="IGNORE_ALL_VERSION"
     versionRange="[${dvlib_version},)"
     ordering="AFTER"
     side="CLIENT"
+
+[[dependencies.${mod_id}]]
+    modId="dvteam"
+    mandatory=false
+    versionRange="*"
+    ordering="NONE"
+    side="BOTH"

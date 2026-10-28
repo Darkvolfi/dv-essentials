@@ -81,7 +81,13 @@ public final class TeamClient {
                         );
                     } else {
                         ClanData.Clan clan = ClientClanCache.clan(settlement.clanId);
-                        if (clan != null) {
+                        if (clan != null && TeamConfig.TERRITORY_TITLE.get()) {
+                            mc.gui.setTimes(5, 40, 15);
+                            mc.gui.setSubtitle(Component.translatable(settlement.type.translationKey())
+                                    .append(" • ")
+                                    .append(Component.literal("[" + clan.tag + "] " + clan.name).withStyle(s -> s.withColor(clan.color))));
+                            mc.gui.setTitle(Component.literal(settlement.name).withStyle(s -> s.withColor(clan.color)));
+                        } else if (clan != null) {
                             mc.player.displayClientMessage(
                                     Component.translatable("dvteam.msg.entering_territory",
                                             Component.literal(settlement.name).withStyle(s -> s.withColor(clan.color)),

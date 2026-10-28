@@ -5,11 +5,13 @@ import com.darkvolfi.dvvein.DVVein;
 import com.darkvolfi.dvvein.VeinConfig;
 import com.darkvolfi.dvvein.VeinMiner;
 import com.darkvolfi.dvvein.VeinShape;
+import com.darkvolfi.dvvein.network.BlacklistPacket;
 import com.darkvolfi.dvvein.network.VeinKeyPacket;
 import com.darkvolfi.dvvein.network.VeinNetwork;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -18,6 +20,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -32,10 +35,12 @@ import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -54,6 +59,8 @@ public final class VeinClient {
     private static BlockPos previewStart;
     private static BlockState previewState;
     private static VeinShape previewShape;
+    private static Object sentBlacklistTo;
+    private static List<String> sentBlacklist = List.of();
 
     private VeinClient() {}
 
@@ -74,7 +81,51 @@ public final class VeinClient {
             sentHeld = held;
             sentShape = shape;
         }
+        // On joining a server, and whenever the list changes (middle-click, config file, a loaded DV profile).
+        List<? extends String> blacklist = VeinConfig.BLACKLIST.get();
+        if (serverHasMod() && (mc.getConnection() != sentBlacklistTo || !blacklist.equals(sentBlacklist))) {
+            List<ResourceLocation> ids = new ArrayList<>();
+            for (String id : blacklist) {
+                ResourceLocation rl = ResourceLocation.tryParse(id);
+                if (rl != null) ids.add(rl);
+            }
+            VeinNetwork.CHANNEL.sendToServer(new BlacklistPacket(ids));
+            sentBlacklistTo = mc.getConnection();
+            sentBlacklist = List.copyOf(blacklist);
+        }
         updatePreview(mc);
+    }
+
+    /** Client side: whether the vein key is held (and the server has DV Vein). */
+    public static boolean isHeld() {
+        return held;
+    }
+
+    private static boolean isBlacklisted(BlockState state) {
+        ResourceLocation id = ForgeRegistries.BLOCKS.getKey(state.getBlock());
+        return id != null && VeinConfig.BLACKLIST.get().contains(id.toString());
+    }
+
+    /** Vein key + middle click on a block: add it to or remove it from the blacklist. */
+    @SubscribeEvent
+    public static void onPickBlock(InputEvent.InteractionKeyMappingTriggered event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (!held || !event.isPickBlock() || mc.level == null || mc.player == null) return;
+        if (!(mc.hitResult instanceof BlockHitResult hit) || hit.getType() != HitResult.Type.BLOCK) return;
+        BlockState state = mc.level.getBlockState(hit.getBlockPos());
+        ResourceLocation id = ForgeRegistries.BLOCKS.getKey(state.getBlock());
+        if (id == null) return;
+
+        List<String> list = new ArrayList<>(VeinConfig.BLACKLIST.get());
+        boolean added = !list.remove(id.toString());
+        if (added) list.add(id.toString());
+        VeinConfig.BLACKLIST.set(list);
+        VeinConfig.CLIENT_SPEC.save();
+        mc.player.displayClientMessage(Component.translatable(added ? "dvvein.blacklist.added" : "dvvein.blacklist.removed",
+                state.getBlock().getName()).withStyle(added ? ChatFormatting.RED : ChatFormatting.GREEN), true);
+        previewStart = null; // recompute the outline
+        event.setCanceled(true);
+        event.setSwingHand(false);
     }
 
     /** While the vein key is held, the mouse wheel picks the shape instead of the hotbar slot. */
@@ -100,9 +151,17 @@ public final class VeinClient {
         previewStart = hit.getBlockPos();
         previewState = state;
         previewShape = shape;
-        preview = VeinMiner.canVein(mc.player, state)
+        preview = VeinMiner.canVein(mc.player, state) && !isBlacklisted(state)
                 ? shape.blocks(mc.level, mc.player, previewStart, state, VeinConfig.maxBlocks(), VeinConfig.groupOres())
                 : List.of();
+        if (!VeinConfig.BLACKLIST.get().isEmpty()) {
+            // The server skips these inside shapes too; keep the clicked block so the count still makes sense.
+            List<BlockPos> kept = new ArrayList<>();
+            for (int i = 0; i < preview.size(); i++) {
+                if (i == 0 || !isBlacklisted(mc.level.getBlockState(preview.get(i)))) kept.add(preview.get(i));
+            }
+            preview = kept;
+        }
         previewSet = new HashSet<>(preview);
     }
 

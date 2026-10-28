@@ -1,9 +1,12 @@
 package com.darkvolfi.dvteam.command;
 
+import com.darkvolfi.dvteam.ClanChat;
 import com.darkvolfi.dvteam.DVTeam;
 import com.darkvolfi.dvteam.TeamConfig;
 import com.darkvolfi.dvteam.data.ClanData;
+import com.darkvolfi.dvteam.data.ClanLevel;
 import com.darkvolfi.dvteam.data.ClanTypes.SettlementType;
+import com.darkvolfi.dvteam.data.ClanVault;
 import com.darkvolfi.dvteam.network.ClanActionPacket;
 import com.darkvolfi.dvteam.network.TeamNetwork;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -13,14 +16,13 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import java.util.UUID;
+import java.util.Locale;
 
 /** /klan (also /clan and /dvteam): the everyday actions; the rest is in the clan screen (Y). */
 @Mod.EventBusSubscriber(modid = DVTeam.MOD_ID)
@@ -50,7 +52,8 @@ public final class TeamCommands {
                     ClanData.Clan clan = data.clanOf(player.getUUID());
                     if (clan == null) return done(player, "dvteam.err.no_clan", null);
                     player.sendSystemMessage(Component.translatable("dvteam.cmd.info", ClanActionPacket.clanName(clan),
-                            clan.members.size(), data.chunkCount(clan.id), TeamConfig.MAX_CHUNKS_PER_CLAN.get()));
+                            clan.members.size(), data.chunkCount(clan.id),
+                            ClanLevel.chunkLimit(TeamConfig.MAX_CHUNKS_PER_CLAN.get(), data.level(clan)), data.level(clan)));
                     return 1;
                 }))
                 .then(Commands.literal("invite")
@@ -83,20 +86,21 @@ public final class TeamCommands {
                             Component.translatable("dvteam.cmd.left"));
                 }))
                 .then(Commands.literal("msg")
-                        .then(Commands.argument("message", StringArgumentType.greedyString()).executes(ctx -> {
-                            ServerPlayer player = ctx.getSource().getPlayerOrException();
-                            MinecraftServer server = player.getServer();
-                            ClanData.Clan clan = ClanData.get(server).clanOf(player.getUUID());
-                            if (clan == null) return done(player, "dvteam.err.no_clan", null);
-                            Component line = Component.literal("[" + clan.tag + "] ").withStyle(s -> s.withColor(clan.color))
-                                    .append(Component.literal(player.getGameProfile().getName() + ": ").withStyle(ChatFormatting.WHITE))
-                                    .append(Component.literal(StringArgumentType.getString(ctx, "message")).withStyle(ChatFormatting.GRAY));
-                            for (UUID id : clan.members.keySet()) {
-                                ServerPlayer member = server.getPlayerList().getPlayer(id);
-                                if (member != null) member.sendSystemMessage(line);
-                            }
-                            return 1;
-                        })))
+                        .then(Commands.argument("message", StringArgumentType.greedyString())
+                                .executes(ctx -> chat(ctx.getSource().getPlayerOrException(), ClanChat.Channel.CLAN,
+                                        StringArgumentType.getString(ctx, "message")))))
+                .then(Commands.literal("ally")
+                        .then(Commands.argument("message", StringArgumentType.greedyString())
+                                .executes(ctx -> chat(ctx.getSource().getPlayerOrException(), ClanChat.Channel.ALLY,
+                                        StringArgumentType.getString(ctx, "message")))))
+                .then(Commands.literal("chat")
+                        .then(chatMode(ClanChat.Channel.ALL))
+                        .then(chatMode(ClanChat.Channel.CLAN))
+                        .then(chatMode(ClanChat.Channel.ALLY)))
+                .then(Commands.literal("vault").executes(ctx -> {
+                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                    return done(player, ClanVault.open(player), null);
+                }))
                 .then(Commands.literal("claim")
                         .executes(ctx -> claimHere(ctx.getSource().getPlayerOrException(), ""))
                         .then(Commands.argument("settlementName", StringArgumentType.greedyString())
@@ -109,6 +113,23 @@ public final class TeamCommands {
                     return done(player, ClanData.get(player.getServer()).unclaim(player.getServer(), player, dim, cp.x, cp.z),
                             Component.translatable("dvteam.cmd.unclaimed", cp.x, cp.z));
                 }));
+    }
+
+    private static int chat(ServerPlayer player, ClanChat.Channel channel, String message) {
+        return ClanChat.send(player, channel, message) ? 1 : done(player, "dvteam.err.no_clan", null);
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> chatMode(ClanChat.Channel channel) {
+        return Commands.literal(channel.name().toLowerCase(Locale.ROOT)).executes(ctx -> {
+            ServerPlayer player = ctx.getSource().getPlayerOrException();
+            if (channel != ClanChat.Channel.ALL && ClanData.get(player.getServer()).clanOf(player.getUUID()) == null) {
+                return done(player, "dvteam.err.no_clan", null);
+            }
+            ClanChat.setChannel(player, channel);
+            player.sendSystemMessage(Component.translatable("dvteam.chat.mode." + channel.name().toLowerCase(Locale.ROOT))
+                    .withStyle(ChatFormatting.GREEN));
+            return 1;
+        });
     }
 
     /** Claims the chunk the player stands in; a name is needed when it founds a new settlement (a village). */

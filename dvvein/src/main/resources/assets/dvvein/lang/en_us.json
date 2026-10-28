@@ -11,5 +11,7 @@
   "dvvein.config.showPreview": "Outline preview",
   "dvvein.config.maxBlocks": "Max blocks",
   "dvvein.config.exhaustionPerBlock": "Hunger per block",
-  "dvvein.config.groupOres": "Group ore variants"
+  "dvvein.config.groupOres": "Group ore variants",
+  "dvvein.blacklist.added": "%s will no longer be vein mined",
+  "dvvein.blacklist.removed": "%s can be vein mined again"
 }

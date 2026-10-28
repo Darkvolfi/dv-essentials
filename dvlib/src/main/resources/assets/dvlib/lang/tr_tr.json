@@ -2,5 +2,21 @@
   "key.categories.dv": "DV Modları",
   "dvlib.menu.title": "DV Modları",
   "dvlib.menu.empty": "Kurulu DV modu yok.",
-  "dvlib.config.server_in_world": "Dünya ayarları tek oyunculu bir dünyanın içindeyken değiştirilebilir."
+  "dvlib.menu.update": "Güncelleme var: %s",
+  "dvlib.menu.updates": "Güncellemeler var",
+  "dvlib.config.server_in_world": "Dünya ayarları tek oyunculu bir dünyanın içindeyken değiştirilebilir.",
+  "dvlib.search": "Ayar ara...",
+  "dvlib.search.none": "Eşleşen ayar yok.",
+  "dvlib.profiles.title": "Profiller",
+  "dvlib.profiles.name": "Profil adı",
+  "dvlib.profiles.save": "Kaydet",
+  "dvlib.profiles.load": "Yükle",
+  "dvlib.profiles.delete": "Sil",
+  "dvlib.profiles.folder": "Klasörü aç",
+  "dvlib.profiles.empty": "Henüz kayıtlı profil yok.",
+  "dvlib.profiles.saved": "\"%s\" kaydedildi.",
+  "dvlib.profiles.loaded": "\"%s\" yüklendi: %s ayar değişti.",
+  "dvlib.profiles.deleted": "\"%s\" silindi.",
+  "dvlib.profiles.delete_title": "Bu profil silinsin mi?",
+  "dvlib.profiles.error": "Profil dosyası okunamadı ya da yazılamadı."
 }

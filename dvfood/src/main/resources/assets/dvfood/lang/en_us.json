@@ -3,5 +3,6 @@
   "dvfood.config.showPreview": "Food preview",
   "dvfood.config.showHealthPreview": "Health preview",
   "dvfood.config.showExhaustion": "Exhaustion bar",
-  "dvfood.config.showTooltip": "Food tooltip"
+  "dvfood.config.showTooltip": "Food tooltip",
+  "dvfood.config.showEffects": "Food effects in tooltip"
 }

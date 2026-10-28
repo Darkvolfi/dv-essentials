@@ -151,9 +151,23 @@
   "dvteam.err.not_yours": "Your clan doesn't own this chunk.",
   "dvteam.err.need_banner": "You need a banner in your inventory.",
 
-  "dvteam.cmd.info": "%s • %s members • %s/%s chunks",
+  "dvteam.cmd.info": "%s • level %5$s • %s members • %s/%s chunks",
   "dvteam.cmd.joined": "You joined %s!",
   "dvteam.cmd.left": "You left the clan.",
   "dvteam.cmd.claimed": "Claimed chunk (%s, %s).",
-  "dvteam.cmd.unclaimed": "Released chunk (%s, %s)."
+  "dvteam.cmd.unclaimed": "Released chunk (%s, %s).",
+  "dvteam.config.territoryTitle": "Settlement name as a title",
+  "dvteam.screen.level": "Level %s  •  %s/%s points",
+  "dvteam.screen.level_max": "Level %s (max)  •  %s points",
+  "dvteam.screen.vault": "Vault",
+  "dvteam.screen.vault.tooltip": "The clan's shared chest. Opens on your clan's land. Also: /clan vault",
+  "dvteam.screen.vault_access": "Vault: %s+",
+  "dvteam.vault.title": "%s vault",
+  "dvteam.err.vault_rank": "Your rank can't open the clan vault.",
+  "dvteam.err.vault_land": "The clan vault only opens on your clan's land.",
+  "dvteam.chat.clan": "[Clan]",
+  "dvteam.chat.ally": "[Allies]",
+  "dvteam.chat.mode.all": "Your chat now goes to everyone.",
+  "dvteam.chat.mode.clan": "Your chat now goes to your clan. Back to everyone: /clan chat all",
+  "dvteam.chat.mode.ally": "Your chat now goes to your clan and allies. Back to everyone: /clan chat all"
 }

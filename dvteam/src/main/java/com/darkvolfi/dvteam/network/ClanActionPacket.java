@@ -3,6 +3,7 @@ package com.darkvolfi.dvteam.network;
 import com.darkvolfi.dvteam.TeamConfig;
 import com.darkvolfi.dvteam.data.BannerData;
 import com.darkvolfi.dvteam.data.ClanData;
+import com.darkvolfi.dvteam.data.ClanVault;
 import com.darkvolfi.dvteam.data.ClanTypes.Rank;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -31,7 +32,7 @@ public record ClanActionPacket(Action action, UUID target, String text, int valu
     public enum Action {
         CREATE, EDIT, DISBAND, LEAVE, INVITE, JOIN, DECLINE, KICK, SET_RANK,
         ALLY_REQUEST, ALLY_BREAK, WAR_DECLARE, WAR_PEACE, WAR_SURRENDER,
-        RENAME_SETTLEMENT, SET_PERMS, UNCLAIM_ALL, GET_BANNER
+        RENAME_SETTLEMENT, SET_PERMS, UNCLAIM_ALL, GET_BANNER, VAULT_OPEN, VAULT_ACCESS
     }
 
     private static final UUID NONE = new UUID(0L, 0L);
@@ -142,6 +143,8 @@ public record ClanActionPacket(Action action, UUID target, String text, int valu
                 yield null;
             }
             case GET_BANNER -> giveBanner(player, clan);
+            case VAULT_OPEN -> ClanVault.open(player);
+            case VAULT_ACCESS -> data.setVaultAccess(player, Rank.values()[Math.floorMod(p.value, Rank.values().length)]);
         };
         TeamNetwork.tell(player, error);
         TeamNetwork.syncToAll(server);

@@ -71,7 +71,7 @@ public final class Harvest {
         for (BlockPos pos : field.subList(1, field.size())) { // the clicked crop is already done
             if (!player.isCreative() && player.getFoodData().getFoodLevel() <= 0) return;
             BlockState state = level.getBlockState(pos);
-            if (!isRipe(state) || !level.mayInteract(player, pos)) continue;
+            if (!isRipe(state) || VeinMiner.isBlacklisted(player, state) || !level.mayInteract(player, pos)) continue;
             BlockState seedling = seedling(state);
             if (seedling == null) continue;
             harvest(level, player, pos, state, seedling, true);

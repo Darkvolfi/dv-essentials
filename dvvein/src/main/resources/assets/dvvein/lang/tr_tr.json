@@ -11,5 +11,7 @@
   "dvvein.config.showPreview": "Çizgili önizleme",
   "dvvein.config.maxBlocks": "En çok blok",
   "dvvein.config.exhaustionPerBlock": "Blok başına açlık",
-  "dvvein.config.groupOres": "Cevher türlerini birleştir"
+  "dvvein.config.groupOres": "Cevher türlerini birleştir",
+  "dvvein.blacklist.added": "%s artık toplu kırılmayacak",
+  "dvvein.blacklist.removed": "%s yeniden toplu kırılabilir"
 }

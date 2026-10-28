@@ -151,9 +151,23 @@
   "dvteam.err.not_yours": "Bu chunk senin klanının değil.",
   "dvteam.err.need_banner": "Envanterinde bir sancak olmalı.",
 
-  "dvteam.cmd.info": "%s • %s üye • %s/%s chunk",
+  "dvteam.cmd.info": "%s • seviye %5$s • %s üye • %s/%s chunk",
   "dvteam.cmd.joined": "%s klanına katıldın!",
   "dvteam.cmd.left": "Klandan ayrıldın.",
   "dvteam.cmd.claimed": "Chunk (%s, %s) alındı.",
-  "dvteam.cmd.unclaimed": "Chunk (%s, %s) bırakıldı."
+  "dvteam.cmd.unclaimed": "Chunk (%s, %s) bırakıldı.",
+  "dvteam.config.territoryTitle": "Yerleşim adı büyük başlık olarak",
+  "dvteam.screen.level": "Seviye %s  •  %s/%s puan",
+  "dvteam.screen.level_max": "Seviye %s (en yüksek)  •  %s puan",
+  "dvteam.screen.vault": "Kasa",
+  "dvteam.screen.vault.tooltip": "Klanın ortak sandığı. Klanının arazisinde açılır. Komutu: /klan vault",
+  "dvteam.screen.vault_access": "Kasa: %s+",
+  "dvteam.vault.title": "%s kasası",
+  "dvteam.err.vault_rank": "Rütben klan kasasını açmaya yetmiyor.",
+  "dvteam.err.vault_land": "Klan kasası sadece klanının arazisinde açılır.",
+  "dvteam.chat.clan": "[Klan]",
+  "dvteam.chat.ally": "[Müttefik]",
+  "dvteam.chat.mode.all": "Sohbetin artık herkese gidiyor.",
+  "dvteam.chat.mode.clan": "Sohbetin artık klanına gidiyor. Herkese dönmek için: /klan chat all",
+  "dvteam.chat.mode.ally": "Sohbetin artık klanına ve müttefiklerine gidiyor. Herkese dönmek için: /klan chat all"
 }

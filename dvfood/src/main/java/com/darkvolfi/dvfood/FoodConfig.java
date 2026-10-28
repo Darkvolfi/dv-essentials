@@ -9,6 +9,7 @@ public final class FoodConfig {
     public static final ForgeConfigSpec.BooleanValue SHOW_HEALTH_PREVIEW;
     public static final ForgeConfigSpec.BooleanValue SHOW_EXHAUSTION;
     public static final ForgeConfigSpec.BooleanValue SHOW_TOOLTIP;
+    public static final ForgeConfigSpec.BooleanValue SHOW_EFFECTS;
 
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
@@ -22,6 +23,8 @@ public final class FoodConfig {
                 .define("showExhaustion", true);
         SHOW_TOOLTIP = b.comment("Show hunger and saturation icons in food tooltips.")
                 .define("showTooltip", true);
+        SHOW_EFFECTS = b.comment("List the effects a food gives (golden apple, pufferfish...) in its tooltip, with duration and chance.")
+                .define("showEffects", true);
         SPEC = b.build();
     }
 

@@ -8,7 +8,7 @@ Ortak bilgiler: **Minecraft 1.20.1 · Forge 47+ ve NeoForge 47.1+ · Lisans MIT 
 | DV Lib | `dvlib-1.20.1-0.1.0.jar` | ikisi | — | Library |
 | DV Zoom | `dvzoom-1.20.1-0.1.0.jar` | istemci | DV Lib | Utility |
 | DV Food | `dvfood-1.20.1-0.1.0.jar` | ikisi (ikisi de isteğe bağlı) | DV Lib (istemci) | Food, Utility |
-| DV Lens | `dvlens-1.20.1-0.1.0.jar` | istemci | DV Lib | Utility |
+| DV Lens | `dvlens-1.20.1-0.1.0.jar` | istemci (sunucuda isteğe bağlı) | DV Lib (istemci) | Utility |
 | DV Vein | `dvvein-1.20.1-0.1.0.jar` | ikisi (zorunlu) | DV Lib | Utility |
 | DV Slots | `dvslots-1.20.1-0.1.0.jar` | ikisi (zorunlu) | DV Lib | Equipment |
 | DV Dark | `dvdark-1.20.1-0.1.0.jar` | istemci | DV Lib | Decoration, Utility |
@@ -31,6 +31,9 @@ Jar'lar: `<mod>/build/libs/` (`.\gradlew.bat build` ile üretilir).
 The library behind the DV mods. Install it together with any DV mod.
 - **DV** button on the title screen and in the pause menu, listing your installed DV mods
 - One settings screen for every DV mod: toggles, number fields with validation, tooltips, and key bindings you can change right there
+- Search box: find any DV setting by name
+- **Profiles:** save all DV settings and key bindings under a name, then load them in another world or instance
+- Shows when a DV mod has an update (Forge's version check)
 - English and Turkish
 
 ## DV Zoom
@@ -39,7 +42,9 @@ The library behind the DV mods. Install it together with any DV mod.
 - Hold **C** to zoom (4× by default)
 - Mouse wheel changes the zoom from 1× to 50× while zooming, without switching hotbar slots
 - Smooth transition and cinematic camera, both optional
-- Only the world zooms; your hand stays the same
+- Mouse gets slower the further you zoom in
+- Hides the HUD and your hand while zooming
+- Every option can be turned off
 - Client-side only
 
 ## DV Food
@@ -49,18 +54,30 @@ The library behind the DV mods. Install it together with any DV mod.
 - While holding food: the hunger, saturation **and health** it would restore flash on the bars
 - Exhaustion bar behind the hunger bar
 - Food tooltips show hunger and saturation as icons
+- Food tooltips list the effects a food gives, like a potion: golden apples, pufferfish, rotten flesh... with duration and chance
 - Hunger, saturation and exhaustion in the F3 screen
 - Install on the server too for exact saturation/exhaustion sync (optional on both sides)
 
 ## DV Lens
 **Summary:** Shows what you're looking at.
 
-- Name, icon and mod of the block or entity you're looking at
-- For blocks that need a tool: the minimum tool (e.g. "Needs: Iron Pickaxe") with ✔/✘ for your held item
+- Name, icon and mod of the block or entity you're looking at; mobs show their face
+- For blocks that need a tool: the minimum tool's icon with ✔/✘ for your held item
 - Crop growth, entity health, dropped item counts
+- Animals: baby or adult, time until grown up and until they can breed again
+- Villager profession and level, owner of tamed animals
+- Redstone: power level, repeater delay and lock, comparator mode, what an observer watches
+- Which mob a spawner spawns
+- Container contents as icons (chests, barrels, modded inventories), furnace and brewing progress and fuel
+- Potion effects on mobs
+- Machines from any mod: stored energy (FE/RF) and fluid tanks; Create rotation speed and network stress
+- Note block note and instrument, unstable TNT, honey level and bees in a hive, command block command (operators only)
+- Painting title and artist, item frame item, armor stand gear
+- Progress bar while breaking a block
+- Server setting to stop sharing container contents
 - Horse, donkey, mule and camel speed (blocks/s) and jump height (blocks)
 - Toggle key; every line can be turned off
-- Client-side only
+- Works client-side only; install on the server too for container contents, furnace progress, mob effects, bees, exact animal growth times and offline pet owner names
 
 ## DV Vein
 **Summary:** Hold a key to break a whole vein, harvest a whole field or shear every sheep around — straight into your inventory.
@@ -72,6 +89,9 @@ The library behind the DV mods. Install it together with any DV mod.
 - Drops and XP go straight into your inventory (what doesn't fit drops at your feet)
 - **Harvest:** right-click a fully grown crop to harvest it and replant it from its own seed. Wheat, carrots, potatoes, beetroot, nether wart, cocoa, and modded crops built on vanilla's crop block (e.g. Farmer's Delight); other crops via the `dvvein:harvestable` block tag, exclude with `dvvein:blacklist`. Fortune applies, sneak to use items normally, respects claims
 - **Whole field:** hold the key and right-click a crop to harvest every connected ripe crop of that kind into your inventory
+- **Plant a field:** hold the key and right-click farmland or grass with seeds, potatoes, carrots or saplings to plant every connected free spot (uses more of the same seeds from your inventory)
+- **Till and make paths:** hold the key and right-click with a hoe to till, or a shovel to make paths, across the whole connected patch
+- **Blacklist in-game:** hold the key and middle-click a block so the vein key never breaks it (middle-click again to undo)
 - **Shear them all:** hold the key and shear a sheep to shear every sheep within 32 blocks (3 up, 3 down); the wool goes into your inventory
 - Safe: stops before your tool breaks or when you run out of hunger; in survival only works with a tool that actually drops the block
 - Server settings: max blocks (64), hunger per block, ore grouping
@@ -96,6 +116,9 @@ The library behind the DV mods. Install it together with any DV mod.
 - Darkens GUI textures as they load: grey becomes dark, colours stay, bevels still read correctly
 - Works on modded screens too, no resource pack needed
 - Dark label text is brightened so it stays readable
+- Choose how dark, and an accent colour (blue, purple, green, red, orange)
+- Dark item tooltips with an accent-coloured border
+- Exception list: leave chosen mods' screens as they are
 - Toggle with a key or from the DV menu
 - Client-side only
 
@@ -108,7 +131,11 @@ The library behind the DV mods. Install it together with any DV mod.
 - **Persistent exploration:** discovered surface regions are saved per world and dimension
 - **Waypoints (B):** custom colours, in-world light beams and distance labels, quick teleport (when permitted), and automatic Last Death waypoint
 - **Entity Radar:** toggleable markers for players, hostiles, animals and dropped items
-- Client-side only; integrates with **DV Team** when installed
+- **Share waypoints** in chat: players with DV Map add them with one click
+- **Structures** you've been inside (villages, fortresses, temples...) are marked on the map (needs DV Map on the server)
+- **Save the map as PNG** into your screenshots folder
+- Nether ↔ Overworld coordinates (÷8 / ×8) under the minimap
+- Client-side (install on the server too for player positions and structure markers); integrates with **DV Team** when installed
 
 ## DV Team
 **Summary:** Clans with a flag, a capital, villages and trade centers on DV Map — with alliances and wars.
@@ -120,6 +147,10 @@ The library behind the DV mods. Install it together with any DV mod.
 - **Trade centers:** no PvP and no raids; outsiders get more freedom by default
 - **Wars:** declare war, a warm-up, then PvP and raids on enemy land (trade centers and the capital core stay safe; no raids while the defenders are all offline). Ends by peace, surrender or time
 - **Alliances:** offer and accept; friendly fire follows each clan's setting
+- **Clan level:** members and land earn points; higher levels unlock more chunks and force-loaded chunks
+- **Clan vault:** a shared chest that opens on your clan's land; the leader picks which ranks may use it
+- **Clan and ally chat:** `/clan msg`, `/clan ally`, or switch your normal chat with `/clan chat clan|ally|all`
+- Entering a settlement shows its name as a title
 - **Server limits:** chunks per clan, villages, trade centers, village size, force-loaded chunks, gap between clans, war timings
 - Claim from the world map (**M** → Claims), or `/clan claim`; force-load chunks with Shift
 - Required on both client and server; requires **DV Map** on the client
@@ -137,4 +168,5 @@ The library behind the DV mods. Install it together with any DV mod.
 - [ ] NeoForge istemcisinde (başlatıcıyla) bir kez dene
 - [x] Mod ikonları: `art/icons/<mod>.png` (512, sayfalar için), jar içinde `<mod>_logo.png` (128); yeniden üretmek için `tools/make-icons.ps1`
 - [ ] GitHub deposu açılınca `displayURL` ve `issueTrackerURL` ekle
+- [ ] Modrinth projeleri açılınca her modun `mods.toml`'una `updateJSONURL` ekle (DV menüsündeki güncelleme işareti bunu kullanır)
 - [ ] Ekran görüntüleri (her sayfa için 2–3)

@@ -170,7 +170,8 @@ public final class MinimapOverlay {
 
         pose.popPose();
 
-        // 4. Entity radar: upright icons at rotated positions
+        // 4. Structures and entity radar: upright icons at rotated positions
+        renderStructures(mc, g, cx, cy, halfSize - 4, px, pz, yaw, rotate, scale, circle);
         renderEntityRadar(mc, g, partialTick, cx, cy, halfSize, px, pz, yaw, rotate, scale, circle);
         g.disableScissor();
 
@@ -214,6 +215,21 @@ public final class MinimapOverlay {
             points.add(inside ? new int[]{cx + (int) Math.round(rx), cy + (int) Math.round(rz)} : null);
         }
         MapMarkers.drawAll(g, markers, points, 8, Mth.lerp(partialTick, mc.player.yo, mc.player.getY()));
+    }
+
+    private static void renderStructures(Minecraft mc, GuiGraphics g, int cx, int cy, int edge,
+                                         double px, double pz, float yaw, boolean rotate, float scale, boolean circle) {
+        double rad = rotate ? Math.toRadians(-yaw - 180.0f) : 0.0;
+        double cos = Math.cos(rad);
+        double sin = Math.sin(rad);
+        for (StructureMarkers.Entry s : StructureMarkers.forDimension(mc.level.dimension())) {
+            double dx = (s.x + 0.5 - px) * scale;
+            double dz = (s.z + 0.5 - pz) * scale;
+            double rx = dx * cos - dz * sin;
+            double rz = dx * sin + dz * cos;
+            boolean inside = circle ? Math.hypot(rx, rz) <= edge : Math.max(Math.abs(rx), Math.abs(rz)) <= edge;
+            if (inside) StructureMarkers.draw(g, cx + (int) Math.round(rx), cy + (int) Math.round(rz) + 3, 1);
+        }
     }
 
     private static void renderMinimapWaypoints(Minecraft mc, GuiGraphics g, int cx, int cy, int maxOffset,
@@ -265,6 +281,15 @@ public final class MinimapOverlay {
         BlockPos pos = mc.player.blockPosition();
         if (MapConfig.SHOW_COORDINATES.get()) {
             lines.add(pos.getX() + ", " + pos.getY() + ", " + pos.getZ());
+        }
+        if (MapConfig.SHOW_PORTAL_COORDINATES.get()) {
+            // Nether blocks are 8 overworld blocks wide; the line shows where a portal would lead.
+            ResourceKey<Level> dim = mc.level.dimension();
+            if (dim == Level.OVERWORLD) {
+                lines.add(I18n.get("dvmap.coords.nether", Math.floorDiv(pos.getX(), 8), Math.floorDiv(pos.getZ(), 8)));
+            } else if (dim == Level.NETHER) {
+                lines.add(I18n.get("dvmap.coords.overworld", pos.getX() * 8, pos.getZ() * 8));
+            }
         }
         if (MapConfig.SHOW_BIOME.get()) {
             Holder<Biome> biomeHolder = mc.level.getBiome(pos);

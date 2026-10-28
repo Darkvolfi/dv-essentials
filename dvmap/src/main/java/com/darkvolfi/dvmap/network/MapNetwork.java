@@ -27,7 +27,7 @@ import java.util.UUID;
  */
 @Mod.EventBusSubscriber(modid = DVMap.MOD_ID)
 public final class MapNetwork {
-    private static final String VERSION = "1";
+    private static final String VERSION = "2";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(DVMap.MOD_ID, "main"), () -> VERSION,
             NetworkRegistry.acceptMissingOr(VERSION), NetworkRegistry.acceptMissingOr(VERSION));
@@ -49,6 +49,11 @@ public final class MapNetwork {
                 .encoder(PlayerPositionsPacket::encode)
                 .decoder(PlayerPositionsPacket::decode)
                 .consumerMainThread(PlayerPositionsPacket::handle)
+                .add();
+        CHANNEL.messageBuilder(StructurePacket.class, 2, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(StructurePacket::encode)
+                .decoder(StructurePacket::decode)
+                .consumerMainThread(StructurePacket::handle)
                 .add();
     }
 

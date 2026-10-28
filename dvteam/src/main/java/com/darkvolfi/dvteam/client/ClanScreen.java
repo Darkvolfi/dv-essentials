@@ -2,6 +2,7 @@ package com.darkvolfi.dvteam.client;
 
 import com.darkvolfi.dvlib.client.DVTheme;
 import com.darkvolfi.dvteam.data.ClanData;
+import com.darkvolfi.dvteam.data.ClanLevel;
 import com.darkvolfi.dvteam.data.ClanTypes.Rank;
 import com.darkvolfi.dvteam.data.ClanTypes.SettlementType;
 import com.darkvolfi.dvteam.network.ClanActionPacket;
@@ -10,6 +11,7 @@ import com.darkvolfi.dvteam.network.TeamNetwork;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.nbt.CompoundTag;
@@ -142,9 +144,23 @@ public class ClanScreen extends Screen {
         rows.add(new Row(clanLabel(clan), List.of()));
         rows.add(new Row(Component.translatable("dvteam.screen.your_rank", Component.translatable(ClientClanCache.myRank().translationKey())), List.of()));
         rows.add(new Row(Component.translatable("dvteam.screen.counts",
-                ClientClanCache.chunkCount(clan.id), lim.maxChunks(),
+                ClientClanCache.chunkCount(clan.id), ClientClanCache.maxChunks(clan),
                 ClientClanCache.settlementCount(clan.id, SettlementType.VILLAGE), lim.maxVillages(),
-                ClientClanCache.forcedCount(clan.id), lim.maxForced()), List.of()));
+                ClientClanCache.forcedCount(clan.id), ClientClanCache.maxForced(clan)), List.of()));
+        int level = ClientClanCache.level(clan);
+        int next = ClanLevel.nextPoints(level);
+        Component levelLabel = next < 0
+                ? Component.translatable("dvteam.screen.level_max", level, ClientClanCache.points(clan))
+                : Component.translatable("dvteam.screen.level", level, ClientClanCache.points(clan), next);
+        Button vault = button(Component.translatable("dvteam.screen.vault"), 50, b -> send(ClanActionPacket.of(Action.VAULT_OPEN)));
+        vault.active = ClientClanCache.iAm(clan.vaultAccess);
+        vault.setTooltip(Tooltip.create(Component.translatable("dvteam.screen.vault.tooltip")));
+        Button access = button(Component.translatable("dvteam.screen.vault_access", Component.translatable(clan.vaultAccess.translationKey())), 110, b -> {
+            Rank nextRank = Rank.values()[(clan.vaultAccess.ordinal() + Rank.values().length - 1) % Rank.values().length];
+            send(new ClanActionPacket(Action.VAULT_ACCESS, clan.id, "", nextRank.ordinal(), new CompoundTag()));
+        });
+        access.active = leader;
+        rows.add(new Row(levelLabel, List.of(access, vault)));
         Button ff = button(onOff("dvteam.screen.friendly_fire", clan.friendlyFire), 120, b -> {
             CompoundTag fields = new CompoundTag();
             fields.putBoolean("FriendlyFire", !clan.friendlyFire);

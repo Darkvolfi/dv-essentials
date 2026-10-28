@@ -68,6 +68,12 @@ public final class ClaimProtection {
         return false;
     }
 
+    /** Whether the player may open containers at {@code pos}; silent, for other mods (DV Lens hides contents). */
+    public static boolean mayOpenContainers(ServerLevel level, Player player, BlockPos pos) {
+        String dim = level.dimension().location().toString();
+        return ClanData.get(level.getServer()).allows(level.getServer(), player, dim, pos.getX() >> 4, pos.getZ() >> 4, Perm.CONTAINERS);
+    }
+
     /** Crops and the like count as farming, so planting and harvesting can be allowed without building. */
     private static boolean isFarming(BlockState state) {
         Block b = state.getBlock();

@@ -30,6 +30,10 @@ public final class DarkTextures {
         for (String skipped : SKIPPED) {
             if (path.startsWith(skipped)) return false;
         }
+        String full = location.toString();
+        for (String exception : DarkConfig.EXCEPTIONS.get()) {
+            if (exception.equals(location.getNamespace()) || full.startsWith(exception)) return false;
+        }
         return true;
     }
 
@@ -42,8 +46,8 @@ public final class DarkTextures {
                 int r = abgr & 0xFF, g = abgr >> 8 & 0xFF, b = abgr >> 16 & 0xFF;
                 int max = Math.max(r, Math.max(g, b)), min = Math.min(r, Math.min(g, b));
                 if (max > 0 && (max - min) / (float) max > MAX_SATURATION) continue; // coloured: keep
-                image.setPixelRGBA(x, y, (abgr & 0xFF000000)
-                        | DVTheme.darkChannel(b) << 16 | DVTheme.darkChannel(g) << 8 | DVTheme.darkChannel(r));
+                int rgb = DVTheme.darkRgb(r, g, b);
+                image.setPixelRGBA(x, y, (abgr & 0xFF000000) | (rgb & 0xFF) << 16 | (rgb & 0xFF00) | rgb >> 16 & 0xFF);
             }
         }
     }

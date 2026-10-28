@@ -23,6 +23,7 @@ import net.minecraftforge.fml.ModLoadingContext;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -32,10 +33,11 @@ import java.util.function.Function;
 /**
  * One config screen for every DV mod: a row per option, on/off buttons for booleans,
  * text boxes for numbers, the spec comment as tooltip. Changes apply on Done.
+ * A search box at the top hides the rows whose label doesn't match.
  */
 public class DVConfigScreen extends Screen {
     private static final int ROW_HEIGHT = 24;
-    private static final int TOP = 40;
+    private static final int TOP = 46;
 
     private final Screen parent;
     private final String modId;
@@ -50,10 +52,22 @@ public class DVConfigScreen extends Screen {
     private Component notice;
     private int noticeBaseY;
     private Button doneButton;
+    private EditBox search;
+    private String query;
     private int scrollOffset;
     private int maxScroll;
 
-    private record Row(Component label, int baseY, AbstractWidget widget) {}
+    private static final class Row {
+        final Component label;
+        final AbstractWidget widget;
+        int baseY;
+        boolean shown;
+
+        Row(Component label, AbstractWidget widget) {
+            this.label = label;
+            this.widget = widget;
+        }
+    }
 
     /**
      * Adds a "Config" button for the calling mod in the mods list. Call from the mod constructor, client side only.
@@ -63,10 +77,16 @@ public class DVConfigScreen extends Screen {
         Function<Screen, Screen> factory = parent -> new DVConfigScreen(parent, modId, clientSpec, serverSpec, onSave);
         ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class,
                 () -> new ConfigScreenHandler.ConfigScreenFactory((mc, parent) -> factory.apply(parent)));
-        DVMenuScreen.add(modId, factory);
+        DVMods.add(new DVMods.Mod(modId, clientSpec, serverSpec, onSave));
     }
 
     public DVConfigScreen(Screen parent, String modId, ForgeConfigSpec clientSpec, ForgeConfigSpec serverSpec, Runnable onSave) {
+        this(parent, modId, clientSpec, serverSpec, onSave, "");
+    }
+
+    /** Opens with {@code query} already typed into the search box. */
+    public DVConfigScreen(Screen parent, String modId, ForgeConfigSpec clientSpec, ForgeConfigSpec serverSpec, Runnable onSave,
+                          String query) {
         super(Component.literal(ModList.get().getModContainerById(modId)
                 .map(c -> c.getModInfo().getDisplayName()).orElse(modId)));
         this.parent = parent;
@@ -74,44 +94,66 @@ public class DVConfigScreen extends Screen {
         this.clientSpec = clientSpec;
         this.serverSpec = serverSpec;
         this.onSave = onSave;
+        this.query = query;
     }
 
     @Override
     protected void init() {
         rows.clear();
         notice = null;
-        int y = TOP;
-        y = addSpec(clientSpec, y);
+        search = addRenderableWidget(new EditBox(font, width / 2 - 155, 22, 310, 16, Component.translatable("dvlib.search")));
+        search.setHint(Component.translatable("dvlib.search").withStyle(ChatFormatting.DARK_GRAY));
+        search.setValue(query);
+        search.setResponder(text -> {
+            query = text;
+            scrollOffset = 0;
+            layout();
+        });
+
+        addSpec(clientSpec);
         if (serverSpec != null) {
             boolean editable = serverSpec.isLoaded() && Minecraft.getInstance().hasSingleplayerServer();
             if (editable) {
-                y = addSpec(serverSpec, y);
+                addSpec(serverSpec);
             } else {
                 notice = Component.translatable("dvlib.config.server_in_world").withStyle(ChatFormatting.GRAY);
-                noticeBaseY = y;
-                y += ROW_HEIGHT;
             }
         }
-        y = addKeys(y);
-
-        int viewBottom = height - 34;
-        maxScroll = Math.max(0, y - viewBottom);
-        scrollOffset = Mth.clamp(scrollOffset, 0, maxScroll);
+        addKeys();
 
         doneButton = addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, b -> save())
                 .bounds(width / 2 - 155, height - 28, 150, 20).build());
         addRenderableWidget(Button.builder(CommonComponents.GUI_CANCEL, b -> onClose())
                 .bounds(width / 2 + 5, height - 28, 150, 20).build());
-        updateScroll();
+        layout();
         updateDone();
     }
 
-    private int addSpec(ForgeConfigSpec spec, int y) {
-        if (spec == null || !spec.isLoaded()) return y;
+    /** Stacks the rows matching the search from the top and recomputes the scroll range. */
+    private void layout() {
+        int y = TOP;
+        for (Row row : rows) {
+            row.shown = query.isEmpty() || DVMods.contains(row.label.getString(), query);
+            if (!row.shown) continue;
+            row.baseY = y;
+            y += ROW_HEIGHT;
+        }
+        if (notice != null && query.isEmpty()) {
+            noticeBaseY = y;
+            y += ROW_HEIGHT;
+        }
+        int viewBottom = height - 34;
+        maxScroll = Math.max(0, y - viewBottom);
+        scrollOffset = Mth.clamp(scrollOffset, 0, maxScroll);
+        updateScroll();
+    }
+
+    private void addSpec(ForgeConfigSpec spec) {
+        if (spec == null || !spec.isLoaded()) return;
         for (Object entry : spec.getValues().valueMap().values()) {
             if (!(entry instanceof ForgeConfigSpec.ConfigValue<?> value)) continue;
             ForgeConfigSpec.ValueSpec valueSpec = spec.getSpec().get(value.getPath());
-            String name = value.getPath().get(value.getPath().size() - 1);
+            String name = DVMods.optionName(value);
             Tooltip tooltip = valueSpec.getComment() == null ? null : Tooltip.create(Component.literal(valueSpec.getComment()));
             int x = width / 2 + 5;
             AbstractWidget widget;
@@ -120,12 +162,15 @@ public class DVConfigScreen extends Screen {
                 widget = addRenderableWidget(CycleButton.onOffBuilder((Boolean) pendingOr(bool))
                         .displayOnlyValue()
                         .withTooltip(v -> tooltip)
-                        .create(x, y, 150, 20, Component.empty(), (button, v) -> pending.put(bool, v)));
+                        .create(x, 0, 150, 20, Component.empty(), (button, v) -> pending.put(bool, v)));
             } else if (value instanceof ForgeConfigSpec.EnumValue<?> enumVal) {
-                widget = addRenderableWidget(createEnumButton(enumVal, name, tooltip, x, y));
+                widget = addRenderableWidget(createEnumButton(enumVal, name, tooltip, x));
             } else {
-                EditBox box = new EditBox(font, x + 1, y + 1, 148, 18, Component.literal(name));
-                box.setValue(String.valueOf(pendingOr(value)));
+                EditBox box = new EditBox(font, x + 1, 0, 148, 18, Component.literal(name));
+                box.setMaxLength(1024);
+                Object current = pendingOr(value);
+                box.setValue(current instanceof List<?> list
+                        ? String.join(", ", list.stream().map(String::valueOf).toList()) : String.valueOf(current));
                 box.setTooltip(tooltip);
                 box.setResponder(text -> {
                     Object parsed = parse(value, text);
@@ -137,14 +182,12 @@ public class DVConfigScreen extends Screen {
                 });
                 widget = addRenderableWidget(box);
             }
-            rows.add(new Row(label(name), y, widget));
-            y += ROW_HEIGHT;
+            rows.add(new Row(Component.literal(DVMods.optionLabel(modId, name)), widget));
         }
-        return y;
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private CycleButton<?> createEnumButton(ForgeConfigSpec.EnumValue enumVal, String optionName, Tooltip tooltip, int x, int y) {
+    private CycleButton<?> createEnumButton(ForgeConfigSpec.EnumValue enumVal, String optionName, Tooltip tooltip, int x) {
         Enum<?> current = (Enum<?>) pendingOr(enumVal);
         Enum<?>[] constants = current.getDeclaringClass().getEnumConstants();
         return CycleButton.<Enum<?>>builder(val -> enumLabel(optionName, val))
@@ -152,7 +195,7 @@ public class DVConfigScreen extends Screen {
                 .withInitialValue(current)
                 .displayOnlyValue()
                 .withTooltip(v -> tooltip)
-                .create(x, y, 150, 20, Component.empty(), (button, v) -> pending.put(enumVal, v));
+                .create(x, 0, 150, 20, Component.empty(), (button, v) -> pending.put(enumVal, v));
     }
 
     private Component enumLabel(String optionName, Enum<?> val) {
@@ -163,7 +206,7 @@ public class DVConfigScreen extends Screen {
     }
 
     /** The mod's key bindings (named key.<modid>.*), rebound like in the vanilla Controls screen. */
-    private int addKeys(int y) {
+    private void addKeys() {
         keyButtons.clear();
         selectingKey = null;
         for (KeyMapping key : minecraft.options.keyMappings) {
@@ -171,13 +214,11 @@ public class DVConfigScreen extends Screen {
             Button button = addRenderableWidget(Button.builder(Component.empty(), b -> {
                 selectingKey = key;
                 refreshKeyButtons();
-            }).bounds(width / 2 + 5, y, 150, 20).build());
+            }).bounds(width / 2 + 5, 0, 150, 20).build());
             keyButtons.put(key, button);
-            rows.add(new Row(Component.translatable(key.getName()), y, button));
-            y += ROW_HEIGHT;
+            rows.add(new Row(Component.translatable(key.getName()), button));
         }
         refreshKeyButtons();
-        return y;
     }
 
     private void refreshKeyButtons() {
@@ -241,7 +282,7 @@ public class DVConfigScreen extends Screen {
             int y = row.baseY - scrollOffset;
             int offset = row.widget instanceof EditBox ? 1 : 0;
             row.widget.setY(y + offset);
-            row.widget.visible = y >= viewTop && y + 20 <= viewBottom;
+            row.widget.visible = row.shown && y >= viewTop && y + 20 <= viewBottom;
         }
     }
 
@@ -256,18 +297,14 @@ public class DVConfigScreen extends Screen {
         try {
             if (value instanceof ForgeConfigSpec.IntValue) return Integer.parseInt(text.trim());
             if (value instanceof ForgeConfigSpec.DoubleValue) return Double.parseDouble(text.trim().replace(',', '.'));
+            // Lists of strings are edited as comma-separated text.
+            if (value.get() instanceof List<?>) {
+                return Arrays.stream(text.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList();
+            }
         } catch (NumberFormatException e) {
             return null;
         }
         return null;
-    }
-
-    private Component label(String name) {
-        String key = modId + ".config." + name;
-        if (I18n.exists(key)) return Component.translatable(key);
-        // Fallback: "showModName" -> "Show mod name"
-        String words = name.replaceAll("([a-z])([A-Z])", "$1 $2").toLowerCase(Locale.ROOT);
-        return Component.literal(Character.toUpperCase(words.charAt(0)) + words.substring(1));
     }
 
     private void updateDone() {
@@ -288,15 +325,21 @@ public class DVConfigScreen extends Screen {
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         renderBackground(g);
-        g.drawCenteredString(font, title, width / 2, 15, 0xFFFFFF);
+        g.drawCenteredString(font, title, width / 2, 8, 0xFFFFFF);
         int viewTop = TOP - 4;
         int viewBottom = height - 34;
+        boolean any = false;
         for (Row row : rows) {
+            if (!row.shown) continue;
+            any = true;
             if (!row.widget.visible) continue;
             int y = row.baseY - scrollOffset;
             g.drawString(font, row.label, width / 2 - 155, y + 6, 0xFFFFFF);
         }
-        if (notice != null) {
+        if (!any && !query.isEmpty()) {
+            g.drawCenteredString(font, Component.translatable("dvlib.search.none"), width / 2, TOP + 6, 0xA0A0A0);
+        }
+        if (notice != null && query.isEmpty()) {
             int y = noticeBaseY - scrollOffset;
             if (y >= viewTop && y + 20 <= viewBottom) {
                 g.drawString(font, notice, width / 2 - 155, y + 6, 0xA0A0A0);

@@ -13,7 +13,7 @@ import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 public final class TeamNetwork {
-    private static final String PROTOCOL = "2"; // 2: clans and settlements
+    private static final String PROTOCOL = "3"; // 2: clans and settlements, 3: vault
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(DVTeam.MOD_ID, "main"), () -> PROTOCOL, PROTOCOL::equals, PROTOCOL::equals);
 

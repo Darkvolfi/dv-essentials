@@ -148,13 +148,18 @@ Paint (Mask (Disc 16 16 2.2)) (Col '#120F1C')
 Set-Px 17 14 $white; Set-Px 18 14 $white
 Save-Icon 'dvlens'
 
-# ---------- DV Vein: pickaxe, head centred on the handle, plus ore bits
+# ---------- DV Vein: crossed pickaxe and hoe (layout from the user's reference picture)
+# Thick handles crossing in the middle and reaching the bottom corners; the pickaxe head a big arc over
+# the top right, the hoe blade coming down the left side from its handle top.
 New-Icon '#90A4AE'
-foreach ($g in @(@(6, 9), @(9, 13), @(5, 15))) { Part (RectS $g[0] $g[1] 2 2) '#3EE6D0' }
-Part (Seg 7.5 25.5 19.5 13.5 1.1) '#8B5A2B'                       # handle (2px diagonal)
-# head: the handle lies on x + y = 33; the two tips mirror each other across it and the
-# control point sits on it, so the head is exactly symmetric and centred on the handle
-Part (Curve 11 6.5 23.5 9.5 26.5 22 1.5) '#B8C4D0'
+$wood = '#8B5A2B'; $woodLight = '#B07A3E'; $metal = '#C3CDD8'
+# The two handles are exact mirror images (x -> 32 - x); each lit edge runs parallel, 0.55px off centre.
+Part (Seg 9 9 25 25 1.3) $wood                                      # hoe handle
+Paint (Mask (Seg 9.4 8.6 25.4 24.6 0.4)) (Col $woodLight)           # its lit edge
+Part (Curve 9.5 7.5 3.5 7.5 4.5 17.5 1.4) $metal                    # hoe blade, down the left side
+Part (Seg 23 9 7 25 1.3) $wood                                      # pickaxe handle
+Paint (Mask (Seg 22.6 8.6 6.6 24.6 0.4)) (Col $woodLight)           # its lit edge
+Part (Curve 15.5 5.5 26.5 5 26.5 18.5 1.6) $metal                   # pickaxe head, over the top right; 3px clear of the hoe
 Save-Icon 'dvvein'
 
 # ---------- DV Slots: chestplate with elytra wings behind

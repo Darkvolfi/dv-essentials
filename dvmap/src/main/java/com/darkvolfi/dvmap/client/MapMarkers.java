@@ -1,5 +1,6 @@
 package com.darkvolfi.dvmap.client;
 
+import com.darkvolfi.dvlib.client.MobFace;
 import com.darkvolfi.dvmap.MapConfig;
 import com.darkvolfi.dvmap.network.PlayerPositionsPacket;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -8,7 +9,6 @@ import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.PlayerFaceRenderer;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -17,14 +17,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.NeutralMob;
-import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
-import org.joml.Quaternionf;
 import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
@@ -40,8 +37,6 @@ public final class MapMarkers {
     private static final int FACE_LIMIT = 40;
     /** Height difference (blocks) from which the above/below arrow shows. */
     private static final int LEVEL_THRESHOLD = 3;
-    /** Entity types whose renderer failed once in the GUI; drawn as dots from then on. */
-    private static final Set<EntityType<?>> BROKEN = new HashSet<>();
 
     public enum Kind {
         PLAYER(0x4FC3F7), HOSTILE(0xFF5A5A), NEUTRAL(0xFFC24D), PASSIVE(0x7CE08A), ITEM(0xFFD54F);
@@ -143,9 +138,9 @@ public final class MapMarkers {
             g.renderItem(item.getItem(), 0, 0);
             pose.popPose();
             RenderSystem.clear(GL11.GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
-        } else if (face && m.entity instanceof LivingEntity living && !BROKEN.contains(living.getType())) {
+        } else if (face && m.entity instanceof LivingEntity living && MobFace.canDraw(living)) {
             g.fill(x0, y0, x0 + size, y0 + size, 0x66000000);
-            drawMobFace(g, living, cx, cy, size);
+            MobFace.draw(g, living, cx, cy, size);
             drawRing(g, x0, y0, size, ring);
         } else {
             g.fill(cx - 2, cy - 2, cx + 3, cy + 3, 0xFF000000);
@@ -176,53 +171,6 @@ public final class MapMarkers {
             int w = up ? row : 2 - row;
             g.fill(cx - w, top + row, cx + w + 1, top + row + 1, color);
         }
-    }
-
-    private static void drawMobFace(GuiGraphics g, LivingEntity e, int cx, int cy, int size) {
-        // A sleeping (or swimming, crouching…) mob has a tiny box and lies sideways, which zoomed into one
-        // corner of its face. Stand it up just for this render; client-side only, restored below.
-        Pose pose = e.getPose();
-        if (pose != Pose.STANDING) e.setPose(Pose.STANDING);
-        try {
-            drawStandingFace(g, e, cx, cy, size);
-        } finally {
-            if (pose != Pose.STANDING) e.setPose(pose);
-        }
-    }
-
-    private static void drawStandingFace(GuiGraphics g, LivingEntity e, int cx, int cy, int size) {
-        // Scale so the whole head fits with a little margin; big blob-like mobs (slimes, ghasts) show whole.
-        float head = Mth.clamp(Math.min(e.getBbWidth(), e.getBbHeight()) * 1.15f, 0.4f, 4.0f);
-        int scale = Math.max(1, Math.round(size / head));
-        int half = size / 2;
-        // Eyes sit in the lower half of most heads (villagers especially): aim between the eyes and the top.
-        float centerY = (e.getEyeHeight() + e.getBbHeight()) / 2.0f;
-
-        float bodyRot = e.yBodyRot, bodyRotO = e.yBodyRotO, headRot = e.yHeadRot, headRotO = e.yHeadRotO;
-        float xRot = e.getXRot(), xRotO = e.xRotO, yRot = e.getYRot();
-        // Face the viewer, like the inventory preview.
-        e.yBodyRot = e.yBodyRotO = e.yHeadRot = e.yHeadRotO = 180.0f;
-        e.setXRot(0.0f);
-        e.xRotO = 0.0f;
-        e.setYRot(180.0f);
-        g.enableScissor(cx - half, cy - half, cx - half + size, cy - half + size);
-        try {
-            InventoryScreen.renderEntityInInventory(g, cx, cy + Math.round(centerY * scale), scale,
-                    new Quaternionf().rotateZ((float) Math.PI), null, e);
-        } catch (RuntimeException ex) {
-            BROKEN.add(e.getType());
-        } finally {
-            g.disableScissor();
-            e.yBodyRot = bodyRot;
-            e.yBodyRotO = bodyRotO;
-            e.yHeadRot = headRot;
-            e.yHeadRotO = headRotO;
-            e.setXRot(xRot);
-            e.xRotO = xRotO;
-            e.setYRot(yRot);
-        }
-        // Each face renders in depth; clear so the next icon is not hidden behind this one.
-        RenderSystem.clear(GL11.GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
     }
 
     /** The local player: a white pixel arrow with a dark outline, pointing at {@code angleDeg} (0 = up). */

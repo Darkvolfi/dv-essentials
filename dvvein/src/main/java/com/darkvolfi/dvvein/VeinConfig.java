@@ -1,6 +1,9 @@
 package com.darkvolfi.dvvein;
 
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.ForgeConfigSpec;
+
+import java.util.List;
 
 public final class VeinConfig {
     // Server: per world, synced to clients so the preview matches what will be mined.
@@ -12,6 +15,7 @@ public final class VeinConfig {
     // Client.
     public static final ForgeConfigSpec CLIENT_SPEC;
     public static final ForgeConfigSpec.BooleanValue SHOW_PREVIEW;
+    public static final ForgeConfigSpec.ConfigValue<List<? extends String>> BLACKLIST;
 
     public static final int DEFAULT_MAX_BLOCKS = 64;
 
@@ -28,6 +32,8 @@ public final class VeinConfig {
         ForgeConfigSpec.Builder c = new ForgeConfigSpec.Builder();
         SHOW_PREVIEW = c.comment("Outline the blocks that will be broken while the key is held.")
                 .define("showPreview", true);
+        BLACKLIST = c.comment("Blocks the vein key never breaks (block ids). Edit in-game: hold the vein key and middle-click a block.")
+                .defineListAllowEmpty(List.of("blacklist"), List::of, o -> o instanceof String id && ResourceLocation.isValidResourceLocation(id));
         CLIENT_SPEC = c.build();
     }
 

@@ -2,5 +2,21 @@
   "key.categories.dv": "DV Mods",
   "dvlib.menu.title": "DV Mods",
   "dvlib.menu.empty": "No DV mods installed.",
-  "dvlib.config.server_in_world": "World settings can be changed inside a singleplayer world."
+  "dvlib.menu.update": "Update available: %s",
+  "dvlib.menu.updates": "Updates available",
+  "dvlib.config.server_in_world": "World settings can be changed inside a singleplayer world.",
+  "dvlib.search": "Search settings...",
+  "dvlib.search.none": "No matching settings.",
+  "dvlib.profiles.title": "Profiles",
+  "dvlib.profiles.name": "Profile name",
+  "dvlib.profiles.save": "Save",
+  "dvlib.profiles.load": "Load",
+  "dvlib.profiles.delete": "Delete",
+  "dvlib.profiles.folder": "Open folder",
+  "dvlib.profiles.empty": "No saved profiles yet.",
+  "dvlib.profiles.saved": "Saved \"%s\".",
+  "dvlib.profiles.loaded": "Loaded \"%s\": %s settings changed.",
+  "dvlib.profiles.deleted": "Deleted \"%s\".",
+  "dvlib.profiles.delete_title": "Delete this profile?",
+  "dvlib.profiles.error": "Couldn't read or write the profile file."
 }

@@ -6,6 +6,7 @@ public final class TeamConfig {
     public static final ForgeConfigSpec CLIENT_SPEC;
     public static final ForgeConfigSpec.BooleanValue SHOW_CLAIMS_ON_MINIMAP;
     public static final ForgeConfigSpec.BooleanValue SHOW_TERRITORY_BANNER;
+    public static final ForgeConfigSpec.BooleanValue TERRITORY_TITLE;
 
     public static final ForgeConfigSpec SERVER_SPEC;
     public static final ForgeConfigSpec.IntValue MAX_CHUNKS_PER_CLAN;
@@ -28,6 +29,8 @@ public final class TeamConfig {
                 .define("showClaimsOnMinimap", true);
         SHOW_TERRITORY_BANNER = cb.comment("Show an action-bar message when entering or leaving a settlement.")
                 .define("showTerritoryBanner", true);
+        TERRITORY_TITLE = cb.comment("Show the settlement's name as a big title in the middle of the screen instead of above the hotbar.")
+                .define("territoryTitle", true);
         CLIENT_SPEC = cb.build();
 
         ForgeConfigSpec.Builder sb = new ForgeConfigSpec.Builder();

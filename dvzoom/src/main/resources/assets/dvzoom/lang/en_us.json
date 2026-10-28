@@ -3,5 +3,9 @@
   "dvzoom.config.zoomLevel": "Zoom level",
   "dvzoom.config.scrollAdjust": "Scroll to adjust",
   "dvzoom.config.smoothTransition": "Smooth transition",
-  "dvzoom.config.cinematicCamera": "Cinematic camera"
+  "dvzoom.config.cinematicCamera": "Cinematic camera",
+  "dvzoom.config.slowMouse": "Slower mouse",
+  "dvzoom.config.mouseSlowdown": "Mouse slowdown (%%)",
+  "dvzoom.config.hideHud": "Hide HUD",
+  "dvzoom.config.hideHand": "Hide hand"
 }

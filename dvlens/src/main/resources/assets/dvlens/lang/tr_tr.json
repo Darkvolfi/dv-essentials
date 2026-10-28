@@ -35,6 +35,8 @@
   "dvlens.config.showDetails": "Blok ve varlık ayrıntıları",
   "dvlens.config.showBreakProgress": "Kırma ilerlemesi",
   "dvlens.config.showMachines": "Enerji, sıvı, Create",
+  "dvlens.config.showLand": "Arazi sahibi klan",
+  "dvlens.land": "⚑ %s",
   "dvlens.energy": "⚡ %s / %s FE",
   "dvlens.fluid": "%s: %s / %s mB",
   "dvlens.fluid.empty": "Boş",

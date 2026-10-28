@@ -136,7 +136,7 @@ public final class TeamMapIntegration implements MapOverlayHook {
         int w = font.width(name);
         int ty = sy + half + 3;
         g.fill(sx - w / 2 - 2, ty - 1, sx + w / 2 + 2, ty + 9, 0x99000000);
-        g.drawCenteredString(font, name, sx, ty, 0xFF000000 | clan.color);
+        g.drawCenteredString(font, name, sx, ty, 0xFF000000 | clan.textColor());
     }
 
     private static void drawIcon(GuiGraphics g, String[] rows, int cx, int cy, int px, int rgb) {
@@ -160,7 +160,7 @@ public final class TeamMapIntegration implements MapOverlayHook {
         ClanData.Settlement s = claim == null ? null : ClientClanCache.settlement(claim.settlementId);
         ClanData.Clan clan = s == null ? null : ClientClanCache.clan(s.clanId);
         if (clan == null) return null;
-        MutableComponent text = Component.literal("[" + clan.tag + "] " + s.name).withStyle(st -> st.withColor(clan.color))
+        MutableComponent text = Component.literal("[" + clan.tag + "] " + s.name).withStyle(st -> st.withColor(clan.textColor()))
                 .append(Component.literal(" (").append(Component.translatable(s.type.translationKey())).append(")")
                         .withStyle(ChatFormatting.GRAY));
         if (ClientClanCache.atWarWithMe(clan.id)) text.append(Component.literal(" ⚔").withStyle(ChatFormatting.RED));
@@ -227,7 +227,7 @@ public final class TeamMapIntegration implements MapOverlayHook {
             text = Component.translatable("dvteam.map.need_officer").withStyle(ChatFormatting.YELLOW);
         } else {
             ClanData.Snapshot lim = ClientClanCache.limits();
-            text = Component.literal("[" + mine.tag + "] ").withStyle(s -> s.withColor(mine.color))
+            text = Component.literal("[" + mine.tag + "] ").withStyle(s -> s.withColor(mine.textColor()))
                     .append(Component.translatable("dvteam.map.banner_counts",
                             ClientClanCache.chunkCount(mine.id), ClientClanCache.maxChunks(mine),
                             ClientClanCache.settlementCount(mine.id, SettlementType.VILLAGE), lim.maxVillages(),

@@ -85,14 +85,14 @@ public final class TeamClient {
                             mc.gui.setTimes(5, 40, 15);
                             mc.gui.setSubtitle(Component.translatable(settlement.type.translationKey())
                                     .append(" • ")
-                                    .append(Component.literal("[" + clan.tag + "] " + clan.name).withStyle(s -> s.withColor(clan.color))));
-                            mc.gui.setTitle(Component.literal(settlement.name).withStyle(s -> s.withColor(clan.color)));
+                                    .append(Component.literal("[" + clan.tag + "] " + clan.name).withStyle(s -> s.withColor(clan.textColor()))));
+                            mc.gui.setTitle(Component.literal(settlement.name).withStyle(s -> s.withColor(clan.textColor())));
                         } else if (clan != null) {
                             mc.player.displayClientMessage(
                                     Component.translatable("dvteam.msg.entering_territory",
-                                            Component.literal(settlement.name).withStyle(s -> s.withColor(clan.color)),
+                                            Component.literal(settlement.name).withStyle(s -> s.withColor(clan.textColor())),
                                             Component.translatable(settlement.type.translationKey()),
-                                            Component.literal("[" + clan.tag + "] " + clan.name).withStyle(s -> s.withColor(clan.color))),
+                                            Component.literal("[" + clan.tag + "] " + clan.name).withStyle(s -> s.withColor(clan.textColor()))),
                                     true
                             );
                         }

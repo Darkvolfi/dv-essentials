@@ -20,6 +20,7 @@ public final class LensConfig {
     public static final ForgeConfigSpec.BooleanValue SHOW_DETAILS;
     public static final ForgeConfigSpec.BooleanValue SHOW_BREAK_PROGRESS;
     public static final ForgeConfigSpec.BooleanValue SHOW_MACHINES;
+    public static final ForgeConfigSpec.BooleanValue SHOW_LAND;
 
     public static final ForgeConfigSpec SERVER_SPEC;
     public static final ForgeConfigSpec.BooleanValue SHARE_CONTENTS;
@@ -58,6 +59,8 @@ public final class LensConfig {
                 .define("showBreakProgress", true);
         SHOW_MACHINES = b.comment("Show stored energy (FE/RF), fluid tanks and Create rotation speed and stress of any mod's machines (needs DV Lens on the server).")
                 .define("showMachines", true);
+        SHOW_LAND = b.comment("With DV Team: show which clan and settlement the block you look at belongs to.")
+                .define("showLand", true);
         SPEC = b.build();
 
         ForgeConfigSpec.Builder s = new ForgeConfigSpec.Builder();

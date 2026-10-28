@@ -147,6 +147,10 @@ record LensInfo(ItemStack icon, LivingEntity face, List<Component> lines, List<B
                 }
             }
         }
+        if (LensConfig.SHOW_LAND.get() && ModList.get().isLoaded("dvteam")) {
+            Component land = TeamLand.owner(level, pos);
+            if (land != null) lines.add(land);
+        }
         if (LensConfig.SHOW_MOD_NAME.get()) {
             lines.add(modName(ForgeRegistries.BLOCKS.getKey(state.getBlock())));
         }

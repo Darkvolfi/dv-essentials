@@ -83,8 +83,6 @@
   "dvmap.waypoint.empty": "No waypoints in this dimension yet.",
   "dvmap.config.showPortalCoordinates": "Nether/Overworld coordinates",
   "dvmap.config.showStructures": "Mark structures",
-  "dvmap.coords.nether": "Nether: %s, %s",
-  "dvmap.coords.overworld": "Overworld: %s, %s",
   "dvmap.bar.structures": "Structures",
   "dvmap.bar.export": "Save PNG",
   "dvmap.bar.export.tooltip": "Save the explored surface map of this dimension as one image in the screenshots folder.",

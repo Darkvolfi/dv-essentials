@@ -167,7 +167,7 @@ public record ClanActionPacket(Action action, UUID target, String text, int valu
 
     public static MutableComponent clanName(ClanData.Clan clan) {
         if (clan == null) return Component.literal("?");
-        return Component.literal("[" + clan.tag + "] " + clan.name).withStyle(s -> s.withColor(clan.color));
+        return Component.literal("[" + clan.tag + "] " + clan.name).withStyle(s -> s.withColor(clan.textColor()));
     }
 
     private static void broadcast(MinecraftServer server, String key, Object... args) {

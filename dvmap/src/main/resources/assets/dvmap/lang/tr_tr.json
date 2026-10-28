@@ -83,8 +83,6 @@
   "dvmap.waypoint.empty": "Bu boyutta henüz işaret noktası yok.",
   "dvmap.config.showPortalCoordinates": "Nether/Dünya koordinatları",
   "dvmap.config.showStructures": "Yapıları işaretle",
-  "dvmap.coords.nether": "Nether: %s, %s",
-  "dvmap.coords.overworld": "Dünya: %s, %s",
   "dvmap.bar.structures": "Yapılar",
   "dvmap.bar.export": "PNG kaydet",
   "dvmap.bar.export.tooltip": "Bu boyutun keşfedilen yüzey haritasını tek resim olarak ekran görüntüleri klasörüne kaydeder.",

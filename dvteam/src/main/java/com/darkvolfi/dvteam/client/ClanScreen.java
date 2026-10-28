@@ -228,7 +228,7 @@ public class ClanScreen extends Screen {
 
     private void buildSettlements(ClanData.Clan clan) {
         for (ClanData.Settlement s : ClientClanCache.settlementsOf(clan.id)) {
-            Component label = Component.literal(s.name).withStyle(st -> st.withColor(clan.color))
+            Component label = Component.literal(s.name).withStyle(st -> st.withColor(clan.textColor()))
                     .append(Component.literal("  ").append(Component.translatable(s.type.translationKey()))
                             .append(" · ").append(Component.translatable("dvteam.settlement.chunks", ClientClanCache.settlementChunks(s.id)))
                             .withStyle(ChatFormatting.GRAY));
@@ -300,7 +300,7 @@ public class ClanScreen extends Screen {
     }
 
     private static MutableComponent clanLabel(ClanData.Clan c) {
-        return Component.literal("[" + c.tag + "] " + c.name).withStyle(s -> s.withColor(c.color));
+        return Component.literal("[" + c.tag + "] " + c.name).withStyle(s -> s.withColor(c.textColor()));
     }
 
     private static Component onOff(String key, boolean on) {

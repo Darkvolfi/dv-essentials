@@ -76,6 +76,18 @@ public class ClanData extends SavedData {
             this.banner = banner;
         }
 
+        /** The clan colour for text: very dark colours are lifted toward white so they stay readable on dark panels and chat. */
+        public int textColor() {
+            int r = color >> 16 & 0xFF, g = color >> 8 & 0xFF, b = color & 0xFF;
+            int luma = (r * 299 + g * 587 + b * 114) / 1000;
+            if (luma >= 90) return color;
+            float t = (90 - luma) / 90f * 0.6f;
+            r += Math.round((255 - r) * t);
+            g += Math.round((255 - g) * t);
+            b += Math.round((255 - b) * t);
+            return r << 16 | g << 8 | b;
+        }
+
         public Rank rank(UUID player) {
             return members.get(player);
         }

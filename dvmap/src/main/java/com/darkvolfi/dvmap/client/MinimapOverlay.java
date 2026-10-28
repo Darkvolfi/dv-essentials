@@ -1,6 +1,7 @@
 package com.darkvolfi.dvmap.client;
 
 import com.darkvolfi.dvlib.client.DVTheme;
+import com.darkvolfi.dvlib.client.DVUi;
 import com.darkvolfi.dvmap.DVMap;
 import com.darkvolfi.dvmap.MapConfig;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -24,6 +25,7 @@ import net.minecraftforge.fml.common.Mod;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Mod.EventBusSubscriber(modid = DVMap.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class MinimapOverlay {
@@ -57,7 +59,7 @@ public final class MinimapOverlay {
         MapConfig.Shape shape = MapConfig.MINIMAP_SHAPE.get();
         boolean circle = shape == MapConfig.Shape.CIRCLE;
 
-        List<String> infoLines = buildInfoLines(mc);
+        List<InfoLine> infoLines = buildInfoLines(mc);
         int textBlockHeight = infoLines.size() * 10;
 
         int left;
@@ -189,8 +191,8 @@ public final class MinimapOverlay {
         // 8. Info lines below the minimap
         Font font = mc.font;
         int textY = top + size + 4;
-        for (String line : infoLines) {
-            g.drawCenteredString(font, line, cx, textY, 0xE6E6F0);
+        for (InfoLine line : infoLines) {
+            drawInfoLine(g, font, line, cx, textY);
             textY += 10;
         }
     }
@@ -276,26 +278,34 @@ public final class MinimapOverlay {
         }
     }
 
-    private static List<String> buildInfoLines(Minecraft mc) {
-        List<String> lines = new ArrayList<>(3);
+    /** One line under the minimap: a small icon in its own colour, then the value. */
+    private record InfoLine(String[] icon, int iconColor, String text) {}
+
+    private static final int INFO_ICON_PX = 1;
+    private static final int INFO_ICON_GAP = 3;
+
+    private static List<InfoLine> buildInfoLines(Minecraft mc) {
+        List<InfoLine> lines = new ArrayList<>(4);
         BlockPos pos = mc.player.blockPosition();
         if (MapConfig.SHOW_COORDINATES.get()) {
-            lines.add(pos.getX() + ", " + pos.getY() + ", " + pos.getZ());
+            lines.add(new InfoLine(MapIcons.COORDS, 0xFFE6E6F0, pos.getX() + ", " + pos.getY() + ", " + pos.getZ()));
         }
         if (MapConfig.SHOW_PORTAL_COORDINATES.get()) {
             // Nether blocks are 8 overworld blocks wide; the line shows where a portal would lead.
+            // Purple portal: Nether coordinates; green portal: Overworld coordinates.
             ResourceKey<Level> dim = mc.level.dimension();
             if (dim == Level.OVERWORLD) {
-                lines.add(I18n.get("dvmap.coords.nether", Math.floorDiv(pos.getX(), 8), Math.floorDiv(pos.getZ(), 8)));
+                lines.add(new InfoLine(MapIcons.PORTAL, 0xFFB050F0, Math.floorDiv(pos.getX(), 8) + ", " + Math.floorDiv(pos.getZ(), 8)));
             } else if (dim == Level.NETHER) {
-                lines.add(I18n.get("dvmap.coords.overworld", pos.getX() * 8, pos.getZ() * 8));
+                lines.add(new InfoLine(MapIcons.PORTAL, 0xFF60D060, pos.getX() * 8 + ", " + pos.getZ() * 8));
             }
         }
         if (MapConfig.SHOW_BIOME.get()) {
             Holder<Biome> biomeHolder = mc.level.getBiome(pos);
             biomeHolder.unwrapKey().ifPresent(key -> {
                 String langKey = "biome." + key.location().getNamespace() + "." + key.location().getPath();
-                lines.add(I18n.exists(langKey) ? I18n.get(langKey) : key.location().getPath());
+                int grass = 0xFF000000 | biomeHolder.value().getFoliageColor();
+                lines.add(new InfoLine(MapIcons.BIOME, grass, I18n.exists(langKey) ? I18n.get(langKey) : key.location().getPath()));
             });
         }
         if (MapConfig.SHOW_TIME.get()) {
@@ -303,9 +313,18 @@ public final class MinimapOverlay {
             int hours = (int) (dayTime / 1000L);
             int minutes = (int) ((dayTime % 1000L) * 60L / 1000L);
             boolean day = hours >= 6 && hours < 18;
-            lines.add(String.format("%02d:%02d %s", hours, minutes, day ? "☀" : "☽"));
+            lines.add(new InfoLine(day ? MapIcons.SUN : MapIcons.MOON, day ? 0xFFFFD040 : 0xFFB0C0FF,
+                    String.format(Locale.ROOT, "%02d:%02d", hours, minutes)));
         }
         return lines;
+    }
+
+    private static void drawInfoLine(GuiGraphics g, Font font, InfoLine line, int cx, int y) {
+        int iconW = line.icon()[0].length() * INFO_ICON_PX;
+        int total = iconW + INFO_ICON_GAP + font.width(line.text());
+        int x = cx - total / 2;
+        DVUi.icon(g, line.icon(), x + iconW / 2, y + 4, INFO_ICON_PX, line.iconColor());
+        g.drawString(font, line.text(), x + iconW + INFO_ICON_GAP, y, 0xE6E6F0);
     }
 
     private static void drawOctagonFill(GuiGraphics g, int cx, int cy, int r, int color) {

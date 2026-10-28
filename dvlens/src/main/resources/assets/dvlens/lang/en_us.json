@@ -35,6 +35,8 @@
   "dvlens.config.showDetails": "Block and entity details",
   "dvlens.config.showBreakProgress": "Breaking progress",
   "dvlens.config.showMachines": "Energy, fluids, Create",
+  "dvlens.config.showLand": "Clan land owner",
+  "dvlens.land": "⚑ %s",
   "dvlens.energy": "⚡ %s / %s FE",
   "dvlens.fluid": "%s: %s / %s mB",
   "dvlens.fluid.empty": "Empty",

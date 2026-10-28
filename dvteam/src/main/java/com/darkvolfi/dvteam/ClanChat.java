@@ -48,7 +48,7 @@ public final class ClanChat {
         }
         Component line = Component.translatable(channel == Channel.ALLY ? "dvteam.chat.ally" : "dvteam.chat.clan")
                 .withStyle(channel == Channel.ALLY ? ChatFormatting.AQUA : ChatFormatting.GREEN)
-                .append(Component.literal(" [" + clan.tag + "] ").withStyle(s -> s.withColor(clan.color)))
+                .append(Component.literal(" [" + clan.tag + "] ").withStyle(s -> s.withColor(clan.textColor())))
                 .append(Component.literal(player.getGameProfile().getName() + ": ").withStyle(ChatFormatting.WHITE))
                 .append(Component.literal(message).withStyle(ChatFormatting.GRAY));
         for (UUID id : to) {

@@ -1,15 +1,18 @@
 package com.darkvolfi.dvlib.client;
 
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.ModList;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Function;
 
 /** Every DV mod that registered a config screen, with its config specs. Shared by the menu, search and profiles. */
 public final class DVMods {
@@ -41,12 +44,14 @@ public final class DVMods {
     }
 
     /** Every DV mod, installed or not, in menu order. Each has a logo in assets/dvlib/textures/gui/mods. */
-    public static final List<String> KNOWN = List.of("dvzoom", "dvfood", "dvlens", "dvvein", "dvslots", "dvdark", "dvmap", "dvteam", "dvgrave");
+    public static final List<String> KNOWN = List.of("dvzoom", "dvfood", "dvlens", "dvvein", "dvslots", "dvdark", "dvmap", "dvteam", "dvgrave", "dvmusic");
 
     /** Download pages, once the mods are published; until then the menu says "coming soon". */
     private static final Map<String, String> PAGES = Map.of();
 
     private static final Map<String, Mod> MODS = new TreeMap<>();
+    /** Mods whose tile opens their own screen (e.g. a music player) instead of the settings. */
+    private static final Map<String, Function<Screen, Screen>> SCREENS = new HashMap<>();
 
     /** The registered mod, or null when it isn't installed (or has no settings). */
     public static Mod get(String modId) {
@@ -58,6 +63,15 @@ public final class DVMods {
     }
 
     private DVMods() {}
+
+    /** Makes the mod's tile in the DV menu open {@code screen} (given the menu as its parent) instead of the settings. */
+    public static void registerScreen(String modId, Function<Screen, Screen> screen) {
+        SCREENS.put(modId, screen);
+    }
+
+    public static Function<Screen, Screen> screen(String modId) {
+        return SCREENS.get(modId);
+    }
 
     static void add(Mod mod) {
         MODS.put(mod.modId(), mod);

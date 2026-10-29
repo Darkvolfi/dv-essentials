@@ -214,6 +214,13 @@ Paint (Mask (RectS 15 9 2 11)) (Col '#4A4A54')                    # carved cross
 Paint (Mask (RectS 12 12 8 2)) (Col '#4A4A54')                     # carved cross, arms
 Save-Icon 'dvgrave'
 
+# ---------- DV Music: two beamed eighth notes
+New-Icon '#4FC3F7'
+$noteParts = @((RectS 12 8 12 3.5), (RectS 12 8 2.5 15), (RectS 21.5 8 2.5 13), (Disc 10.5 23.5 3.5), (Disc 20 21.5 3.5))
+Part ({ param($px, $py) foreach ($s in $noteParts) { if (& $s $px $py) { return $true } }; $false }.GetNewClosure()) '#4FC3F7' # beam, stems and heads as one shape
+Paint (Mask (RectS 12.5 9 11 1)) (Col '#B3E5FC')                  # beam shine
+Save-Icon 'dvmusic'
+
 # ---------- write files (nearest-neighbour scaling keeps the pixels sharp)
 function Scale($bmp, [int]$size) {
     $big = New-Object System.Drawing.Bitmap($size, $size)

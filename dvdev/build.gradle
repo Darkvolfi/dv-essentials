@@ -5,7 +5,7 @@ plugins {
     id 'net.minecraftforge.gradle'
 }
 
-def dvMods = ['dvlib', 'dvzoom', 'dvfood', 'dvlens', 'dvvein', 'dvslots', 'dvdark', 'dvmap', 'dvteam', 'dvgrave']
+def dvMods = ['dvlib', 'dvzoom', 'dvfood', 'dvlens', 'dvvein', 'dvslots', 'dvdark', 'dvmap', 'dvteam', 'dvgrave', 'dvmusic']
 def mixinConfigs = ['dvslots.mixins.json', 'dvdark.mixins.json']
 def compat = project.hasProperty('compat')
 dvMods.each { evaluationDependsOn(":$it") }

@@ -135,7 +135,9 @@ public class DVMenuScreen extends Screen {
 
         @Override
         public void onPress() {
-            if (mod != null) {
+            if (DVMods.screen(modId) != null && query.isEmpty()) {
+                Minecraft.getInstance().setScreen(DVMods.screen(modId).apply(DVMenuScreen.this));
+            } else if (mod != null) {
                 Minecraft.getInstance().setScreen(new DVConfigScreen(DVMenuScreen.this, modId, mod.clientSpec(), mod.serverSpec(), mod.onSave(), query));
             } else if (DVMods.page(modId) != null) {
                 ConfirmLinkScreen.confirmLinkNow(DVMods.page(modId), DVMenuScreen.this, true);

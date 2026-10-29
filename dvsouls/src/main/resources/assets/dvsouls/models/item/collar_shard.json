@@ -1,0 +1,2 @@
+{"parent": "minecraft:item/generated",
+ "textures": {"layer0": "dvsouls:item/collar_shard", "layer1": "dvsouls:item/collar_shard_gem"}}

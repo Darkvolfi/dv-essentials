@@ -1,0 +1,3 @@
+{"type": "minecraft:crafting_shaped", "category": "misc", "pattern": ["Q", "B", "S"],
+ "key": {"Q": {"item": "minecraft:quartz"}, "B": {"item": "minecraft:glass_bottle"}, "S": {"tag": "minecraft:soul_fire_base_blocks"}},
+ "result": {"item": "dvsouls:soul_jar"}}

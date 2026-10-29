@@ -1,0 +1,2 @@
+{"parent": "minecraft:item/generated",
+ "textures": {"layer0": "dvsouls:item/soul_jar", "layer1": "dvsouls:item/soul_jar_soul", "layer2": "dvsouls:item/soul_jar_spots"}}

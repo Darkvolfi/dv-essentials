@@ -1,0 +1,18 @@
+plugins {
+    id 'net.minecraftforge.gradle'
+}
+
+apply from: rootProject.file('gradle/dv-mod.gradle')
+
+repositories {
+    // JEI's API, only to show the Soul Furnace and the Soul Fuser's recipes in it when it is installed.
+    maven {
+        url = 'https://maven.blamejared.com'
+        content { includeGroup 'mezz.jei' }
+    }
+}
+
+dependencies {
+    compileOnly fg.deobf("mezz.jei:jei-1.20.1-common-api:15.74.0.233")
+    compileOnly fg.deobf("mezz.jei:jei-1.20.1-forge-api:15.74.0.233")
+}

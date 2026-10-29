@@ -1,0 +1,20 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "base": "minecraft:block/polished_blackstone",
+    "pillar": "minecraft:block/chiseled_polished_blackstone",
+    "rim": "minecraft:block/polished_blackstone_bricks",
+    "top": "minecraft:block/soul_soil",
+    "particle": "minecraft:block/polished_blackstone"
+  },
+  "elements": [
+    {"from": [1, 0, 1], "to": [15, 4, 15], "faces": {
+      "down": {"texture": "#base", "cullface": "down"}, "up": {"texture": "#base"},
+      "north": {"texture": "#base"}, "south": {"texture": "#base"}, "west": {"texture": "#base"}, "east": {"texture": "#base"}}},
+    {"from": [4, 4, 4], "to": [12, 10, 12], "faces": {
+      "north": {"texture": "#pillar"}, "south": {"texture": "#pillar"}, "west": {"texture": "#pillar"}, "east": {"texture": "#pillar"}}},
+    {"from": [2, 10, 2], "to": [14, 13, 14], "faces": {
+      "down": {"texture": "#rim"}, "up": {"texture": "#top"},
+      "north": {"texture": "#rim"}, "south": {"texture": "#rim"}, "west": {"texture": "#rim"}, "east": {"texture": "#rim"}}}
+  ]
+}

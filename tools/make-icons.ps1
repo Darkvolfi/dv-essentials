@@ -240,6 +240,15 @@ Part (Seg 19 6 25 11 2) '#C1613B'                                 # head, right 
 Paint (Mask (Seg 9 10 13 7.5 0.6)) (Col '#F59E70')                # head shine
 Save-Icon 'dvnewcrafts'
 
+# ---------- DV Science of Souls: a jar holding a glowing soul
+New-Icon '#4FD8E8'
+Part (RectS 13 4 6 3) '#E8E2D6'                                   # stopper
+Part (Poly @(13, 7, 19, 7, 19, 9, 23, 13, 23, 24, 9, 24, 9, 13, 13, 9)) '#A8D8E0' # glass
+Paint (Mask (Poly @(11, 14, 21, 14, 21, 23, 11, 23))) (Col '#4FD8E8') # soul
+Paint (Mask (Disc 16 18 2.5)) (Col '#B8F4FF')                     # soul's glow
+Part (RectS 8 24 16 3) '#5A4436'                                  # soul sand base
+Save-Icon 'dvsouls'
+
 # ---------- write files (nearest-neighbour scaling keeps the pixels sharp)
 function Scale($bmp, [int]$size) {
     $big = New-Object System.Drawing.Bitmap($size, $size)

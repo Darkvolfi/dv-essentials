@@ -44,6 +44,8 @@
   "dvlib.mod.dvbackpack.desc": "Backpacks from leather to netherite, worn or set down.",
   "dvlib.mod.dvnewcrafts.name": "DV New Crafts",
   "dvlib.mod.dvnewcrafts.desc": "Recipes for saddles, name tags and more, plus copper gear.",
+  "dvlib.mod.dvsouls.name": "DV Science of Souls",
+  "dvlib.mod.dvsouls.desc": "Catch souls, fuse them into new creatures, bind pets.",
   "dvlib.config.server": "Server",
   "dvlib.config.keys": "Keys"
 }

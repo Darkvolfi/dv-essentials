@@ -44,6 +44,8 @@
   "dvlib.mod.dvbackpack.desc": "Deriden netherite'e kadar sırt çantaları; giy ya da yere koy.",
   "dvlib.mod.dvnewcrafts.name": "DV New Crafts",
   "dvlib.mod.dvnewcrafts.desc": "Eyer, ad etiketi gibi şeylere tarif; bir de bakır eşyalar.",
+  "dvlib.mod.dvsouls.name": "DV Science of Souls",
+  "dvlib.mod.dvsouls.desc": "Ruhları yakala, birleştirip yeni canlılar yap, evcil bağla.",
   "dvlib.config.server": "Sunucu",
   "dvlib.config.keys": "Tuşlar"
 }

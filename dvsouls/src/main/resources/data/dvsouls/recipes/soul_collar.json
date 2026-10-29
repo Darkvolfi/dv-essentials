@@ -1,0 +1,3 @@
+{"type": "minecraft:crafting_shaped", "category": "misc", "pattern": [" L ", "L L", " J "],
+ "key": {"L": {"item": "minecraft:leather"}, "J": {"item": "dvsouls:soul_jar"}},
+ "result": {"item": "dvsouls:soul_collar"}}

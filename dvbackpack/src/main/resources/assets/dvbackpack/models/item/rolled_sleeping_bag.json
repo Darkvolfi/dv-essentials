@@ -1,0 +1,7 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "dvbackpack:item/rolled_sleeping_bag",
+    "layer1": "dvbackpack:item/rolled_sleeping_bag_ties"
+  }
+}

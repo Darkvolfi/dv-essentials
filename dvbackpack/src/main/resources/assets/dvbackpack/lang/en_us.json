@@ -15,6 +15,7 @@
   "dvbackpack.deposit": "Put everything from the inventory in (not the hotbar)",
   "dvbackpack.take": "Take everything out",
   "item.dvbackpack.upgrade_base": "Blank Upgrade Card",
+  "item.dvbackpack.rolled_sleeping_bag": "Rolled Sleeping Bag",
   "item.dvbackpack.crafting_upgrade": "Crafting Upgrade",
   "item.dvbackpack.furnace_upgrade": "Furnace Upgrade",
   "item.dvbackpack.smoker_upgrade": "Smoker Upgrade",

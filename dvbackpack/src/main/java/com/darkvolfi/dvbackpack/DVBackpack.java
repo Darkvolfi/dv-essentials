@@ -47,6 +47,8 @@ public class DVBackpack {
     public static final Map<BackpackTier, RegistryObject<BackpackItem>> BACKPACKS = new EnumMap<>(BackpackTier.class);
     public static final Map<UpgradeType, RegistryObject<UpgradeItem>> UPGRADES = new EnumMap<>(UpgradeType.class);
     public static final RegistryObject<Item> UPGRADE_BASE = ITEMS.register("upgrade_base", () -> new Item(new Item.Properties()));
+    /** Goes into the leather backpack's recipe; the backpack carries it rolled up under the bag. */
+    public static final RegistryObject<Item> ROLLED_SLEEPING_BAG = ITEMS.register("rolled_sleeping_bag", () -> new Item(new Item.Properties()));
 
     static {
         for (BackpackTier tier : BackpackTier.values()) {
@@ -75,6 +77,7 @@ public class DVBackpack {
                 .icon(() -> new ItemStack(BACKPACKS.get(BackpackTier.LEATHER).get()))
                 .displayItems((params, output) -> {
                     BACKPACKS.values().forEach(item -> output.accept(item.get()));
+                    output.accept(ROLLED_SLEEPING_BAG.get());
                     output.accept(UPGRADE_BASE.get());
                     UPGRADES.values().forEach(item -> output.accept(item.get()));
                 })

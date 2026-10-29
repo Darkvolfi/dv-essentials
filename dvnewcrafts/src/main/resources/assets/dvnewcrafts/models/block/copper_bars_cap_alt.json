@@ -1,0 +1,2 @@
+{"parent": "minecraft:block/iron_bars_cap_alt", "render_type": "minecraft:cutout_mipped",
+ "textures": {"particle": "dvnewcrafts:block/copper_bars", "bars": "dvnewcrafts:block/copper_bars", "edge": "dvnewcrafts:block/copper_bars"}}

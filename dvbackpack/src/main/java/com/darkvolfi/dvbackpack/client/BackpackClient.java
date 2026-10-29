@@ -69,6 +69,7 @@ public final class BackpackClient {
                     default -> -1;
                 }, DVBackpack.BACKPACKS.get(tier).get());
             }
+            event.register((stack, layer) -> layer == 0 ? 0xFF000000 | BackpackItem.DEFAULT_BAG_COLOR : -1, DVBackpack.ROLLED_SLEEPING_BAG.get());
         }
 
         /** A set-down backpack: tint 0 is its tier's colour, tint 1 its rolled sleeping bag; a laid-out bag takes its own colour. */

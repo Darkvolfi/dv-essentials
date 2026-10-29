@@ -42,6 +42,8 @@
   "dvlib.mod.dvmusic.desc": "Çalan şarkıyı gör ve değiştir, kendi müziğini ekle.",
   "dvlib.mod.dvbackpack.name": "DV Backpack",
   "dvlib.mod.dvbackpack.desc": "Deriden netherite'e kadar sırt çantaları; giy ya da yere koy.",
+  "dvlib.mod.dvnewcrafts.name": "DV New Crafts",
+  "dvlib.mod.dvnewcrafts.desc": "Eyer, ad etiketi gibi şeylere tarif; bir de bakır eşyalar.",
   "dvlib.config.server": "Sunucu",
   "dvlib.config.keys": "Tuşlar"
 }

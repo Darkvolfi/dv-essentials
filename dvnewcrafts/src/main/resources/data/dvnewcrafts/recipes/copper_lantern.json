@@ -1,0 +1,1 @@
+{"type": "minecraft:crafting_shaped", "category": "misc", "pattern": ["NNN", "NTN", "NNN"], "key": {"N": {"item": "dvnewcrafts:copper_nugget"}, "T": {"item": "dvnewcrafts:copper_torch"}}, "result": {"item": "dvnewcrafts:copper_lantern", "count": 1}}

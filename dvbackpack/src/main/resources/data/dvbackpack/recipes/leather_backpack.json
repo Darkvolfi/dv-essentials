@@ -1,11 +1,12 @@
 {
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "pattern": ["LSL", "LCL", "LLL"],
+  "pattern": ["LSL", "LCL", "LRL"],
   "key": {
     "L": {"item": "minecraft:leather"},
     "S": {"item": "minecraft:string"},
-    "C": {"tag": "forge:chests/wooden"}
+    "C": {"tag": "forge:chests/wooden"},
+    "R": {"item": "dvbackpack:rolled_sleeping_bag"}
   },
   "result": {"item": "dvbackpack:leather_backpack"}
 }

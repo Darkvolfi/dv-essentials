@@ -5,7 +5,7 @@ plugins {
     id 'net.minecraftforge.gradle'
 }
 
-def dvMods = ['dvlib', 'dvzoom', 'dvfood', 'dvlens', 'dvvein', 'dvslots', 'dvdark', 'dvmap', 'dvteam', 'dvgrave', 'dvmusic', 'dvbackpack']
+def dvMods = ['dvlib', 'dvzoom', 'dvfood', 'dvlens', 'dvvein', 'dvslots', 'dvdark', 'dvmap', 'dvteam', 'dvgrave', 'dvmusic', 'dvbackpack', 'dvnewcrafts']
 def mixinConfigs = ['dvslots.mixins.json', 'dvdark.mixins.json']
 def compat = project.hasProperty('compat')
 dvMods.each { evaluationDependsOn(":$it") }
@@ -41,9 +41,19 @@ minecraft {
     }
 }
 
+repositories {
+    // JEI, so recipes can be looked up in the development run. Only the run loads it; no DV mod depends on it.
+    maven {
+        url = 'https://maven.blamejared.com'
+        content { includeGroup 'mezz.jei'; includeGroup 'net.mezzdev.config' }
+    }
+}
+
 configurations {
     // The run's classpath comes from the mods above, not from dependencies: these go into run-compat/mods instead.
     compatMods { transitive = false }
+    // Third-party mods for looking things up in every run (JEI); copied into the run's mods folder too.
+    devMods { transitive = false }
 }
 
 if (compat) {
@@ -58,6 +68,7 @@ if (compat) {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     dvMods.each { implementation project(":$it") }
+    devMods fg.deobf("mezz.jei:jei-1.20.1-forge:15.74.0.233")
     if (compat) {
         compatMods fg.deobf("curse.maven:curios-309927:6418456")                    // Curios 5.14.1
         compatMods fg.deobf("curse.maven:cosmetic-armor-reworked-237307:4600191")    // 1.20.1-v1a
@@ -69,10 +80,17 @@ dependencies {
 
 def copyCompatMods = tasks.register('copyCompatMods', Sync) {
     from configurations.compatMods
+    from configurations.devMods
     into rootProject.file('run-compat/mods')
+}
+def copyDevMods = tasks.register('copyDevMods', Copy) {
+    from configurations.devMods
+    into rootProject.file('run/mods')
 }
 if (compat) {
     tasks.matching { it.name.startsWith('prepareRun') }.configureEach { dependsOn copyCompatMods }
+} else {
+    tasks.matching { it.name.startsWith('prepareRun') }.configureEach { dependsOn copyDevMods }
 }
 
 tasks.named('jar') { enabled = false }

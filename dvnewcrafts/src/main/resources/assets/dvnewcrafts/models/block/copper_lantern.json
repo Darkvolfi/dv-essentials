@@ -1,0 +1,1 @@
+{"parent": "minecraft:block/template_lantern", "render_type": "minecraft:cutout", "textures": {"lantern": "dvnewcrafts:block/copper_lantern"}}

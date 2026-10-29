@@ -1,0 +1,6 @@
+{"variants": {
+  "facing=east": {"model": "dvnewcrafts:block/copper_wall_torch"},
+  "facing=north": {"model": "dvnewcrafts:block/copper_wall_torch", "y": 270},
+  "facing=south": {"model": "dvnewcrafts:block/copper_wall_torch", "y": 90},
+  "facing=west": {"model": "dvnewcrafts:block/copper_wall_torch", "y": 180}
+}}

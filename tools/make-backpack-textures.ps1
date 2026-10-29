@@ -3,6 +3,7 @@
 #   textures/item/backpack.png          item sprite: the leather, not tinted
 #   textures/item/backpack_straps.png   its straps and buckles, tinted per tier
 #   textures/item/backpack_roll.png     its rolled sleeping bag, tinted in the bag's colour
+#   textures/item/rolled_sleeping_bag*.png  the rolled sleeping bag on its own (tinted) and its ties
 #   textures/block/backpack_leather.png      leather for the bag, with stitching round the edge
 #   textures/block/backpack_leather_dark.png darker leather for the lid and the pocket's flap
 #   textures/block/backpack_strap.png   front straps (grey, tinted per tier)
@@ -139,8 +140,34 @@ Noise (Join-Path $tex 'item\upgrade_face.png') '#E8D9B0' 6 5 {
 # lighter zip; and a white pillow, not tinted.
 Noise (Join-Path $tex 'block\sleeping_bag_top.png') '#D4D4D4' 6 21 {
     param($bmp)
-    for ($i = 0; $i -lt 16; $i++) { foreach ($q in 3, 7, 11, 15) { $bmp.SetPixel($q, $i, (Col '#A8A8A8')); $bmp.SetPixel($i, $q, (Col '#A8A8A8')) } }
+    for ($i = 0; $i -lt 16; $i++) {
+        # Across, every 3rd pixel: the model shows columns 1-14, so this leaves 2 pixels at both edges.
+        foreach ($q in 3, 6, 9, 12) { $bmp.SetPixel($q, $i, (Col '#A8A8A8')) }
+        foreach ($q in 3, 7, 11, 15) { $bmp.SetPixel($i, $q, (Col '#A8A8A8')) }
+    }
 }
+# The rolled sleeping bag on its own (the leather backpack's recipe takes one): grey, tinted like the bag, with its
+# spiral end on the left (x outline, t top, d shade, e end) and two leather ties (k, not tinted).
+$roll = @(
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+    '..xxxxxkxxxxkxx.',
+    '.xeeeetkttttktx.',
+    '.xeddetkttttktx.',
+    '.xedeetkttttktx.',
+    '.xeedeskssssksx.',
+    '.xeeeeskssssksx.',
+    '..xxxxxkxxxxkxx.',
+    '................',
+    '................',
+    '................',
+    '................'
+)
+Sprite (Join-Path $tex 'item\rolled_sleeping_bag.png') (Layer $roll 'xtdes') @{ x = '#707070'; t = '#E2E2E2'; d = '#A0A0A0'; e = '#F2F2F2'; s = '#B4B4B4' }
+Sprite (Join-Path $tex 'item\rolled_sleeping_bag_ties.png') (Layer $roll 'k') @{ k = '#5E3A20' }
 Noise (Join-Path $tex 'block\sleeping_bag_side.png') '#B4B4B4' 5 22 {
     param($bmp)
     for ($x = 0; $x -lt 16; $x++) { $bmp.SetPixel($x, 9, (Col '#F4F4F4')) }

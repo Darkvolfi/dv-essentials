@@ -1,0 +1,1 @@
+{"type": "minecraft:crafting_shaped", "category": "misc", "pattern": ["N", "C", "S"], "key": {"N": {"item": "dvnewcrafts:copper_nugget"}, "C": {"tag": "minecraft:coals"}, "S": {"item": "minecraft:stick"}}, "result": {"item": "dvnewcrafts:copper_torch", "count": 4}}

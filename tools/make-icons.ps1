@@ -231,6 +231,15 @@ Part (RectS 14.5 14 3 3) '#E0E0E8'                                # buckle
 Paint (Mask (RectS 8 11 16 1)) (Col '#E59A72')                    # lid shine
 Save-Icon 'dvbackpack'
 
+# ---------- DV New Crafts: a copper pickaxe
+New-Icon '#E07B50'
+Part (Seg 9 24 21 12 1.8) '#7A5230'                               # handle
+Part (Seg 8 11 13 7 2) '#C1613B'                                  # head, left arm
+Part (Seg 13 7 19 6 2) '#C1613B'                                  # head, middle
+Part (Seg 19 6 25 11 2) '#C1613B'                                 # head, right arm
+Paint (Mask (Seg 9 10 13 7.5 0.6)) (Col '#F59E70')                # head shine
+Save-Icon 'dvnewcrafts'
+
 # ---------- write files (nearest-neighbour scaling keeps the pixels sharp)
 function Scale($bmp, [int]$size) {
     $big = New-Object System.Drawing.Bitmap($size, $size)

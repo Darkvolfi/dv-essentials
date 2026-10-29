@@ -30,11 +30,20 @@ public final class DarkTextures {
         for (String skipped : SKIPPED) {
             if (path.startsWith(skipped)) return false;
         }
+        return !isException(location);
+    }
+
+    /** Atlases of GUI sprites, such as JEI's {@code jei:textures/atlas/gui.png}. */
+    public static boolean shouldDarkenAtlas(ResourceLocation atlas) {
+        return DarkConfig.enabled() && atlas.getPath().equals("textures/atlas/gui.png") && !isException(atlas);
+    }
+
+    private static boolean isException(ResourceLocation location) {
         String full = location.toString();
         for (String exception : DarkConfig.EXCEPTIONS.get()) {
-            if (exception.equals(location.getNamespace()) || full.startsWith(exception)) return false;
+            if (exception.equals(location.getNamespace()) || full.startsWith(exception)) return true;
         }
-        return true;
+        return false;
     }
 
     public static void darken(NativeImage image) {

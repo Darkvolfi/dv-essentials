@@ -1,0 +1,4 @@
+{"variants": {
+  "hanging=false": {"model": "dvnewcrafts:block/copper_lantern"},
+  "hanging=true": {"model": "dvnewcrafts:block/copper_lantern_hanging"}
+}}

@@ -6,6 +6,7 @@
   "refmap": "dvdark.refmap.json",
   "client": [
     "GuiGraphicsMixin",
+    "SpriteLoaderMixin",
     "SimpleTextureMixin"
   ],
   "injectors": {

@@ -1,0 +1,12 @@
+{
+  "variants": {
+    "facing=north,rolled=true": {"model": "dvbackpack:block/backpack"},
+    "facing=north,rolled=false": {"model": "dvbackpack:block/backpack_bare"},
+    "facing=east,rolled=true": {"model": "dvbackpack:block/backpack", "y": 90},
+    "facing=east,rolled=false": {"model": "dvbackpack:block/backpack_bare", "y": 90},
+    "facing=south,rolled=true": {"model": "dvbackpack:block/backpack", "y": 180},
+    "facing=south,rolled=false": {"model": "dvbackpack:block/backpack_bare", "y": 180},
+    "facing=west,rolled=true": {"model": "dvbackpack:block/backpack", "y": 270},
+    "facing=west,rolled=false": {"model": "dvbackpack:block/backpack_bare", "y": 270}
+  }
+}

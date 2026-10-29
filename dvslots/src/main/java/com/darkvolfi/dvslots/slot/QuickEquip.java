@@ -26,6 +26,7 @@ public final class QuickEquip {
         if (data == null) return;
 
         for (SlotType type : SlotType.values()) {
+            if (type == SlotType.BACKPACK) continue; // right-click opens a backpack; it equips itself
             if (!type.accepts(held) || !data.get(type).isEmpty()) continue;
             if (!player.level().isClientSide) {
                 data.set(type, held.split(1));

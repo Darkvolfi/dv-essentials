@@ -27,7 +27,8 @@ public class SlotsScreen extends AbstractContainerScreen<SlotsMenu> {
 
     private static final Map<SlotType, ItemStack> GHOSTS = Map.of(
             SlotType.BACK, new ItemStack(Items.ELYTRA),
-            SlotType.SADDLE, new ItemStack(Items.SADDLE));
+            SlotType.SADDLE, new ItemStack(Items.SADDLE),
+            SlotType.BACKPACK, new ItemStack(Items.BUNDLE));
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {

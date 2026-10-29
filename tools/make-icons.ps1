@@ -221,6 +221,16 @@ Part ({ param($px, $py) foreach ($s in $noteParts) { if (& $s $px $py) { return 
 Paint (Mask (RectS 12.5 9 11 1)) (Col '#B3E5FC')                  # beam shine
 Save-Icon 'dvmusic'
 
+# ---------- DV Backpack: a backpack with a lid, a front pocket and a buckle
+New-Icon '#C8714A'
+Part (Seg 12 9 20 9 1.6) '#5D4037'                                # carry handle
+Part (RectS 8 15 16 12) '#A0522D'                                 # bag
+Part (RectS 7 10 18 6) '#C8714A'                                  # lid
+Part (RectS 11 19 10 6) '#8D4A25'                                 # pocket
+Part (RectS 14.5 14 3 3) '#E0E0E8'                                # buckle
+Paint (Mask (RectS 8 11 16 1)) (Col '#E59A72')                    # lid shine
+Save-Icon 'dvbackpack'
+
 # ---------- write files (nearest-neighbour scaling keeps the pixels sharp)
 function Scale($bmp, [int]$size) {
     $big = New-Object System.Drawing.Bitmap($size, $size)

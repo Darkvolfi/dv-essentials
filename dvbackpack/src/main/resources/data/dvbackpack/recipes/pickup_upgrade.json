@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {"item": "dvbackpack:upgrade_base"},
+    {"item": "minecraft:hopper"}
+  ],
+  "result": {"item": "dvbackpack:pickup_upgrade"}
+}

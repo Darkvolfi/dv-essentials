@@ -1,0 +1,10 @@
+{
+  "type": "dvbackpack:tier_upgrade",
+  "category": "equipment",
+  "pattern": ["MMM", "MBM", "MMM"],
+  "key": {
+    "M": {"tag": "forge:gems/diamond"},
+    "B": {"item": "dvbackpack:gold_backpack"}
+  },
+  "result": {"item": "dvbackpack:diamond_backpack"}
+}

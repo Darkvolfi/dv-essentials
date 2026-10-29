@@ -1,0 +1,6 @@
+{
+  "parent": "dvbackpack:item/upgrade_card",
+  "textures": {
+    "face": "minecraft:block/crafting_table_top"
+  }
+}

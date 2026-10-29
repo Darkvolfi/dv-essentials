@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {"item": "dvbackpack:upgrade_base"},
+    {"item": "minecraft:blast_furnace"}
+  ],
+  "result": {"item": "dvbackpack:blast_furnace_upgrade"}
+}

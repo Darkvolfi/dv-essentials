@@ -1,0 +1,34 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "top": "dvbackpack:block/sleeping_bag_top",
+    "side": "dvbackpack:block/sleeping_bag_side",
+    "pillow": "dvbackpack:block/sleeping_bag_pillow",
+    "particle": "dvbackpack:block/sleeping_bag_top"
+  },
+  "elements": [
+    {
+      "name": "bag",
+      "from": [1, 0, 0], "to": [15, 3, 16],
+      "faces": {
+        "up": {"texture": "#top", "tintindex": 0},
+        "down": {"texture": "#side", "cullface": "down", "tintindex": 0},
+        "north": {"uv": [1, 10, 15, 13], "texture": "#side", "tintindex": 0},
+        "south": {"texture": "#side", "tintindex": 0},
+        "east": {"uv": [0, 7, 16, 10], "texture": "#side", "tintindex": 0},
+        "west": {"uv": [0, 7, 16, 10], "texture": "#side", "tintindex": 0}
+      }
+    },
+    {
+      "name": "pillow",
+      "from": [3, 3, 1], "to": [13, 5, 6],
+      "faces": {
+        "up": {"texture": "#pillow"},
+        "north": {"uv": [3, 0, 13, 2], "texture": "#pillow"},
+        "south": {"uv": [3, 0, 13, 2], "texture": "#pillow"},
+        "east": {"uv": [1, 0, 6, 2], "texture": "#pillow"},
+        "west": {"uv": [1, 0, 6, 2], "texture": "#pillow"}
+      }
+    }
+  ]
+}

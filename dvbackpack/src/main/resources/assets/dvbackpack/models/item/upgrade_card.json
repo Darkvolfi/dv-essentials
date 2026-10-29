@@ -1,0 +1,38 @@
+{
+  "gui_light": "front",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "frame": "dvbackpack:item/upgrade_frame",
+    "face": "dvbackpack:item/upgrade_face",
+    "particle": "dvbackpack:item/upgrade_frame"
+  },
+  "elements": [
+    {
+      "name": "frame",
+      "from": [0, 0, 7.5], "to": [16, 16, 8.5],
+      "faces": {
+        "south": {"uv": [0, 0, 16, 16], "texture": "#frame"},
+        "north": {"uv": [16, 0, 0, 16], "texture": "#frame"},
+        "up": {"uv": [0, 0, 16, 1], "texture": "#frame"},
+        "down": {"uv": [0, 15, 16, 16], "texture": "#frame"},
+        "east": {"uv": [15, 0, 16, 16], "texture": "#frame"},
+        "west": {"uv": [0, 0, 1, 16], "texture": "#frame"}
+      }
+    },
+    {
+      "name": "face",
+      "from": [3, 3, 7.45], "to": [13, 13, 8.55],
+      "faces": {
+        "south": {"uv": [0, 0, 16, 16], "texture": "#face"},
+        "north": {"uv": [16, 0, 0, 16], "texture": "#face"}
+      }
+    }
+  ],
+  "display": {
+    "ground": {"rotation": [0, 0, 0], "translation": [0, 2, 0], "scale": [0.5, 0.5, 0.5]},
+    "head": {"rotation": [0, 180, 0], "translation": [0, 13, 7], "scale": [1, 1, 1]},
+    "thirdperson_righthand": {"rotation": [0, 0, 0], "translation": [0, 3, 1], "scale": [0.55, 0.55, 0.55]},
+    "firstperson_righthand": {"rotation": [0, -90, 25], "translation": [1.13, 3.2, 1.13], "scale": [0.68, 0.68, 0.68]},
+    "fixed": {"rotation": [0, 180, 0], "scale": [1, 1, 1]}
+  }
+}

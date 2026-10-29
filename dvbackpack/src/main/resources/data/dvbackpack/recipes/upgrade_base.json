@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": ["PLP", "LSL", "PLP"],
+  "key": {
+    "P": {"item": "minecraft:paper"},
+    "L": {"item": "minecraft:leather"},
+    "S": {"item": "minecraft:string"}
+  },
+  "result": {"item": "dvbackpack:upgrade_base"}
+}

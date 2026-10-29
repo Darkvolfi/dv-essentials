@@ -1,0 +1,10 @@
+{
+  "type": "dvbackpack:tier_upgrade",
+  "category": "equipment",
+  "pattern": ["MMM", "MBM", "MMM"],
+  "key": {
+    "M": {"tag": "forge:ingots/gold"},
+    "B": {"item": "dvbackpack:iron_backpack"}
+  },
+  "result": {"item": "dvbackpack:gold_backpack"}
+}

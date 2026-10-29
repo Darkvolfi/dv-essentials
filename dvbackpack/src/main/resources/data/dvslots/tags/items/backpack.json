@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "dvbackpack:leather_backpack",
+    "dvbackpack:copper_backpack",
+    "dvbackpack:iron_backpack",
+    "dvbackpack:gold_backpack",
+    "dvbackpack:diamond_backpack",
+    "dvbackpack:netherite_backpack"
+  ]
+}

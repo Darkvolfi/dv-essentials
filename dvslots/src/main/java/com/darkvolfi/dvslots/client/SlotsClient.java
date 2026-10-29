@@ -9,6 +9,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
@@ -32,11 +33,15 @@ public final class SlotsClient {
     // Next to the recipe book button, below the crafting grid.
     private static final int BUTTON_X = 126;
     private static final int BUTTON_Y = 61;
+    // Creative inventory tab: right of the player, clear of the armour and offhand slots.
+    private static final int CREATIVE_X = 127;
+    private static final int CREATIVE_Y = 19;
 
     /** A pair of elytra wings, 7×7. */
     private static final String[] WINGS = {"##...##", "###.###", "#######", "###.###", "##...##", "#.....#", "#.....#"};
 
     private static DVIconButton inventoryButton;
+    private static DVIconButton creativeButton;
 
     private SlotsClient() {}
 
@@ -59,10 +64,16 @@ public final class SlotsClient {
 
     @SubscribeEvent
     public static void onScreenInit(ScreenEvent.Init.Post event) {
-        if (!(event.getScreen() instanceof InventoryScreen screen) || !serverHasMod()) return;
-        inventoryButton = new DVIconButton(screen.getGuiLeft() + BUTTON_X, screen.getGuiTop() + BUTTON_Y, 18, WINGS,
-                Component.translatable("container.dvslots"), SlotsClient::requestOpen);
-        event.addListener(inventoryButton);
+        if (!serverHasMod()) return;
+        if (event.getScreen() instanceof InventoryScreen screen) {
+            inventoryButton = new DVIconButton(screen.getGuiLeft() + BUTTON_X, screen.getGuiTop() + BUTTON_Y, 18, WINGS,
+                    Component.translatable("container.dvslots"), SlotsClient::requestOpen);
+            event.addListener(inventoryButton);
+        } else if (event.getScreen() instanceof CreativeModeInventoryScreen screen) {
+            creativeButton = new DVIconButton(screen.getGuiLeft() + CREATIVE_X, screen.getGuiTop() + CREATIVE_Y, 18, WINGS,
+                    Component.translatable("container.dvslots"), SlotsClient::requestOpen);
+            event.addListener(creativeButton);
+        }
     }
 
     /** The recipe book shifts the inventory sideways; follow it. */
@@ -70,6 +81,10 @@ public final class SlotsClient {
     public static void onScreenRender(ScreenEvent.Render.Pre event) {
         if (event.getScreen() instanceof InventoryScreen screen && inventoryButton != null) {
             inventoryButton.setX(screen.getGuiLeft() + BUTTON_X);
+        }
+        // In creative only the inventory tab has room for it (the other tabs fill that space with items).
+        if (event.getScreen() instanceof CreativeModeInventoryScreen screen && creativeButton != null) {
+            creativeButton.visible = screen.isInventoryOpen();
         }
     }
 

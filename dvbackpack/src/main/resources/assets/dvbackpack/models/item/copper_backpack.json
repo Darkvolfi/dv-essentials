@@ -1,0 +1,8 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "dvbackpack:item/backpack",
+    "layer1": "dvbackpack:item/backpack_straps",
+    "layer2": "dvbackpack:item/backpack_roll"
+  }
+}

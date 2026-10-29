@@ -1,0 +1,10 @@
+{
+  "type": "dvbackpack:tier_upgrade",
+  "category": "equipment",
+  "pattern": ["MMM", "MBM", "MMM"],
+  "key": {
+    "M": {"tag": "forge:ingots/copper"},
+    "B": {"item": "dvbackpack:leather_backpack"}
+  },
+  "result": {"item": "dvbackpack:copper_backpack"}
+}

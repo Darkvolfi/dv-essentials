@@ -29,7 +29,7 @@
   "dvlib.mod.dvvein.name": "DV Vein",
   "dvlib.mod.dvvein.desc": "Bütün damarı kır, bütün tarlayı topla ve ek.",
   "dvlib.mod.dvslots.name": "DV Slots",
-  "dvlib.mod.dvslots.desc": "Elytra ve eyer slotları.",
+  "dvlib.mod.dvslots.desc": "Elytra, eyer ve çanta slotları.",
   "dvlib.mod.dvdark.name": "DV Dark",
   "dvlib.mod.dvdark.desc": "Bütün menüler için koyu mod.",
   "dvlib.mod.dvmap.name": "DV Map",
@@ -40,6 +40,8 @@
   "dvlib.mod.dvgrave.desc": "Ölünce eşyalarını ve deneyimini bir mezar taşı saklar.",
   "dvlib.mod.dvmusic.name": "DV Music",
   "dvlib.mod.dvmusic.desc": "Çalan şarkıyı gör ve değiştir, kendi müziğini ekle.",
+  "dvlib.mod.dvbackpack.name": "DV Backpack",
+  "dvlib.mod.dvbackpack.desc": "Deriden netherite'e kadar sırt çantaları; giy ya da yere koy.",
   "dvlib.config.server": "Sunucu",
   "dvlib.config.keys": "Tuşlar"
 }

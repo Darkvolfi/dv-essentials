@@ -1,0 +1,75 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "leather": "dvbackpack:block/backpack_leather",
+    "dark": "dvbackpack:block/backpack_leather_dark",
+    "strap": "dvbackpack:block/backpack_strap",
+    "buckle": "dvbackpack:block/backpack_buckle",
+    "trim": "dvbackpack:block/backpack_trim",
+    "roll": "dvbackpack:block/sleeping_bag_side",
+    "roll_end": "dvbackpack:block/sleeping_bag_top",
+    "particle": "dvbackpack:block/backpack_leather"
+  },
+  "elements": [
+    {"name": "bag", "from": [3.5, 3, 6], "to": [12.5, 15, 11], "faces": {
+      "north": {"texture": "#leather"}, "south": {"texture": "#leather"},
+      "east": {"texture": "#leather"}, "west": {"texture": "#leather"},
+      "up": {"texture": "#leather"}, "down": {"texture": "#leather"}}},
+    {"name": "lid", "from": [3.3, 11.5, 5.8], "to": [12.7, 15.3, 11.2], "faces": {
+      "north": {"texture": "#dark"}, "south": {"texture": "#dark"},
+      "east": {"texture": "#dark"}, "west": {"texture": "#dark"},
+      "up": {"texture": "#dark"}, "down": {"texture": "#dark"}}},
+    {"name": "lid_buckle", "from": [7, 10.4, 5.5], "to": [9, 12, 5.8], "faces": {
+      "north": {"texture": "#buckle", "tintindex": 0}, "south": {"texture": "#buckle", "tintindex": 0},
+      "east": {"texture": "#buckle", "tintindex": 0}, "west": {"texture": "#buckle", "tintindex": 0},
+      "up": {"texture": "#buckle", "tintindex": 0}, "down": {"texture": "#buckle", "tintindex": 0}}},
+    {"name": "strap_front_left", "from": [5, 7.8, 5.6], "to": [6, 15.5, 6], "faces": {
+      "north": {"texture": "#strap", "tintindex": 0}, "south": {"texture": "#strap", "tintindex": 0},
+      "east": {"texture": "#strap", "tintindex": 0}, "west": {"texture": "#strap", "tintindex": 0},
+      "up": {"texture": "#strap", "tintindex": 0}, "down": {"texture": "#strap", "tintindex": 0}}},
+    {"name": "strap_front_right", "from": [10, 7.8, 5.6], "to": [11, 15.5, 6], "faces": {
+      "north": {"texture": "#strap", "tintindex": 0}, "south": {"texture": "#strap", "tintindex": 0},
+      "east": {"texture": "#strap", "tintindex": 0}, "west": {"texture": "#strap", "tintindex": 0},
+      "up": {"texture": "#strap", "tintindex": 0}, "down": {"texture": "#strap", "tintindex": 0}}},
+    {"name": "strap_top_left", "from": [5, 15.3, 5.6], "to": [6, 15.5, 9], "faces": {
+      "north": {"texture": "#strap", "tintindex": 0}, "south": {"texture": "#strap", "tintindex": 0},
+      "east": {"texture": "#strap", "tintindex": 0}, "west": {"texture": "#strap", "tintindex": 0},
+      "up": {"texture": "#strap", "tintindex": 0}, "down": {"texture": "#strap", "tintindex": 0}}},
+    {"name": "strap_top_right", "from": [10, 15.3, 5.6], "to": [11, 15.5, 9], "faces": {
+      "north": {"texture": "#strap", "tintindex": 0}, "south": {"texture": "#strap", "tintindex": 0},
+      "east": {"texture": "#strap", "tintindex": 0}, "west": {"texture": "#strap", "tintindex": 0},
+      "up": {"texture": "#strap", "tintindex": 0}, "down": {"texture": "#strap", "tintindex": 0}}},
+    {"name": "pocket", "from": [4.3, 3.5, 4.3], "to": [11.7, 7.5, 6], "faces": {
+      "north": {"texture": "#leather"}, "south": {"texture": "#leather"},
+      "east": {"texture": "#leather"}, "west": {"texture": "#leather"},
+      "up": {"texture": "#leather"}, "down": {"texture": "#leather"}}},
+    {"name": "pocket_flap", "from": [4.1, 6.3, 4.1], "to": [11.9, 7.8, 6], "faces": {
+      "north": {"texture": "#dark"}, "south": {"texture": "#dark"},
+      "east": {"texture": "#dark"}, "west": {"texture": "#dark"},
+      "up": {"texture": "#dark"}, "down": {"texture": "#dark"}}},
+    {"name": "pocket_buckle", "from": [7.3, 5.3, 3.9], "to": [8.7, 6.5, 4.1], "faces": {
+      "north": {"texture": "#buckle", "tintindex": 0}, "south": {"texture": "#buckle", "tintindex": 0},
+      "east": {"texture": "#buckle", "tintindex": 0}, "west": {"texture": "#buckle", "tintindex": 0},
+      "up": {"texture": "#buckle", "tintindex": 0}, "down": {"texture": "#buckle", "tintindex": 0}}},
+    {"name": "shoulder_left", "from": [4.5, 4, 11], "to": [6, 14, 11.6], "faces": {
+      "north": {"texture": "#trim"}, "south": {"texture": "#trim"},
+      "east": {"texture": "#trim"}, "west": {"texture": "#trim"},
+      "up": {"texture": "#trim"}, "down": {"texture": "#trim"}}},
+    {"name": "shoulder_right", "from": [10, 4, 11], "to": [11.5, 14, 11.6], "faces": {
+      "north": {"texture": "#trim"}, "south": {"texture": "#trim"},
+      "east": {"texture": "#trim"}, "west": {"texture": "#trim"},
+      "up": {"texture": "#trim"}, "down": {"texture": "#trim"}}},
+    {"name": "roll", "from": [3, 0, 6.3], "to": [13, 3, 10.7], "faces": {
+      "north": {"texture": "#roll", "tintindex": 1}, "south": {"texture": "#roll", "tintindex": 1},
+      "east": {"texture": "#roll_end", "tintindex": 1}, "west": {"texture": "#roll_end", "tintindex": 1},
+      "up": {"texture": "#roll", "tintindex": 1}, "down": {"texture": "#roll", "tintindex": 1}}},
+    {"name": "roll_strap_left", "from": [4.8, -0.2, 6.1], "to": [5.8, 3.2, 10.9], "faces": {
+      "north": {"texture": "#strap", "tintindex": 0}, "south": {"texture": "#strap", "tintindex": 0},
+      "east": {"texture": "#strap", "tintindex": 0}, "west": {"texture": "#strap", "tintindex": 0},
+      "up": {"texture": "#strap", "tintindex": 0}, "down": {"texture": "#strap", "tintindex": 0}}},
+    {"name": "roll_strap_right", "from": [10.2, -0.2, 6.1], "to": [11.2, 3.2, 10.9], "faces": {
+      "north": {"texture": "#strap", "tintindex": 0}, "south": {"texture": "#strap", "tintindex": 0},
+      "east": {"texture": "#strap", "tintindex": 0}, "west": {"texture": "#strap", "tintindex": 0},
+      "up": {"texture": "#strap", "tintindex": 0}, "down": {"texture": "#strap", "tintindex": 0}}}
+  ]
+}

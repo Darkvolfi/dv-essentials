@@ -1,0 +1,10 @@
+{
+  "type": "dvbackpack:tier_upgrade",
+  "category": "equipment",
+  "pattern": ["B", "N"],
+  "key": {
+    "N": {"tag": "forge:ingots/netherite"},
+    "B": {"item": "dvbackpack:diamond_backpack"}
+  },
+  "result": {"item": "dvbackpack:netherite_backpack"}
+}

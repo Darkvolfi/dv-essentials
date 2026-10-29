@@ -29,7 +29,7 @@
   "dvlib.mod.dvvein.name": "DV Vein",
   "dvlib.mod.dvvein.desc": "Break whole veins, harvest and plant whole fields.",
   "dvlib.mod.dvslots.name": "DV Slots",
-  "dvlib.mod.dvslots.desc": "Elytra and saddle slots.",
+  "dvlib.mod.dvslots.desc": "Elytra, saddle and backpack slots.",
   "dvlib.mod.dvdark.name": "DV Dark",
   "dvlib.mod.dvdark.desc": "Dark mode for every menu.",
   "dvlib.mod.dvmap.name": "DV Map",
@@ -40,6 +40,8 @@
   "dvlib.mod.dvgrave.desc": "A gravestone keeps your items and experience when you die.",
   "dvlib.mod.dvmusic.name": "DV Music",
   "dvlib.mod.dvmusic.desc": "See and change the playing song, add your own music.",
+  "dvlib.mod.dvbackpack.name": "DV Backpack",
+  "dvlib.mod.dvbackpack.desc": "Backpacks from leather to netherite, worn or set down.",
   "dvlib.config.server": "Server",
   "dvlib.config.keys": "Keys"
 }

@@ -78,6 +78,13 @@ function Recolour([string]$from, [string]$to, [bool]$metal, [bool]$flame) {
     New-Item -ItemType Directory -Force (Split-Path $path) | Out-Null
     $bmp.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
     $bmp.Dispose()
+    # Animated textures (the lantern's frames stacked) need their .mcmeta, or the strip is drawn as one picture.
+    $meta = $jar.GetEntry("assets/minecraft/textures/$from.png.mcmeta")
+    if ($meta) {
+        $reader = New-Object System.IO.StreamReader $meta.Open()
+        [System.IO.File]::WriteAllText("$path.mcmeta", $reader.ReadToEnd())
+        $reader.Dispose()
+    }
 }
 
 foreach ($tool in 'sword', 'pickaxe', 'axe', 'shovel', 'hoe', 'helmet', 'chestplate', 'leggings', 'boots', 'nugget') {

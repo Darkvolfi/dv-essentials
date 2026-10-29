@@ -1,8 +1,9 @@
 # Makes DV Science of Souls' hybrid creature textures from the game's own (read from Minecraft's client jar in the
 # Gradle cache), so each hybrid fits the model of the creature it is built on:
-#   textures/entity/woolly_cow.png          the cow with its body under wool; _sheared is the plain cow
+#   textures/entity/woolly_cow.png          the cow with bare, pinkish skin; _wool is its coat, drawn over it
 #   textures/entity/feathered_pig.png       the pig with a feathered body, and its wings below (64x64)
 #   textures/entity/lava_horse.png          a basalt-dark horse with ember cracks; _glow is the cracks alone
+#   textures/entity/wolf_fox.png            the fox's texture fitted onto the wolf model
 #   textures/block/soul_furnace_front*.png  the furnace's front in blackstone with blue soul fire
 # Run from the repo root:  powershell -ExecutionPolicy Bypass -File tools\make-souls-mobs.ps1
 
@@ -105,6 +106,57 @@ for ($y = 0; $y -lt 64; $y++) {
 Save $horse 'lava_horse'
 Save $glow 'lava_horse_glow'
 
+
+# ---------- Wolf Fox: the fox's own texture laid onto the wolf model, part by part. Each part of a model is a box,
+# unwrapped on the texture from its corner (u, v) into six faces (w wide, h high, d deep); every face of a wolf part
+# takes the matching face of the fox part, stretched or squeezed to fit.
+function Faces([int]$u, [int]$v, [int]$w, [int]$h, [int]$d) {
+    @(
+        @(($u + $d), $v, $w, $d),                # top
+        @(($u + $d + $w), $v, $w, $d),           # bottom
+        @($u, ($v + $d), $d, $h),                # one side
+        @(($u + $d), ($v + $d), $w, $h),         # front
+        @(($u + $d + $w), ($v + $d), $d, $h),    # other side
+        @(($u + 2 * $d + $w), ($v + $d), $w, $h) # back
+    )
+}
+function MapBox($src, $dst, $from, $to) {
+    $a = Faces @from; $b = Faces @to
+    for ($f = 0; $f -lt 6; $f++) {
+        $s = $a[$f]; $t = $b[$f]
+        for ($y = 0; $y -lt $t[3]; $y++) {
+            for ($x = 0; $x -lt $t[2]; $x++) {
+                $sx = $s[0] + [Math]::Floor($x * $s[2] / $t[2]); $sy = $s[1] + [Math]::Floor($y * $s[3] / $t[3])
+                $dst.SetPixel($t[0] + $x, $t[1] + $y, $src.GetPixel($sx, $sy))
+            }
+        }
+    }
+}
+$fox = Load 'entity/fox/fox'
+$wolfFox = New-Object System.Drawing.Bitmap 64, 32
+#        fox part (u, v, w, h, d)     wolf part (u, v, w, h, d)
+MapBox $fox $wolfFox @(1, 5, 8, 6, 6) @(0, 0, 6, 6, 4)      # head
+MapBox $fox $wolfFox @(8, 1, 2, 2, 1) @(16, 14, 2, 2, 1)    # ear
+MapBox $fox $wolfFox @(6, 18, 4, 2, 3) @(0, 10, 3, 3, 4)    # nose to snout
+MapBox $fox $wolfFox @(24, 15, 6, 11, 6) @(18, 14, 6, 9, 6) # body
+MapBox $fox $wolfFox @(24, 15, 6, 11, 6) @(21, 0, 8, 6, 7)  # body to the wolf's shoulders (its mane)
+MapBox $fox $wolfFox @(4, 24, 2, 6, 2) @(0, 18, 2, 8, 2)    # leg
+MapBox $fox $wolfFox @(30, 0, 4, 9, 5) @(9, 18, 2, 8, 2)    # tail
+# The face and snout are drawn rather than squeezed: the fox's face is wider, and squeezing it loses an eye.
+# In the fox's own colours: orange fur, cream muzzle, white-and-black eyes where the wolf has its own, a black nose.
+$orange = $fox.GetPixel(10, 12); $cream = $fox.GetPixel(10, 16)
+$white = Col '#F6F2EC'; $black = Col '#16120F'
+function Paint($bmp, [int]$u, [int]$v, [string[]]$rows, [hashtable]$colours) {
+    for ($y = 0; $y -lt $rows.Count; $y++) { for ($x = 0; $x -lt $rows[$y].Length; $x++) { $bmp.SetPixel($u + $x, $v + $y, $colours[[string]$rows[$y][$x]]) } }
+}
+$faceColours = @{ o = $orange; a = $orange; c = $cream; w = $white; b = $black }
+Paint $wolfFox 4 4 @('oooooo', 'oooooo', 'wbaabw', 'oooooo', 'cooooc', 'cccccc') $faceColours   # head, front (6x6)
+Paint $wolfFox 4 14 @('cbc', 'ccc', 'ccc') $faceColours                                         # snout, front (3x3)
+Paint $wolfFox 4 10 @('ooo', 'ooo', 'ooo', 'ooo') $faceColours                                  # snout, top (3x4)
+Paint $wolfFox 7 10 @('ccc', 'ccc', 'ccc', 'ccc') $faceColours                                  # snout, bottom (3x4)
+Paint $wolfFox 0 14 @('oooo', 'cccc', 'cccc') $faceColours                                      # snout, one side (4x3)
+Paint $wolfFox 7 14 @('oooo', 'cccc', 'cccc') $faceColours                                      # snout, other side (4x3)
+Save $wolfFox 'wolf_fox'
 
 # ---------- Soul Furnace: the furnace's front in blackstone, its fire turned to blue soul fire (the lit one is
 # animated, so its .mcmeta goes along).

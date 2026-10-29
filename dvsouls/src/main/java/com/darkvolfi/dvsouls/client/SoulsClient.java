@@ -2,6 +2,11 @@ package com.darkvolfi.dvsouls.client;
 
 import com.darkvolfi.dvsouls.DVSouls;
 import com.darkvolfi.dvsouls.Soul;
+import com.darkvolfi.dvsouls.SoulDistiller;
+import com.darkvolfi.dvsouls.SoulFuser;
+import com.darkvolfi.dvsouls.charm.EssenceItem;
+import net.minecraft.world.entity.EntityType;
+import org.jetbrains.annotations.Nullable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraftforge.api.distmarker.Dist;
@@ -25,10 +30,16 @@ public final class SoulsClient {
     public static void onItemColors(RegisterColorHandlersEvent.Item event) {
         event.register((stack, layer) -> layer == 0 ? -1 : 0xFF000000 | soulColor(stack, layer - 1),
                 DVSouls.FILLED_SOUL_JAR.get(), DVSouls.COLLAR_SHARD.get());
+        // An essence's glow (layer 1) takes its creature's egg body colour.
+        event.register((stack, layer) -> layer == 0 ? -1 : 0xFF000000 | eggColor(EssenceItem.creature(stack), 0), DVSouls.SOUL_ESSENCE.get());
     }
 
     private static int soulColor(ItemStack stack, int part) {
-        SpawnEggItem egg = Soul.type(Soul.get(stack)).map(ForgeSpawnEggItem::fromEntityType).orElse(null);
+        return eggColor(Soul.type(Soul.get(stack)).orElse(null), part);
+    }
+
+    private static int eggColor(@Nullable EntityType<?> type, int part) {
+        SpawnEggItem egg = type == null ? null : ForgeSpawnEggItem.fromEntityType(type);
         return egg == null ? SOUL_COLOR : egg.getColor(part);
     }
 
@@ -46,7 +57,8 @@ public final class SoulsClient {
     public static void onSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             MenuScreens.register(DVSouls.SOUL_FURNACE_MENU.get(), SoulScreens.FurnaceScreen::new);
-            MenuScreens.register(DVSouls.SOUL_FUSER_MENU.get(), SoulScreens.FuserScreen::new);
+            MenuScreens.register(DVSouls.SOUL_FUSER_MENU.get(), SoulScreens.MachineScreen<SoulFuser.Menu>::new);
+            MenuScreens.register(DVSouls.SOUL_DISTILLER_MENU.get(), SoulScreens.MachineScreen<SoulDistiller.Menu>::new);
         });
     }
 }

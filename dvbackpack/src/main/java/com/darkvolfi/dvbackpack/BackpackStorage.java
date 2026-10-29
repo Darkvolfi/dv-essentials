@@ -95,7 +95,7 @@ public final class BackpackStorage extends SavedData {
         return new ItemStackHandler(size) {
             @Override
             public boolean isItemValid(int slot, ItemStack stack) {
-                return stack.getItem() instanceof UpgradeItem;
+                return UpgradeItem.isCard(stack);
             }
 
             @Override

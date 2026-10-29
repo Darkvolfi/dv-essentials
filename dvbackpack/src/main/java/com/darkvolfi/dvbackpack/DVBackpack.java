@@ -55,7 +55,7 @@ public class DVBackpack {
             BACKPACKS.put(tier, ITEMS.register(tier.id() + "_backpack", () -> new BackpackItem(tier)));
         }
         for (UpgradeType type : UpgradeType.values()) {
-            UPGRADES.put(type, ITEMS.register(type.id() + "_upgrade", () -> new UpgradeItem(type)));
+            if (type.ownCard()) UPGRADES.put(type, ITEMS.register(type.id() + "_upgrade", () -> new UpgradeItem(type)));
         }
     }
 

@@ -1,5 +1,16 @@
 package com.darkvolfi.dvsouls;
 
+import com.darkvolfi.dvlib.client.DVConfigScreen;
+import com.darkvolfi.dvsouls.charm.CharmRecipes;
+import com.darkvolfi.dvsouls.charm.Charms;
+import com.darkvolfi.dvsouls.charm.EssenceItem;
+import com.darkvolfi.dvsouls.charm.SoulCharm;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectCategory;
+import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer;
+import java.util.EnumMap;
+import java.util.Map;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -24,8 +35,12 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -41,6 +56,8 @@ public class DVSouls {
     private static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MOD_ID);
     private static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, MOD_ID);
     private static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(ForgeRegistries.MENU_TYPES, MOD_ID);
+    private static final DeferredRegister<RecipeSerializer<?>> RECIPES = DeferredRegister.create(ForgeRegistries.RECIPE_SERIALIZERS, MOD_ID);
+    private static final DeferredRegister<MobEffect> EFFECTS = DeferredRegister.create(ForgeRegistries.MOB_EFFECTS, MOD_ID);
 
     /** Creatures no jar or collar can hold: bosses and the like. */
     public static final TagKey<EntityType<?>> UNCAPTURABLE = TagKey.create(Registries.ENTITY_TYPE, new ResourceLocation(MOD_ID, "uncapturable"));
@@ -70,9 +87,11 @@ public class DVSouls {
             () -> new ForgeSpawnEggItem(WOLF_FOX, 0xE07A2E, 0xF6EBDD, new Item.Properties()));
 
     public static final RegistryObject<SoulAltarBlock> SOUL_ALTAR = BLOCKS.register("soul_altar", SoulAltarBlock::new);
+    public static final RegistryObject<BindingAltarBlock> BINDING_ALTAR = BLOCKS.register("binding_altar", BindingAltarBlock::new);
+    /** Both altars keep what is laid on them the same way. */
     @SuppressWarnings("DataFlowIssue") // the data fixer type is unused for mod block entities
     public static final RegistryObject<BlockEntityType<SoulAltarBlock.SoulAltarBlockEntity>> SOUL_ALTAR_ENTITY = BLOCK_ENTITIES.register("soul_altar",
-            () -> BlockEntityType.Builder.of(SoulAltarBlock.SoulAltarBlockEntity::new, SOUL_ALTAR.get()).build(null));
+            () -> BlockEntityType.Builder.of(SoulAltarBlock.SoulAltarBlockEntity::new, SOUL_ALTAR.get(), BINDING_ALTAR.get()).build(null));
 
     public static final RegistryObject<SoulFurnace.Block> SOUL_FURNACE = BLOCKS.register("soul_furnace", SoulFurnace.Block::new);
     @SuppressWarnings("DataFlowIssue")
@@ -88,8 +107,39 @@ public class DVSouls {
     public static final RegistryObject<MenuType<SoulFuser.Menu>> SOUL_FUSER_MENU = MENUS.register("soul_fuser",
             () -> new MenuType<>(SoulFuser.Menu::new, FeatureFlags.VANILLA_SET));
 
+    public static final RegistryObject<SoulDistiller.Block> SOUL_DISTILLER = BLOCKS.register("soul_distiller", SoulDistiller.Block::new);
+    @SuppressWarnings("DataFlowIssue")
+    public static final RegistryObject<BlockEntityType<SoulDistiller.Entity>> SOUL_DISTILLER_ENTITY = BLOCK_ENTITIES.register("soul_distiller",
+            () -> BlockEntityType.Builder.of(SoulDistiller.Entity::new, SOUL_DISTILLER.get()).build(null));
+    public static final RegistryObject<MenuType<SoulDistiller.Menu>> SOUL_DISTILLER_MENU = MENUS.register("soul_distiller",
+            () -> new MenuType<>(SoulDistiller.Menu::new, FeatureFlags.VANILLA_SET));
+
+    // Soul charms: essences distilled from souls give their creatures' abilities.
+    public static final RegistryObject<Item> SOUL_ESSENCE = ITEMS.register("soul_essence", EssenceItem::new);
+    public static final Map<SoulCharm.Tier, RegistryObject<Item>> CHARMS = new EnumMap<>(SoulCharm.Tier.class);
+    public static final RegistryObject<RecipeSerializer<CharmRecipes.Essences>> CHARM_ESSENCES = RECIPES.register("charm_essences",
+            () -> new SimpleCraftingRecipeSerializer<>(CharmRecipes.Essences::new));
+    public static final RegistryObject<RecipeSerializer<CharmRecipes.Upgrade>> CHARM_UPGRADE = RECIPES.register("charm_upgrade",
+            CharmRecipes.Upgrade.Serializer::new);
+    /** Kept up by a spider's essence: climbs walls (see {@link Charms}). */
+    public static final RegistryObject<MobEffect> CLIMBING = EFFECTS.register("climbing", () -> new CharmEffect(0x6B4F3A));
+    /** Kept up by a lava horse's essence: walks on lava. */
+    public static final RegistryObject<MobEffect> LAVA_WALKING = EFFECTS.register("lava_walking", () -> new CharmEffect(0xFF7A1A));
+
+    /** A status effect that does nothing by itself: {@link Charms} looks for it. */
+    private static final class CharmEffect extends MobEffect {
+        CharmEffect(int colour) {
+            super(MobEffectCategory.BENEFICIAL, colour);
+        }
+    }
+
     static {
+        for (SoulCharm.Tier tier : SoulCharm.Tier.values()) {
+            CHARMS.put(tier, ITEMS.register(tier.id() + "_soul_charm", () -> new SoulCharm(tier)));
+        }
+        ITEMS.register("soul_distiller", () -> new BlockItem(SOUL_DISTILLER.get(), new Item.Properties()));
         ITEMS.register("soul_altar", () -> new BlockItem(SOUL_ALTAR.get(), new Item.Properties()));
+        ITEMS.register("binding_altar", () -> new BlockItem(BINDING_ALTAR.get(), new Item.Properties()));
         ITEMS.register("soul_furnace", () -> new BlockItem(SOUL_FURNACE.get(), new Item.Properties()));
         ITEMS.register("soul_fuser", () -> new BlockItem(SOUL_FUSER.get(), new Item.Properties()));
         TABS.register("souls", () -> CreativeModeTab.builder()
@@ -98,9 +148,12 @@ public class DVSouls {
                 .displayItems((params, output) -> {
                     output.accept(SOUL_JAR.get());
                     output.accept(SOUL_COLLAR.get());
+                    output.accept(BINDING_ALTAR.get());
                     output.accept(SOUL_ALTAR.get());
                     output.accept(SOUL_FURNACE.get());
                     output.accept(SOUL_FUSER.get());
+                    output.accept(SOUL_DISTILLER.get());
+                    for (RegistryObject<Item> charm : CHARMS.values()) output.accept(charm.get());
                     output.accept(WOOLLY_COW_EGG.get());
                     output.accept(FEATHERED_PIG_EGG.get());
                     output.accept(LAVA_HORSE_EGG.get());
@@ -118,7 +171,11 @@ public class DVSouls {
         TABS.register(modBus);
         ENTITIES.register(modBus);
         MENUS.register(modBus);
+        RECIPES.register(modBus);
+        EFFECTS.register(modBus);
         modBus.addListener(DVSouls::onAttributes);
+        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, SoulsConfig.SPEC);
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> DVConfigScreen.register(MOD_ID, null, SoulsConfig.SPEC, null));
     }
 
     /** Each hybrid has the attributes of the creature it is built on. */

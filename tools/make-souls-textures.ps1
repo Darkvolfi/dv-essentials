@@ -5,6 +5,9 @@
 #   textures/item/soul_jar_spots.png     swirls in it (tinted: the egg's spot colour)
 #   textures/item/soul_collar.png        a leather collar with a soul gem
 #   textures/item/collar_shard*.png      a piece of a dead pet's collar; its gem is tinted
+#   textures/item/soul_essence*.png      a soul's essence: a glowing drop, its inside tinted
+#   textures/item/*_soul_charm.png       soul charms, a pendant per tier
+#   textures/mob_effect/*.png             the climbing and lava walking effects' icons
 # Run from the repo root:  powershell -ExecutionPolicy Bypass -File tools\make-souls-textures.ps1
 
 Add-Type -AssemblyName System.Drawing
@@ -111,4 +114,102 @@ $shard = @(
 )
 Sprite 'collar_shard' $shard @{ k = '#3A2414'; l = '#7A4E2C'; m = '#C0C0C8' }
 Sprite 'collar_shard_gem' $shard @{ c = '#B4B4B4'; e = '#FFFFFF' }
+
+# A soul essence: a glowing drop with a dark rim (o) and a glint (h); its inside (i) is tinted with the egg's body colour.
+$drop = @(
+    '................',
+    '.......o........',
+    '.......oo.......',
+    '......oiio......',
+    '......oiio......',
+    '.....oiiiio.....',
+    '.....oihiio.....',
+    '....oihiiiio....',
+    '....oihiiiio....',
+    '....oiiiiiio....',
+    '....oiiiiiio....',
+    '.....oiiiio.....',
+    '......oooo......',
+    '................',
+    '................',
+    '................'
+)
+Sprite 'soul_essence' $drop @{ o = '#22343A'; h = '#FFFFFF' }
+Sprite 'soul_essence_glow' $drop @{ i = '#D8D8D8' }
+
+# Soul charms: a chain (m) holding a pendant framed in the tier's metal (f dark, g light) round a soul gem (e, h).
+$charm = @(
+    '...m........m...',
+    '...m........m...',
+    '....m......m....',
+    '.....m....m.....',
+    '......m..m......',
+    '......ffff......',
+    '.....fggggf.....',
+    '....fgeeeegf....',
+    '...fgeehheegf...',
+    '...fgeehheegf...',
+    '...fgeeeeeegf...',
+    '....fgeeeegf....',
+    '.....fgeegf.....',
+    '......fggf......',
+    '.......ff.......',
+    '................'
+)
+$frames = @{ gold = @('#B07A12', '#F2C230'); diamond = @('#1E8C86', '#6FF0E8'); netherite = @('#2A2426', '#5A5052') }
+foreach ($tier in 'gold', 'diamond', 'netherite') {
+    Sprite "${tier}_soul_charm" $charm @{ m = '#8A8A92'; f = $frames[$tier][0]; g = $frames[$tier][1]; e = '#3FB8C8'; h = '#E0FFFF' }
+}
+
+# Status effect icons (18x18, the 16x16 drawing in the middle): a spider's essence climbing, a lava horse's walking on lava.
+$effects = Join-Path $root 'dvsouls\src\main\resources\assets\dvsouls\textures\mob_effect'
+New-Item -ItemType Directory -Force $effects | Out-Null
+function Icon([string]$name, [string[]]$rows, [hashtable]$palette) {
+    $bmp = New-Object System.Drawing.Bitmap 18, 18
+    for ($y = 0; $y -lt 16; $y++) {
+        if ($rows[$y].Length -ne 16) { throw "Row $y of $name is $($rows[$y].Length) wide" }
+        for ($x = 0; $x -lt 16; $x++) {
+            $c = [string]$rows[$y][$x]
+            if ($palette.ContainsKey($c)) { $bmp.SetPixel($x + 1, $y + 1, (Col $palette[$c])) }
+        }
+    }
+    $bmp.Save((Join-Path $effects "$name.png"), [System.Drawing.Imaging.ImageFormat]::Png)
+    $bmp.Dispose()
+}
+Icon 'climbing' @(
+    '................',
+    '.k............k.',
+    '..k..........k..',
+    '...k..kkkk..k...',
+    '....kkkkkkkk....',
+    '.kk.kkrkkrkk.kk.',
+    '...kkkkkkkkkk...',
+    '.kk.kkkkkkkk.kk.',
+    '...k.kkkkkk.k...',
+    '..k...kkkk...k..',
+    '.k....kkkk....k.',
+    '.......kk.......',
+    '................',
+    '................',
+    '................',
+    '................'
+) @{ k = '#2E2420'; r = '#C0202A' }
+Icon 'lava_walking' @(
+    '................',
+    '................',
+    '................',
+    '.....bbb........',
+    '.....bnb........',
+    '.....bnb........',
+    '.....bnbbbb.....',
+    '.....bnnnnbb....',
+    '.....bbbbbbbb...',
+    '................',
+    '.llylllyllllyll.',
+    'llllylllllylllll',
+    'lyllllllylllllly',
+    'llllllllllllllll',
+    'dllldllllldlllld',
+    'dddddddddddddddd'
+) @{ b = '#5A3A22'; n = '#8A5A34'; l = '#FF8A1A'; y = '#FFD040'; d = '#C04A10' }
 Write-Host "Textures written to $tex"

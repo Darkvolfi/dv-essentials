@@ -1,6 +1,8 @@
 package com.darkvolfi.dvsouls;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -43,11 +45,16 @@ public final class Soul {
         return soul;
     }
 
-    /** A newborn soul of the kind: its creature as it would spawn, at full health. For recipe viewers. */
+    /** The kind's own max health, as it spawns; 0 for what has none. */
     @SuppressWarnings("unchecked")
-    public static CompoundTag ofType(EntityType<?> type) {
-        float health = DefaultAttributes.hasSupplier(type)
+    public static float baseHealth(EntityType<?> type) {
+        return DefaultAttributes.hasSupplier(type)
                 ? (float) DefaultAttributes.getSupplier((EntityType<? extends LivingEntity>) type).getBaseValue(Attributes.MAX_HEALTH) : 0;
+    }
+
+    /** A newborn soul of the kind: its creature as it would spawn, at full health. For recipe viewers. */
+    public static CompoundTag ofType(EntityType<?> type) {
+        float health = baseHealth(type);
         CompoundTag soul = new CompoundTag();
         soul.putString(TYPE, String.valueOf(ForgeRegistries.ENTITY_TYPES.getKey(type)));
         soul.put(DATA, new CompoundTag());
@@ -88,6 +95,28 @@ public final class Soul {
         entity.setYHeadRot(yaw);
         level.addFreshEntity(entity);
         return entity;
+    }
+
+    /** The same soul with its creature's max health raised to {@code maxHealth}, and at full health. */
+    public static CompoundTag withMaxHealth(CompoundTag soul, float maxHealth) {
+        CompoundTag copy = soul.copy();
+        CompoundTag data = copy.getCompound(DATA);
+        ListTag attributes = data.getList("Attributes", Tag.TAG_COMPOUND);
+        String id = String.valueOf(ForgeRegistries.ATTRIBUTES.getKey(Attributes.MAX_HEALTH));
+        CompoundTag entry = null;
+        for (int i = 0; i < attributes.size(); i++) {
+            if (id.equals(attributes.getCompound(i).getString("Name"))) entry = attributes.getCompound(i);
+        }
+        if (entry == null) {
+            entry = new CompoundTag();
+            entry.putString("Name", id);
+            attributes.add(entry);
+        }
+        entry.putDouble("Base", maxHealth);
+        data.put("Attributes", attributes);
+        data.putFloat("Health", maxHealth);
+        copy.putFloat(HEARTS, maxHealth / 2);
+        return copy;
     }
 
     /** The same soul with its creature at full health, for one brought back from death. */

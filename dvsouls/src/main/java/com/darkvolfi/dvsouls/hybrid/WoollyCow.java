@@ -4,6 +4,7 @@ import com.darkvolfi.dvsouls.DVSouls;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
@@ -112,6 +113,12 @@ public class WoollyCow extends Cow implements IForgeShearable {
     public void ate() {
         super.ate();
         entityData.set(SHEARED, false);
+    }
+
+    /** Like a sheep, it drops a wool when it dies unshorn: its own table, the cow's drops and one white wool. */
+    @Override
+    protected ResourceLocation getDefaultLootTable() {
+        return isSheared() ? super.getDefaultLootTable() : new ResourceLocation(DVSouls.MOD_ID, "entities/woolly_cow_woolly");
     }
 
     @Override

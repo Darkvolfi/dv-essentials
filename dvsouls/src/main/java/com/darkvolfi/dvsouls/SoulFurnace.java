@@ -29,11 +29,9 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * The Soul Furnace: smelts like a furnace, twice as fast, and burns only souls. A full soul jar is its fuel, good for
- * 2 items per heart; the empty jar is left in the fuel slot.
+ * 2 items per heart (a server setting); the empty jar is left in the fuel slot.
  */
 public final class SoulFurnace {
-    /** Items smelted per heart of the burnt soul. */
-    private static final int ITEMS_PER_HEART = 2;
     /** A vanilla furnace's time for one item, in its own ticks (this one runs two of them per game tick). */
     private static final int ITEM_TIME = 200;
 
@@ -104,7 +102,7 @@ public final class SoulFurnace {
         @Override
         protected int getBurnDuration(ItemStack fuel) {
             // Qualified: the furnace class has a static isFuel of its own (the game's fuels), which would win here.
-            return SoulFurnace.isFuel(fuel) ? Math.max(1, Math.round(Soul.hearts(Soul.get(fuel)) * ITEMS_PER_HEART * ITEM_TIME)) : 0;
+            return SoulFurnace.isFuel(fuel) ? Math.max(1, Math.round(Soul.hearts(Soul.get(fuel)) * SoulsConfig.FURNACE_ITEMS_PER_HEART.get() * ITEM_TIME)) : 0;
         }
 
         /** The fuel slot (1) takes only souls; the output slot (2) nothing. */

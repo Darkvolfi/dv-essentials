@@ -2,10 +2,13 @@ package com.darkvolfi.dvbackpack;
 
 import com.darkvolfi.dvbackpack.compat.CuriosCompat;
 import com.darkvolfi.dvbackpack.compat.SlotsCompat;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.fml.ModList;
+import net.minecraftforge.items.ItemStackHandler;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The backpack a player wears: DV Slots' backpack slot first, then the chest slot, then a Curios back slot.
@@ -26,6 +29,12 @@ public final class WornBackpack {
         if (chest.getItem() instanceof BackpackItem) return chest;
         if (CURIOS) return CuriosCompat.backpack(player);
         return ItemStack.EMPTY;
+    }
+
+    /** The upgrade slots of the backpack the player wears (server side), or null if none is worn. For other mods. */
+    public static @Nullable ItemStackHandler upgrades(ServerPlayer player) {
+        ItemStack worn = find(player);
+        return worn.isEmpty() ? null : BackpackStorage.get(player.server).contents(worn).upgrades();
     }
 
     /** Takes the worn backpack off and returns it (empty if none was worn). */

@@ -221,6 +221,9 @@ record LensInfo(ItemStack icon, LivingEntity face, List<Component> lines, List<B
             String owner = ownerName(mc, pet.getOwnerUUID(), server);
             lines.add((owner.isEmpty() ? Component.translatable("dvlens.tamed") : Component.translatable("dvlens.owner", owner))
                     .withStyle(ChatFormatting.LIGHT_PURPLE));
+        } else if (LensConfig.SHOW_OWNER.get() && server != null && !server.owner().isEmpty()) {
+            // a creature bound by a soul: only the server knows its owner
+            lines.add(Component.translatable("dvlens.owner", server.owner()).withStyle(ChatFormatting.LIGHT_PURPLE));
         }
         if (LensConfig.SHOW_HORSE_STATS.get() && entity instanceof AbstractHorse horse && !(horse instanceof Llama)) {
             lines.add(Component.translatable("dvlens.horse.speed", format(horseSpeed(horse))).withStyle(ChatFormatting.AQUA));

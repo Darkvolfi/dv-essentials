@@ -57,6 +57,12 @@ EOF
 }
 altar soul_altar minecraft:block/soul_soil
 altar soul_altar_filled minecraft:block/sculk
+# The Binding Altar: the same shape, its top a lodestone's, glowing with a respawn anchor's light once a soul lies on it.
+altar binding_altar minecraft:block/lodestone_top
+altar binding_altar_filled minecraft:block/respawn_anchor_top
+w $A/blockstates/binding_altar.json <<EOF
+{"variants": {"filled=false": {"model": "$M:block/binding_altar"}, "filled=true": {"model": "$M:block/binding_altar_filled"}}}
+EOF
 w $A/blockstates/soul_altar.json <<EOF
 {"variants": {"filled=false": {"model": "$M:block/soul_altar"}, "filled=true": {"model": "$M:block/soul_altar_filled"}}}
 EOF
@@ -66,7 +72,7 @@ w $D/loot_tables/blocks/soul_altar.json <<EOF
   "conditions": [{"condition": "minecraft:survives_explosion"}]}]}
 EOF
 w $R/data/minecraft/tags/blocks/mineable/pickaxe.json <<EOF
-{"replace": false, "values": ["$M:soul_altar", "$M:soul_furnace", "$M:soul_fuser"]}
+{"replace": false, "values": ["$M:soul_altar", "$M:binding_altar", "$M:soul_furnace", "$M:soul_fuser", "$M:soul_distiller"]}
 EOF
 
 # ---------- the Soul Furnace (a furnace in blackstone, burning soul fire) and the Soul Fuser (blackstone, with a
@@ -104,7 +110,7 @@ fuser soul_fuser_on minecraft:block/respawn_anchor_top
 w $A/blockstates/soul_fuser.json <<EOF
 {"variants": {"lit=false": {"model": "$M:block/soul_fuser"}, "lit=true": {"model": "$M:block/soul_fuser_on"}}}
 EOF
-for b in soul_furnace soul_fuser; do
+for b in soul_furnace soul_fuser binding_altar; do
     w $A/models/item/$b.json <<EOF
 {"parent": "$M:block/$b"}
 EOF
@@ -149,6 +155,7 @@ drop() {
 loot() { f=$1; shift; printf '{"type": "minecraft:entity", "pools": [%s]}
 ' "$*" > $D/loot_tables/entities/$f.json; }
 loot woolly_cow "$(drop minecraft:leather 0 2), $(drop minecraft:beef 1 3 smelts)"
+loot woolly_cow_woolly "$(drop minecraft:leather 0 2), $(drop minecraft:beef 1 3 smelts), $(drop minecraft:white_wool 1 1)"
 loot feathered_pig "$(drop minecraft:porkchop 1 3 smelts), $(drop minecraft:feather 0 2)"
 loot lava_horse "$(drop minecraft:leather 0 2), $(drop minecraft:magma_cream 0 1)"
 loot wolf_fox "$(drop minecraft:leather 0 1)"
@@ -158,12 +165,74 @@ w $D/recipes/soul_furnace.json <<EOF
  "key": {"B": {"item": "minecraft:polished_blackstone"}, "F": {"item": "minecraft:furnace"}, "J": {"item": "$M:soul_jar"}},
  "result": {"item": "$M:soul_furnace"}}
 EOF
+w $D/recipes/binding_altar.json <<EOF
+{"type": "minecraft:crafting_shaped", "category": "misc", "pattern": ["QJQ", "LSL", "BBB"],
+ "key": {"Q": {"item": "minecraft:quartz"}, "J": {"item": "$M:soul_jar"}, "L": {"item": "minecraft:lead"},
+         "S": {"item": "minecraft:soul_lantern"}, "B": {"item": "minecraft:polished_blackstone"}},
+ "result": {"item": "$M:binding_altar"}}
+EOF
 w $D/recipes/soul_fuser.json <<EOF
 {"type": "minecraft:crafting_shaped", "category": "misc", "pattern": ["QJQ", "OSO", "BBB"],
  "key": {"Q": {"item": "minecraft:quartz"}, "J": {"item": "$M:soul_jar"}, "O": {"item": "minecraft:crying_obsidian"},
          "S": {"item": "minecraft:brewing_stand"}, "B": {"item": "minecraft:polished_blackstone"}},
  "result": {"item": "$M:soul_fuser"}}
 EOF
+
+
+# ---------- soul charms: the Soul Distiller (blackstone round an amethyst top that buds while it works), essences, charms
+fuser soul_distiller minecraft:block/amethyst_block
+fuser soul_distiller_on minecraft:block/budding_amethyst
+w $A/blockstates/soul_distiller.json <<EOF2
+{"variants": {"lit=false": {"model": "$M:block/soul_distiller"}, "lit=true": {"model": "$M:block/soul_distiller_on"}}}
+EOF2
+w $A/models/item/soul_distiller.json <<EOF2
+{"parent": "$M:block/soul_distiller"}
+EOF2
+w $D/loot_tables/blocks/soul_distiller.json <<EOF2
+{"type": "minecraft:block", "pools": [{"rolls": 1, "bonus_rolls": 0,
+  "entries": [{"type": "minecraft:item", "name": "$M:soul_distiller"}],
+  "conditions": [{"condition": "minecraft:survives_explosion"}]}]}
+EOF2
+w $A/models/item/soul_essence.json <<EOF2
+{"parent": "minecraft:item/generated", "textures": {"layer0": "$M:item/soul_essence", "layer1": "$M:item/soul_essence_glow"}}
+EOF2
+for tier in gold diamond netherite; do
+    w $A/models/item/${tier}_soul_charm.json <<EOF2
+{"parent": "minecraft:item/generated", "textures": {"layer0": "$M:item/${tier}_soul_charm"}}
+EOF2
+done
+w $D/recipes/soul_distiller.json <<EOF2
+{"type": "minecraft:crafting_shaped", "category": "misc", "pattern": ["QJQ", "ACA", "BBB"],
+ "key": {"Q": {"item": "minecraft:quartz"}, "J": {"item": "$M:soul_jar"}, "A": {"item": "minecraft:amethyst_block"},
+         "C": {"item": "minecraft:cauldron"}, "B": {"item": "minecraft:polished_blackstone"}},
+ "result": {"item": "$M:soul_distiller"}}
+EOF2
+w $D/recipes/gold_soul_charm.json <<EOF2
+{"type": "minecraft:crafting_shaped", "category": "misc", "pattern": [" C ", "GAG", " G "],
+ "key": {"C": {"item": "minecraft:chain"}, "G": {"item": "minecraft:gold_ingot"}, "A": {"item": "minecraft:amethyst_shard"}},
+ "result": {"item": "$M:gold_soul_charm"}}
+EOF2
+# The next tiers keep the charm's essences: diamonds round a gold charm, then netherite at the smithing table.
+w $D/recipes/diamond_soul_charm.json <<EOF2
+{"type": "$M:charm_upgrade", "category": "misc", "pattern": [" D ", "DCD", " D "],
+ "key": {"D": {"item": "minecraft:diamond"}, "C": {"item": "$M:gold_soul_charm"}},
+ "result": {"item": "$M:diamond_soul_charm"}}
+EOF2
+w $D/recipes/netherite_soul_charm.json <<EOF2
+{"type": "minecraft:smithing_transform", "template": {"item": "minecraft:netherite_upgrade_smithing_template"},
+ "base": {"item": "$M:diamond_soul_charm"}, "addition": {"item": "minecraft:netherite_ingot"},
+ "result": {"item": "$M:netherite_soul_charm"}}
+EOF2
+# Without DV Backpack essences go on in the crafting grid; with it, in the charm's panel in the backpack.
+w $D/recipes/charm_essences.json <<EOF2
+{"type": "$M:charm_essences", "category": "misc",
+ "conditions": [{"type": "forge:not", "value": {"type": "forge:mod_loaded", "modid": "dvbackpack"}}]}
+EOF2
+# DV Backpack takes items with this tag into its upgrade slots (a tag of another mod's: harmless without it).
+mkdir -p $R/data/dvbackpack/tags/items
+w $R/data/dvbackpack/tags/items/upgrades.json <<EOF2
+{"replace": false, "values": ["$M:gold_soul_charm", "$M:diamond_soul_charm", "$M:netherite_soul_charm"]}
+EOF2
 
 # ---------- creatures no jar or collar can hold
 w $D/tags/entity_types/uncapturable.json <<EOF

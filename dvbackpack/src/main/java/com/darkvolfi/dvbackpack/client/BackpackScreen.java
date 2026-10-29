@@ -23,6 +23,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
+import com.darkvolfi.dvbackpack.upgrade.UpgradeItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.fluids.FluidStack;
@@ -214,7 +215,9 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
             }
             int tab = cardTabAt(mouseX, mouseY);
             if (tab >= 0) {
-                press(BackpackMenu.TOOL + tab);
+                // another mod's item with no panel to take it out from: clicking its tab takes it out
+                ItemStack card = menu.upgrade(tab);
+                press((!card.isEmpty() && UpgradeItem.panelType(card) == null ? BackpackMenu.REMOVE : BackpackMenu.TOOL) + tab);
                 return true;
             }
             if (overRemove(mouseX, mouseY)) {
@@ -353,12 +356,14 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
         if (cardTabAt(mouseX, mouseY) == menu.openTool()) g.fill(x0 + 4, y0 + 2, x0 + 22, y0 + 20, DVTheme.shade(0xFFDADADA));
         g.renderItem(menu.upgrade(menu.openTool()), x0 + 5, y0 + 3);
         int cx = x0 + w - BUTTON - 5;
-        String name = Component.translatable("dvbackpack.upgrade." + tool.id()).getString();
+        String name = (tool == UpgradeType.HELD ? menu.upgrade(menu.openTool()).getHoverName()
+                : Component.translatable("dvbackpack.upgrade." + tool.id())).getString();
         g.drawString(font, font.plainSubstrByWidth(name, cx - 4 - (x0 + 26)), x0 + 26, y0 + 8, DVTheme.shade(TEXT), false);
         int cy = y0 + 5;
         raised(g, cx, cy, BUTTON, BUTTON, overRemove(mouseX, mouseY) ? 0xFFDADADA : PANEL);
         flatIcon(g, REMOVE, cx + 3, cy + 3, DVTheme.shade(REMOVE_COLOUR));
 
+        if (tool == UpgradeType.HELD) return; // another mod's item: just its slots
         if (tool == UpgradeType.CRAFTING) {
             g.blit(CRAFTING, x0 + 68, y0 + 45, 90, 35, 22, 15);
             return;

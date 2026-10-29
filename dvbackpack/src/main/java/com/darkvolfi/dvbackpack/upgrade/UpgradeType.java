@@ -21,7 +21,9 @@ public enum UpgradeType {
     /** Refills the held stack from the backpack when it runs out. */
     REFILL(null, true),
     /** A fluid tank. */
-    TANK(null, false);
+    TANK(null, false),
+    /** Another mod's item that holds items (it has an item handler): its panel shows those slots. Not a card of its own. */
+    HELD(null, false);
 
     private final @Nullable RecipeType<? extends AbstractCookingRecipe> cooking;
     private final boolean filter;
@@ -39,6 +41,11 @@ public enum UpgradeType {
     /** Whether this card works on its own and has a filter (see {@link FilterUpgrade}). */
     public boolean filter() {
         return filter;
+    }
+
+    /** Whether this type is one of the backpack's own cards, an item of its own. */
+    public boolean ownCard() {
+        return this != HELD;
     }
 
     public String id() {

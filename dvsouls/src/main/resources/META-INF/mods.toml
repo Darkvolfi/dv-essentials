@@ -38,3 +38,10 @@ description='''${mod_description}'''
     versionRange="*"
     ordering="NONE"
     side="CLIENT"
+
+[[dependencies.${mod_id}]]
+    modId="dvbackpack"
+    mandatory=false
+    versionRange="*"
+    ordering="NONE"
+    side="BOTH"

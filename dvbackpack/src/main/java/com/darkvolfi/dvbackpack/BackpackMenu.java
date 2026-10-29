@@ -32,7 +32,9 @@ import net.minecraftforge.fluids.FluidActionResult;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.IItemHandlerModifiable;
 import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.wrapper.PlayerMainInvWrapper;
@@ -88,8 +90,12 @@ public class BackpackMenu extends AbstractContainerMenu {
     public static final int PANEL_HEIGHT = 86;
     public static final int CRAFTING_WIDTH = 124;
     public static final int COOKING_WIDTH = 124;
-    /** Slots per upgrade: the card, a crafting result and grid, a furnace's three slots and a filter's nine. */
-    private static final int GROUP = 23;
+    /** At most this many of another mod's item's own slots show in its panel. */
+    public static final int HELD_SLOTS = 9;
+    /** Slots per upgrade: the card, a crafting result and grid, a furnace's three slots, a filter's nine and a held item's. */
+    private static final int GROUP = 23 + HELD_SLOTS;
+    /** Where a group's held slots start. */
+    private static final int HELD_START = 23;
     /** How far the tabs below an open panel move down to make room for it. */
     public static final int SHIFT = PANEL_HEIGHT + 2 - TAB_SPACING;
 
@@ -183,6 +189,7 @@ public class BackpackMenu extends AbstractContainerMenu {
         Container upgradeView = new SimpleContainer(upgradeCount);
         Container cookingView = new SimpleContainer(upgradeCount * 3);
         Container filterView = new SimpleContainer(upgradeCount * FilterUpgrade.SIZE);
+        Container heldView = new SimpleContainer(upgradeCount * HELD_SLOTS);
         for (int i = 0; i < upgradeCount; i++) {
             int index = i;
             int x0 = tabX();
@@ -207,6 +214,9 @@ public class BackpackMenu extends AbstractContainerMenu {
             addSlot(new CookingSlot(cookingView, i, CookingUpgrade.OUTPUT, x0 + 66, y0 + 44));
             for (int k = 0; k < FilterUpgrade.SIZE; k++) {
                 addSlot(new FilterSlot(filterView, i, k, x0 + 8 + (k % 3) * 18, y0 + 26 + (k / 3) * 18));
+            }
+            for (int k = 0; k < HELD_SLOTS; k++) {
+                addSlot(new HeldSlot(heldView, i, k, x0 + 8 + (k % 3) * 18, y0 + 26 + (k / 3) * 18));
             }
         }
     }
@@ -302,7 +312,7 @@ public class BackpackMenu extends AbstractContainerMenu {
     /** The type of the card whose panel is open, if that card is still there. */
     public @Nullable UpgradeType toolType() {
         int i = tool.get();
-        return i < 0 || i >= upgradeCount ? null : UpgradeItem.typeOf(upgrade(i));
+        return i < 0 || i >= upgradeCount ? null : UpgradeItem.panelType(upgrade(i));
     }
 
     /** Fire and progress of the open furnace card: "burn", "burnMax", "cook", "cookTotal". */
@@ -536,7 +546,9 @@ public class BackpackMenu extends AbstractContainerMenu {
             // From the backpack, an upgrade slot or a tool panel: into the inventory.
             moved = moveItemStackTo(stack, inventoryStart, inventoryEnd, true);
             if (moved && slot instanceof CookingSlot cooking) cooking.onTake(player, original);
-        } else if (stack.getItem() instanceof UpgradeItem && moveIntoUpgradeSlot(stack)) {
+        } else if (UpgradeItem.isCard(stack) && moveIntoUpgradeSlot(stack)) {
+            moved = true;
+        } else if (toolType() == UpgradeType.HELD && moveIntoHeld(stack)) {
             moved = true;
         } else if (toolType() != null && toolType().filter()) {
             // With a filter open, shift-click lists the item (the item itself stays where it is).
@@ -568,6 +580,12 @@ public class BackpackMenu extends AbstractContainerMenu {
             if (!slots.get(slot).hasItem() && moveItemStackTo(stack, slot, slot + 1, false)) return true;
         }
         return false;
+    }
+
+    /** Into the open held item's slots that take it. */
+    private boolean moveIntoHeld(ItemStack stack) {
+        int first = groupStart(tool.get()) + HELD_START;
+        return moveItemStackTo(stack, first, first + HELD_SLOTS, false);
     }
 
     /** Fuel goes to the fuel slot, anything the card can cook to the input. */
@@ -670,7 +688,7 @@ public class BackpackMenu extends AbstractContainerMenu {
 
         @Override
         public boolean mayPlace(ItemStack stack) {
-            return stack.getItem() instanceof UpgradeItem;
+            return UpgradeItem.isCard(stack);
         }
 
         @Override
@@ -796,6 +814,71 @@ public class BackpackMenu extends AbstractContainerMenu {
         @Override
         public boolean mayPlace(ItemStack stack) {
             return false;
+        }
+    }
+
+    /**
+     * One of the slots of another mod's item in an upgrade slot (see {@link UpgradeType#HELD}), through its item
+     * handler; on the server it changes the item in the upgrade slot. Only as many as the item has are active.
+     */
+    private final class HeldSlot extends Slot {
+        private final int card;
+        private final int part;
+
+        HeldSlot(Container view, int card, int part, int x, int y) {
+            super(view, card * HELD_SLOTS + part, x, y);
+            this.card = card;
+            this.part = part;
+        }
+
+        private @Nullable IItemHandler handler() {
+            ItemStack c = upgrades == null ? upgrade(card) : upgrades.getStackInSlot(card);
+            IItemHandler handler = c.getCapability(ForgeCapabilities.ITEM_HANDLER).orElse(null);
+            return handler != null && part < handler.getSlots() ? handler : null;
+        }
+
+        @Override
+        public boolean isActive() {
+            return tool.get() == card && toolType() == UpgradeType.HELD && handler() != null;
+        }
+
+        @Override
+        public ItemStack getItem() {
+            if (upgrades == null) return super.getItem();
+            IItemHandler handler = handler();
+            return handler == null ? ItemStack.EMPTY : handler.getStackInSlot(part);
+        }
+
+        @Override
+        public void set(ItemStack stack) {
+            if (upgrades == null) {
+                super.set(stack);
+            } else if (handler() instanceof IItemHandlerModifiable handler) {
+                handler.setStackInSlot(part, stack);
+                upgrades.setStackInSlot(card, upgrades.getStackInSlot(card)); // marks the storage for saving
+            }
+            setChanged();
+        }
+
+        @Override
+        public ItemStack remove(int amount) {
+            if (upgrades == null) return super.remove(amount);
+            ItemStack stack = getItem().copy();
+            ItemStack taken = stack.split(amount);
+            set(stack);
+            return taken;
+        }
+
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            IItemHandler handler = handler();
+            return handler != null && handler.isItemValid(part, stack);
+        }
+
+        @Override
+        public int getMaxStackSize() {
+            IItemHandler handler = handler();
+            return handler == null ? 0 : handler.getSlotLimit(part);
         }
     }
 

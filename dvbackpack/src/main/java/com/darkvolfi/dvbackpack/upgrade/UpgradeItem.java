@@ -1,11 +1,15 @@
 package com.darkvolfi.dvbackpack.upgrade;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,6 +30,21 @@ public class UpgradeItem extends Item {
 
     public static @Nullable UpgradeType typeOf(ItemStack stack) {
         return stack.getItem() instanceof UpgradeItem item ? item.type : null;
+    }
+
+    /** The panel a card in an upgrade slot opens: its type, {@link UpgradeType#HELD} for another mod's item that holds items, or null. */
+    public static @Nullable UpgradeType panelType(ItemStack stack) {
+        UpgradeType type = typeOf(stack);
+        if (type != null) return type;
+        return isCard(stack) && stack.getCapability(ForgeCapabilities.ITEM_HANDLER).isPresent() ? UpgradeType.HELD : null;
+    }
+
+    /** Other mods' items tagged {@code dvbackpack:upgrades} go into the upgrade slots too; one that holds items gets a panel of them. */
+    public static final TagKey<Item> OTHER_CARDS = TagKey.create(Registries.ITEM, new ResourceLocation("dvbackpack", "upgrades"));
+
+    /** Whether this goes into an upgrade slot: a card, or another mod's item tagged for it. */
+    public static boolean isCard(ItemStack stack) {
+        return stack.getItem() instanceof UpgradeItem || stack.is(OTHER_CARDS);
     }
 
     @Override

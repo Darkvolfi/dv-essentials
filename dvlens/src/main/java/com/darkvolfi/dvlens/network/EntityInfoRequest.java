@@ -19,6 +19,7 @@ import java.util.function.Supplier;
 public record EntityInfoRequest(int entityId) {
     /** Farther than this the player can't be looking at it with the lens anyway. */
     static final double MAX_DISTANCE = 64;
+    private static final String BOUND_OWNER = "dvsouls:owner";
 
     public void encode(FriendlyByteBuf buf) {
         buf.writeVarInt(entityId);
@@ -37,8 +38,12 @@ public record EntityInfoRequest(int entityId) {
 
         int age = entity instanceof AgeableMob mob ? mob.getAge() : 0;
         String owner = "";
-        if (entity instanceof OwnableEntity pet && pet.getOwnerUUID() != null) {
-            UUID id = pet.getOwnerUUID();
+        // DV Science of Souls keeps the owner of a creature bound by a soul in its saved data, not on the entity
+        UUID id = entity instanceof OwnableEntity pet ? pet.getOwnerUUID() : null;
+        if (id == null && entity.getPersistentData().hasUUID(BOUND_OWNER)) id = entity.getPersistentData().getUUID(BOUND_OWNER);
+        ServerPlayer online = id == null ? null : player.server.getPlayerList().getPlayer(id);
+        if (online != null) owner = online.getGameProfile().getName();
+        else if (id != null) {
             owner = player.server.getProfileCache() == null ? ""
                     : player.server.getProfileCache().get(id).map(p -> p.getName()).orElse("");
         }

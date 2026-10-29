@@ -8,11 +8,11 @@ import com.darkvolfi.dvsouls.hybrid.WoollyCow;
 import com.google.common.collect.Iterables;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import net.minecraft.client.model.AgeableListModel;
 import net.minecraft.client.model.CowModel;
 import net.minecraft.client.model.HorseModel;
 import net.minecraft.client.model.PigModel;
 import net.minecraft.client.model.QuadrupedModel;
+import net.minecraft.client.model.WolfModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.model.geom.ModelPart;
@@ -33,6 +33,7 @@ import net.minecraft.client.renderer.entity.layers.EyesLayer;
 import net.minecraft.client.renderer.entity.layers.HorseArmorLayer;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.entity.layers.SaddleLayer;
+import net.minecraft.client.renderer.entity.layers.WolfCollarLayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemDisplayContext;
@@ -44,7 +45,7 @@ import java.util.List;
 /**
  * How the hybrids look: each is drawn with the model of the creature it is built on, in its own texture (made by
  * tools/make-souls-mobs.ps1), plus what the other half gives it: wool on the cow, wings on the pig, a glow in the horse's
- * cracks; the wolf fox wears the fox's own model and texture, and holds things in its mouth.
+ * cracks, the fox's coat on the wolf, and the wolf fox holding things in its mouth.
  */
 final class HybridRenderers {
     private static final ModelLayerLocation FEATHERED_PIG = new ModelLayerLocation(new ResourceLocation(DVSouls.MOD_ID, "feathered_pig"), "main");
@@ -226,77 +227,22 @@ final class HybridRenderers {
     }
 
     /**
-     * Looks just like a fox: the game's own fox model and texture. The model is driven here rather than by the fox's,
-     * which reads a fox's states (sleeping, pouncing); this one walks, looks about, sits like a fox when told to, and
-     * cocks its head like a wolf.
+     * The wolf's model in a fox's coat: the fox's own texture fitted onto the wolf's parts (made by
+     * tools/make-souls-mobs.ps1). It wears a wolf's collar once tamed, and holds what it fetches in its mouth.
      */
-    static final class WolfFoxModel extends AgeableListModel<WolfFox> {
-        final ModelPart head;
-        private final ModelPart body;
-        private final ModelPart tail;
-        private final ModelPart rightHindLeg;
-        private final ModelPart leftHindLeg;
-        private final ModelPart rightFrontLeg;
-        private final ModelPart leftFrontLeg;
+    static final class WolfFoxRenderer extends MobRenderer<WolfFox, WolfModel<WolfFox>> {
+        private static final ResourceLocation TEXTURE = texture("wolf_fox");
 
-        WolfFoxModel(ModelPart root) {
-            // The fox model's own numbers for how a cub's head is scaled and placed.
-            super(true, 8, 3.35f);
-            head = root.getChild("head");
-            body = root.getChild("body");
-            tail = body.getChild("tail");
-            rightHindLeg = root.getChild("right_hind_leg");
-            leftHindLeg = root.getChild("left_hind_leg");
-            rightFrontLeg = root.getChild("right_front_leg");
-            leftFrontLeg = root.getChild("left_front_leg");
-        }
-
-        @Override
-        public void prepareMobModel(WolfFox fox, float limbSwing, float limbSwingAmount, float partialTick) {
-            for (ModelPart part : List.of(head, body, tail, rightHindLeg, leftHindLeg, rightFrontLeg, leftFrontLeg)) part.resetPose();
-            float swing = limbSwing * 0.6662f;
-            rightHindLeg.xRot = Mth.cos(swing) * 1.4f * limbSwingAmount;
-            leftHindLeg.xRot = Mth.cos(swing + Mth.PI) * 1.4f * limbSwingAmount;
-            rightFrontLeg.xRot = Mth.cos(swing + Mth.PI) * 1.4f * limbSwingAmount;
-            leftFrontLeg.xRot = Mth.cos(swing) * 1.4f * limbSwingAmount;
-            head.zRot = fox.getHeadRollAngle(partialTick);
-            if (fox.isInSittingPose()) {
-                // The fox's own sitting pose: body raised, hind legs folded under, tail on the ground.
-                body.xRot = Mth.PI / 6;
-                body.setPos(0, 9, -3);
-                tail.xRot = Mth.PI / 4;
-                tail.setPos(-4, 15, -2);
-                head.setPos(-1, 10, -0.25f);
-                rightHindLeg.xRot = leftHindLeg.xRot = -1.3089969f;
-                rightHindLeg.setPos(-5, 21.5f, 6.75f);
-                leftHindLeg.setPos(-1, 21.5f, 6.75f);
-                rightFrontLeg.xRot = leftFrontLeg.xRot = -Mth.PI / 12;
-            }
-        }
-
-        @Override
-        public void setupAnim(WolfFox fox, float limbSwing, float limbSwingAmount, float age, float headYaw, float headPitch) {
-            head.xRot = headPitch * Mth.DEG_TO_RAD;
-            head.yRot = headYaw * Mth.DEG_TO_RAD;
-        }
-
-        @Override
-        protected Iterable<ModelPart> headParts() {
-            return List.of(head);
-        }
-
-        @Override
-        protected Iterable<ModelPart> bodyParts() {
-            return List.of(body, rightHindLeg, leftHindLeg, rightFrontLeg, leftFrontLeg);
-        }
-    }
-
-    static final class WolfFoxRenderer extends MobRenderer<WolfFox, WolfFoxModel> {
-        private static final ResourceLocation TEXTURE = new ResourceLocation("textures/entity/fox/fox.png");
-
+        @SuppressWarnings({"unchecked", "rawtypes"}) // the game's collar layer is written for plain wolves
         WolfFoxRenderer(EntityRendererProvider.Context context) {
-            super(context, new WolfFoxModel(context.bakeLayer(ModelLayers.FOX)), 0.4f);
+            super(context, new WolfModel<>(context.bakeLayer(ModelLayers.WOLF)), 0.5f);
+            addLayer((RenderLayer) new WolfCollarLayer((RenderLayerParent) this));
             addLayer(new MouthItemLayer(this, context.getItemInHandRenderer()));
+        }
+
+        @Override
+        protected float getBob(WolfFox fox, float partialTick) {
+            return fox.getTailAngle();
         }
 
         @Override
@@ -305,11 +251,11 @@ final class HybridRenderers {
         }
     }
 
-    /** The carried item, held crosswise in the fox's mouth and turning with its head (placed as the fox's own is). */
-    static final class MouthItemLayer extends RenderLayer<WolfFox, WolfFoxModel> {
+    /** The carried item, held crosswise under the snout and turning with the head. */
+    static final class MouthItemLayer extends RenderLayer<WolfFox, WolfModel<WolfFox>> {
         private final ItemInHandRenderer items;
 
-        MouthItemLayer(RenderLayerParent<WolfFox, WolfFoxModel> parent, ItemInHandRenderer items) {
+        MouthItemLayer(RenderLayerParent<WolfFox, WolfModel<WolfFox>> parent, ItemInHandRenderer items) {
             super(parent);
             this.items = items;
         }
@@ -319,18 +265,14 @@ final class HybridRenderers {
                            float partialTick, float age, float headYaw, float headPitch) {
             ItemStack item = fox.getMainHandItem();
             if (item.isEmpty()) return;
-            ModelPart head = getParentModel().head;
             pose.pushPose();
-            if (fox.isBaby()) {
-                pose.scale(0.75f, 0.75f, 0.75f);
-                pose.translate(0, 0.5f, 0.209375f);
-            }
-            pose.translate(head.x / 16, head.y / 16, head.z / 16);
-            pose.mulPose(Axis.ZP.rotation(head.zRot));
-            pose.mulPose(Axis.YP.rotation(head.yRot));
-            pose.mulPose(Axis.XP.rotation(head.xRot));
-            pose.translate(fox.isBaby() ? 0.04f : 0.06f, fox.isBaby() ? 0.26f : 0.27f, -0.5f);
+            // The wolf model's head pivot, then the head's turn, then down to the mouth.
+            pose.translate(-1 / 16f, 13.5f / 16, -7 / 16f);
+            pose.mulPose(Axis.YP.rotationDegrees(headYaw));
+            pose.mulPose(Axis.XP.rotationDegrees(headPitch));
+            pose.translate(1 / 16f, 2.5f / 16, -6 / 16f);
             pose.mulPose(Axis.XP.rotationDegrees(90));
+            pose.scale(0.6f, 0.6f, 0.6f);
             items.renderItem(fox, item, ItemDisplayContext.GROUND, false, pose, buffers, light);
             pose.popPose();
         }

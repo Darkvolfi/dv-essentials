@@ -30,6 +30,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
+import java.util.UUID;
 
 /**
  * Brings a dead pet back: lay the shard of its collar on the altar, then offer a soul at least as strong (as many hearts or
@@ -76,8 +77,9 @@ public class SoulAltarBlock extends BaseEntityBlock {
         ItemStack held = player.getItemInHand(hand);
         ItemStack copy = altar.copy();
         if (copy.isEmpty()) {
-            if (!held.is(DVSouls.COLLAR_SHARD.get())) {
-                tell(player, level, Component.translatable("dvsouls.altar.empty"));
+            Component refusal = refuse(held, player);
+            if (refusal != null) {
+                tell(player, level, refusal);
                 return InteractionResult.sidedSuccess(level.isClientSide);
             }
             if (!level.isClientSide) {
@@ -93,9 +95,9 @@ public class SoulAltarBlock extends BaseEntityBlock {
             }
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
-        float needed = Soul.hearts(Soul.get(copy));
+        float needed = needed(copy);
         if (!held.is(DVSouls.FILLED_SOUL_JAR.get())) {
-            tell(player, level, Component.translatable("dvsouls.altar.offer", Soul.name(Soul.get(copy)), hearts(needed)));
+            tell(player, level, Component.translatable(offerKey(), Soul.name(Soul.get(copy)), hearts(needed)));
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
         float offered = Soul.hearts(Soul.get(held));
@@ -105,13 +107,36 @@ public class SoulAltarBlock extends BaseEntityBlock {
         }
         if (level instanceof ServerLevel server) {
             Vec3 top = Vec3.atBottomCenterOf(pos.above());
-            if (Soul.spawn(Soul.get(copy), server, top, player.getYRot() + 180) == null) return InteractionResult.FAIL;
+            if (!complete(server, top, player, copy)) return InteractionResult.FAIL;
             altar.setCopy(ItemStack.EMPTY);
             if (!player.getAbilities().instabuild) player.setItemInHand(hand, new ItemStack(DVSouls.SOUL_JAR.get()));
             server.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, top.x, top.y + 0.5, top.z, 40, 0.4, 0.6, 0.4, 0.03);
             server.playSound(null, pos, SoundEvents.TOTEM_USE, SoundSource.BLOCKS, 0.8f, 1.2f);
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    /** Why {@code held} can't be laid on the altar, or null if it can: only the owner's collar shard. */
+    @Nullable
+    protected Component refuse(ItemStack held, Player player) {
+        if (!held.is(DVSouls.COLLAR_SHARD.get())) return Component.translatable("dvsouls.altar.empty");
+        UUID owner = Pets.owner(Soul.get(held));
+        return owner == null || owner.equals(player.getUUID()) ? null : Component.translatable("dvsouls.capture.not_yours");
+    }
+
+    /** How many hearts the offered soul needs: as many as the dead pet had. */
+    protected float needed(ItemStack laid) {
+        return Soul.hearts(Soul.get(laid));
+    }
+
+    /** The message asking for an offering: name, hearts. */
+    protected String offerKey() {
+        return "dvsouls.altar.offer";
+    }
+
+    /** The offering is accepted: the pet stands up on the altar. False if its creature no longer exists. */
+    protected boolean complete(ServerLevel level, Vec3 top, Player player, ItemStack laid) {
+        return Soul.spawn(Soul.get(laid), level, top, player.getYRot() + 180) != null;
     }
 
     private static String hearts(float hearts) {

@@ -11,9 +11,11 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobType;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.animal.AbstractGolem;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -21,19 +23,19 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.LivingChangeTargetEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.Locale;
 import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = DVSouls.MOD_ID)
 public final class SoulEvents {
-    /** What a soul's hearts add to a horse, each, and how far: speed and jump up to the best a horse can be born with. */
-    private static final double SPEED_PER_HEART = 0.003, SPEED_MAX = 0.3375;
-    private static final double JUMP_PER_HEART = 0.01, JUMP_MAX = 1.0;
-    private static final double HEALTH_PER_HEART = 0.5, HEALTH_MAX = 30;
+    /** What each of a soul's hearts adds to a horse; how far it can go is a server setting. */
+    private static final double SPEED_PER_HEART = 0.003, JUMP_PER_HEART = 0.01, HEALTH_PER_HEART = 0.5;
 
     private SoulEvents() {}
 
@@ -64,12 +66,14 @@ public final class SoulEvents {
     }
 
     private static boolean uncapturable(Entity target) {
-        return target.getType().is(DVSouls.UNCAPTURABLE);
+        return target.getType().is(DVSouls.UNCAPTURABLE)
+                || SoulsConfig.UNCAPTURABLE.get().contains(String.valueOf(ForgeRegistries.ENTITY_TYPES.getKey(target.getType())));
     }
 
     private static InteractionResult capture(Player player, InteractionHand hand, ItemStack jar, LivingEntity target) {
         if (uncapturable(target)) return deny(player, "dvsouls.capture.too_strong");
-        if (Pets.isPet(target) && !Pets.ownedBy(target, player)) return deny(player, "dvsouls.capture.not_yours");
+        UUID owner = Pets.anyOwner(target);
+        if (owner != null && !owner.equals(player.getUUID())) return deny(player, "dvsouls.capture.not_yours");
         if (player.level() instanceof ServerLevel level) {
             target.ejectPassengers();
             target.stopRiding();
@@ -85,11 +89,15 @@ public final class SoulEvents {
         return InteractionResult.SUCCESS;
     }
 
+    /** A collar goes only on a creature that is already the player's (bound at the Binding Altar, or tamed); it lets it come back after death. */
     private static InteractionResult collar(Player player, ItemStack collar, LivingEntity target) {
-        if (!(target instanceof Mob mob) || uncapturable(target)) return deny(player, "dvsouls.collar.cannot");
-        if (Pets.isPet(mob)) return deny(player, Pets.ownedBy(mob, player) ? "dvsouls.collar.already" : "dvsouls.capture.not_yours");
+        if (!(target instanceof Mob mob)) return deny(player, "dvsouls.collar.cannot");
+        UUID owner = Pets.anyOwner(mob);
+        if (owner == null) return deny(player, "dvsouls.collar.not_bound");
+        if (!owner.equals(player.getUUID())) return deny(player, "dvsouls.capture.not_yours");
+        if (Pets.collared(mob)) return deny(player, "dvsouls.collar.already");
         if (player.level() instanceof ServerLevel level) {
-            Pets.bind(mob, player);
+            Pets.putCollar(mob);
             if (!player.getAbilities().instabuild) collar.shrink(1);
             level.sendParticles(ParticleTypes.HEART, mob.getX(), mob.getY(1), mob.getZ(), 6, 0.3, 0.3, 0.3, 0);
             player.displayClientMessage(Component.translatable("dvsouls.collar.bound", mob.getName()), true);
@@ -104,9 +112,9 @@ public final class SoulEvents {
         if (soul == null) return InteractionResult.PASS;
         if (player.level() instanceof ServerLevel level) {
             float hearts = Soul.hearts(soul);
-            boolean changed = raise(horse, Attributes.MOVEMENT_SPEED, hearts * SPEED_PER_HEART, SPEED_MAX)
-                    | raise(horse, Attributes.JUMP_STRENGTH, hearts * JUMP_PER_HEART, JUMP_MAX)
-                    | raise(horse, Attributes.MAX_HEALTH, hearts * HEALTH_PER_HEART, HEALTH_MAX);
+            boolean changed = raise(horse, Attributes.MOVEMENT_SPEED, hearts * SPEED_PER_HEART, SoulsConfig.HORSE_SPEED_MAX.get())
+                    | raise(horse, Attributes.JUMP_STRENGTH, hearts * JUMP_PER_HEART, SoulsConfig.HORSE_JUMP_MAX.get())
+                    | raise(horse, Attributes.MAX_HEALTH, hearts * HEALTH_PER_HEART, SoulsConfig.HORSE_HEALTH_MAX.get());
             if (!changed) return deny(player, "dvsouls.horse.maxed");
             horse.heal(horse.getMaxHealth());
             level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, horse.getX(), horse.getY(0.6), horse.getZ(), 25, 0.5, 0.5, 0.5, 0.02);
@@ -132,24 +140,36 @@ public final class SoulEvents {
         return InteractionResult.FAIL;
     }
 
+    /** A bound undead pet doesn't burn in the sun: the fire the sun sets it on is put out before it can hurt. */
+    @SubscribeEvent
+    public static void onLivingTick(LivingEvent.LivingTickEvent event) {
+        LivingEntity entity = event.getEntity();
+        if (entity.level().isClientSide || !entity.isOnFire() || entity.getMobType() != MobType.UNDEAD || !Pets.isPet(entity)) return;
+        if (!entity.isInLava() && entity.level().isDay() && entity.level().canSeeSky(entity.blockPosition())) entity.clearFire();
+    }
+
     @SubscribeEvent
     public static void onJoin(EntityJoinLevelEvent event) {
         if (!event.getLevel().isClientSide && event.getEntity() instanceof Mob mob && Pets.isPet(mob)) Pets.addGoals(mob);
     }
 
-    /** A pet never turns on its owner or the owner's other pets, whatever its nature. */
+    /** Whose side a creature is on decides whom it may target. */
     @SubscribeEvent
     public static void onTarget(LivingChangeTargetEvent event) {
         LivingEntity target = event.getNewTarget();
-        if (target != null && Pets.isPet(event.getEntity()) && Pets.sameSide(event.getEntity(), target)) event.setCanceled(true);
+        if (target == null) return;
+        LivingEntity attacker = event.getEntity();
+        // No pet or tamed creature turns on its own side, and iron and snow golems leave bound pets alone, monsters or not.
+        if (Pets.anyOwner(attacker) != null && Pets.sameSide(attacker, target)) event.setCanceled(true);
+        if (attacker instanceof AbstractGolem && Pets.isPet(target)) event.setCanceled(true);
     }
 
-    /** A pet that dies leaves a shard of its collar, which keeps its soul (healed) and never despawns; the Soul Altar brings it back. */
+    /** A collared pet that dies leaves a shard of its collar, which keeps its soul (healed) and never despawns; the Soul Altar brings it back. */
     @SubscribeEvent
     public static void onDeath(LivingDeathEvent event) {
         LivingEntity entity = event.getEntity();
-        UUID owner = Pets.owner(entity);
-        if (owner == null || !(entity.level() instanceof ServerLevel level)) return;
+        UUID owner = Pets.anyOwner(entity);
+        if (owner == null || !Pets.collared(entity) || !(entity.level() instanceof ServerLevel level)) return;
         ItemStack shard = Soul.put(new ItemStack(DVSouls.COLLAR_SHARD.get()), Soul.healed(Soul.of(entity)));
         ItemEntity drop = new ItemEntity(level, entity.getX(), entity.getY(0.5), entity.getZ(), shard);
         drop.setUnlimitedLifetime();

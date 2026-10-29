@@ -1,8 +1,10 @@
 package com.darkvolfi.dvsouls;
 
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.OwnableEntity;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.Goal;
@@ -15,13 +17,15 @@ import java.util.Locale;
 import java.util.UUID;
 
 /**
- * Creatures bound to a player with a soul collar. Any creature can wear one, so the pet's behaviour is added to its
- * own goals: it follows its owner, sits, or wanders about on its own, and one that can fight takes on whoever hurts its owner or whom its owner
- * hits. It never turns on its owner or the owner's other pets (see {@link SoulEvents}).
+ * Creatures bound to a player at the Binding Altar. Any creature can be bound, so the pet's behaviour is added to its
+ * own goals: it follows its owner, sits, or wanders about on its own, and one that can fight takes on whoever hurts its
+ * owner or whom its owner hits. It never turns on its owner or the owner's other pets (see {@link SoulEvents}).
+ * A pet (or a creature tamed the usual way) that also wears a soul collar leaves a shard of it when it dies.
  */
 public final class Pets {
     private static final String OWNER = "dvsouls:owner";
     private static final String MODE = "dvsouls:mode";
+    private static final String COLLARED = "dvsouls:collared";
 
     private Pets() {}
 
@@ -38,10 +42,34 @@ public final class Pets {
         return player.getUUID().equals(owner(entity));
     }
 
-    /** Both are this player's: the player, or a pet of theirs. */
+    /** The owner of a bound pet or of a creature tamed the usual way (a wolf, a cat, a horse...). */
+    public static UUID anyOwner(Entity entity) {
+        UUID owner = owner(entity);
+        if (owner != null) return owner;
+        return entity instanceof OwnableEntity ownable ? ownable.getOwnerUUID() : null;
+    }
+
+    /** The owner kept in a soul: its creature's bound owner, or the one it was tamed by. */
+    public static UUID owner(CompoundTag soul) {
+        if (soul == null) return null;
+        CompoundTag data = soul.getCompound("Data");
+        CompoundTag forge = data.getCompound("ForgeData");
+        if (forge.hasUUID(OWNER)) return forge.getUUID(OWNER);
+        return data.hasUUID("Owner") ? data.getUUID("Owner") : null;
+    }
+
+    public static boolean collared(Entity entity) {
+        return entity.getPersistentData().getBoolean(COLLARED);
+    }
+
+    public static void putCollar(Entity entity) {
+        entity.getPersistentData().putBoolean(COLLARED, true);
+    }
+
+    /** Both are this player's: the player, or a pet or tamed creature of theirs. */
     public static boolean sameSide(Entity a, Entity b) {
-        UUID ownerA = a instanceof Player ? a.getUUID() : owner(a);
-        UUID ownerB = b instanceof Player ? b.getUUID() : owner(b);
+        UUID ownerA = a instanceof Player ? a.getUUID() : anyOwner(a);
+        UUID ownerB = b instanceof Player ? b.getUUID() : anyOwner(b);
         return ownerA != null && ownerA.equals(ownerB);
     }
 

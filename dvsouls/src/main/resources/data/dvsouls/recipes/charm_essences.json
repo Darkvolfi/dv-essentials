@@ -1,0 +1,2 @@
+{"type": "dvsouls:charm_essences", "category": "misc",
+ "conditions": [{"type": "forge:not", "value": {"type": "forge:mod_loaded", "modid": "dvbackpack"}}]}

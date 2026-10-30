@@ -9,6 +9,9 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.ChatFormatting;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
@@ -34,7 +37,8 @@ import java.util.UUID;
 
 /**
  * Brings a dead pet back: lay the shard of its collar on the altar, then offer a soul at least as strong (as many hearts or
- * more). The offered soul is spent and the pet stands up on the altar, whole, with its name and owner.
+ * more), in a jar or as pure soul. The offering is spent and the pet stands up on the altar, whole, with its name and
+ * owner. A soul of another kind of creature may corrupt it instead ({@link SoulFuel#corrupts}).
  */
 public class SoulAltarBlock extends BaseEntityBlock {
     public static final BooleanProperty FILLED = BooleanProperty.create("filled");
@@ -96,22 +100,33 @@ public class SoulAltarBlock extends BaseEntityBlock {
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
         float needed = needed(copy);
-        if (!held.is(DVSouls.FILLED_SOUL_JAR.get())) {
+        float offered = SoulFuel.offered(held);
+        if (offered <= 0) {
             tell(player, level, Component.translatable(offerKey(), Soul.name(Soul.get(copy)), hearts(needed)));
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
-        float offered = Soul.hearts(Soul.get(held));
         if (offered < needed) {
             tell(player, level, Component.translatable("dvsouls.altar.too_weak", hearts(offered), hearts(needed)));
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
         if (level instanceof ServerLevel server) {
             Vec3 top = Vec3.atBottomCenterOf(pos.above());
-            if (!complete(server, top, player, copy)) return InteractionResult.FAIL;
+            boolean corrupt = SoulFuel.corrupts(Soul.type(Soul.get(copy)).orElse(null), SoulFuel.kind(held), server.random);
+            Entity creature = complete(server, top, player, copy, corrupt);
+            if (creature == null) return InteractionResult.FAIL;
             altar.setCopy(ItemStack.EMPTY);
-            if (!player.getAbilities().instabuild) player.setItemInHand(hand, new ItemStack(DVSouls.SOUL_JAR.get()));
-            server.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, top.x, top.y + 0.5, top.z, 40, 0.4, 0.6, 0.4, 0.03);
-            server.playSound(null, pos, SoundEvents.TOTEM_USE, SoundSource.BLOCKS, 0.8f, 1.2f);
+            spend(player, hand, held);
+            if (corrupt && creature instanceof LivingEntity living) {
+                Corrupted corrupted = Corrupted.corrupt(server, living);
+                player.displayClientMessage(Component.translatable("dvsouls.corrupted.message", living.getName())
+                        .withStyle(ChatFormatting.DARK_RED), true);
+                server.sendParticles(ParticleTypes.LARGE_SMOKE, top.x, top.y + 0.5, top.z, 40, 0.4, 0.6, 0.4, 0.03);
+                server.playSound(null, pos, SoundEvents.ZOMBIE_VILLAGER_CONVERTED, SoundSource.HOSTILE, 1, 0.6f);
+                corrupted.setTarget(player.getAbilities().instabuild ? null : player);
+            } else {
+                server.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, top.x, top.y + 0.5, top.z, 40, 0.4, 0.6, 0.4, 0.03);
+                server.playSound(null, pos, SoundEvents.TOTEM_USE, SoundSource.BLOCKS, 0.8f, 1.2f);
+            }
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
@@ -134,9 +149,22 @@ public class SoulAltarBlock extends BaseEntityBlock {
         return "dvsouls.altar.offer";
     }
 
-    /** The offering is accepted: the pet stands up on the altar. False if its creature no longer exists. */
-    protected boolean complete(ServerLevel level, Vec3 top, Player player, ItemStack laid) {
-        return Soul.spawn(Soul.get(laid), level, top, player.getYRot() + 180) != null;
+    /**
+     * The offering is accepted: the pet stands up on the altar. Null if its creature no longer exists. When
+     * {@code corrupt}, it is about to be corrupted (by the caller), so it shouldn't be made the player's.
+     */
+    @Nullable
+    protected Entity complete(ServerLevel level, Vec3 top, Player player, ItemStack laid, boolean corrupt) {
+        return Soul.spawn(Soul.get(laid), level, top, player.getYRot() + 180);
+    }
+
+    /** Spends one offering from the hand; it leaves its jar, bucket or bottle. */
+    private static void spend(Player player, InteractionHand hand, ItemStack held) {
+        if (player.getAbilities().instabuild) return;
+        ItemStack rest = held.getCraftingRemainingItem();
+        held.shrink(1);
+        if (held.isEmpty()) player.setItemInHand(hand, rest);
+        else if (!player.getInventory().add(rest)) player.drop(rest, false);
     }
 
     private static String hearts(float hearts) {

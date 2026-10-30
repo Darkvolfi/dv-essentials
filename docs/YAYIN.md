@@ -216,10 +216,12 @@ The library behind the DV mods. Install it together with any DV mod.
 - **Binding Altar:** lay a creature's jar on it and offer a soul with half its hearts: it stands up as your pet. Pets follow, wait or wander (sneak + right-click), defend you, and never turn on you or your other pets — monsters too
 - **Soul Collar:** a collared pet that dies leaves a **collar shard**; offer a soul as strong as it at the **Soul Altar** to bring it back
 - **Soul Fuser:** fuse two souls into a hybrid — **Woolly Cow** (shear it, it grazes its wool back), **Feathered Pig** (lays eggs, falls slowly), **Lava Horse** (walks on lava), **Wolf Fox** (fetches items) — or two of the same kind into a stronger soul
-- **Soul Furnace, Soul Smoker, Soul Blast Furnace:** twice as fast as the game's own, burning souls; with **DV Backpack** they also come as upgrade cards that cook inside the backpack
+- **Soul Furnace, Soul Smoker, Soul Blast Furnace:** twice as fast as the game's own, burning souls from a bar at their side; with **DV Backpack** they also come as upgrade cards that cook inside the backpack
+- **Soul bars and pure soul:** every soul machine burns souls from a bar at its side (one heart is one soul), filled from the slot under it with a soul jar or a bucket or bottle of pure soul, or by pipes. The **Soul Refiner** turns a soul jar and a little amethyst (one shard every 8 souls) into **pure soul**: a dark blue liquid with soul faces drifting in it, belonging to no creature. A bucket of it burns in any furnace, a bottle soaks coal into **Soul Coal**, and it is the safe offering at the altars
+- **Corruption:** offer a soul of another kind for a creature (bringing back, binding) and it may turn into a **corrupted** one: its own shape, darkened, red-eyed and hostile. Pure soul or the creature's own kind never corrupts
 - Feed a soul to a horse to raise its speed, jump and health
 - **Soul charms:** distil a soul with amethyst into an **essence** in the **Soul Distiller**, and set essences in a gold, diamond or netherite charm (1, 2 or 3). In a worn **DV Backpack**'s upgrade slot it gives the creatures' powers: water breathing, night vision, wall climbing, walking on lava, strength, speed, creepers keeping away, item magnet... 18 in all; more essences of one creature make it stronger
-- JEI shows the fusions and distilling; works without JEI and DV Backpack (charms then work from the inventory)
+- JEI shows the fusions, distilling and refining; works without JEI and DV Backpack (charms then work from the inventory)
 - Server settings for costs, times and limits
 - Required on both client and server
 

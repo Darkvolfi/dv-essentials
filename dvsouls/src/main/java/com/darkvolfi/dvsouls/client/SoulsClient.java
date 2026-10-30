@@ -12,6 +12,8 @@ import net.minecraft.world.item.SpawnEggItem;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.ForgeSpawnEggItem;
 import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RegisterColorHandlersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -34,8 +36,11 @@ public final class SoulsClient {
         event.register((stack, layer) -> layer == 0 ? -1 : 0xFF000000 | eggColor(EssenceItem.creature(stack), 0), DVSouls.SOUL_ESSENCE.get());
     }
 
+    /** A corrupted creature's soul is dark red, with black swirls. */
     private static int soulColor(ItemStack stack, int part) {
-        return eggColor(Soul.type(Soul.get(stack)).orElse(null), part);
+        EntityType<?> type = Soul.type(Soul.get(stack)).orElse(null);
+        if (type == DVSouls.CORRUPTED.get()) return part == 0 ? 0x6A1414 : 0x1A0A0A;
+        return eggColor(type, part);
     }
 
     private static int eggColor(@Nullable EntityType<?> type, int part) {
@@ -51,6 +56,7 @@ public final class SoulsClient {
     @SubscribeEvent
     public static void onRenderers(EntityRenderersEvent.RegisterRenderers event) {
         HybridRenderers.registerRenderers(event);
+        event.registerEntityRenderer(DVSouls.CORRUPTED.get(), CorruptedRenderer::new);
     }
 
     @SubscribeEvent
@@ -59,6 +65,9 @@ public final class SoulsClient {
             for (var menu : DVSouls.FURNACE_MENUS.values()) MenuScreens.register(menu.get(), SoulScreens.FurnaceScreen::new);
             MenuScreens.register(DVSouls.SOUL_FUSER_MENU.get(), SoulScreens.MachineScreen<SoulFuser.Menu>::new);
             MenuScreens.register(DVSouls.SOUL_DISTILLER_MENU.get(), SoulScreens.MachineScreen<SoulDistiller.Menu>::new);
+            MenuScreens.register(DVSouls.SOUL_REFINER_MENU.get(), SoulScreens.RefinerScreen::new);
+            ItemBlockRenderTypes.setRenderLayer(DVSouls.PURE_SOUL.get(), RenderType.translucent());
+            ItemBlockRenderTypes.setRenderLayer(DVSouls.FLOWING_PURE_SOUL.get(), RenderType.translucent());
         });
     }
 }

@@ -1,0 +1,2 @@
+{"parent": "minecraft:block/cube_bottom_top", "textures": {"top": "minecraft:block/sculk_catalyst_top",
+ "bottom": "minecraft:block/polished_blackstone", "side": "minecraft:block/chiseled_polished_blackstone"}}

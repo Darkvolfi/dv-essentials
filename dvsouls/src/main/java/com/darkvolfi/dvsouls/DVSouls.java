@@ -7,6 +7,21 @@ import com.darkvolfi.dvsouls.charm.EssenceItem;
 import com.darkvolfi.dvsouls.charm.SoulCharm;
 import com.darkvolfi.dvsouls.compat.BackpackCards;
 import net.minecraftforge.fml.ModList;
+import net.minecraft.world.item.BucketItem;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraftforge.fluids.FluidType;
+import net.minecraftforge.fluids.ForgeFlowingFluid;
+import org.jetbrains.annotations.Nullable;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.item.crafting.RecipeSerializer;
@@ -60,6 +75,8 @@ public class DVSouls {
     private static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(ForgeRegistries.MENU_TYPES, MOD_ID);
     private static final DeferredRegister<RecipeSerializer<?>> RECIPES = DeferredRegister.create(ForgeRegistries.RECIPE_SERIALIZERS, MOD_ID);
     private static final DeferredRegister<MobEffect> EFFECTS = DeferredRegister.create(ForgeRegistries.MOB_EFFECTS, MOD_ID);
+    private static final DeferredRegister<FluidType> FLUID_TYPES = DeferredRegister.create(ForgeRegistries.Keys.FLUID_TYPES, MOD_ID);
+    private static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(ForgeRegistries.FLUIDS, MOD_ID);
 
     /** Creatures no jar or collar can hold: bosses and the like. */
     public static final TagKey<EntityType<?>> UNCAPTURABLE = TagKey.create(Registries.ENTITY_TYPE, new ResourceLocation(MOD_ID, "uncapturable"));
@@ -68,6 +85,50 @@ public class DVSouls {
     public static final RegistryObject<Item> FILLED_SOUL_JAR = ITEMS.register("filled_soul_jar", () -> new SoulItem(true));
     public static final RegistryObject<Item> COLLAR_SHARD = ITEMS.register("collar_shard", () -> new SoulItem(false));
     public static final RegistryObject<Item> SOUL_COLLAR = ITEMS.register("soul_collar", () -> new Item(new Item.Properties().stacksTo(16)));
+
+    // Pure soul: refined from creatures' souls, it belongs to none. A liquid, in buckets and bottles.
+    public static final RegistryObject<FluidType> PURE_SOUL_TYPE = FLUID_TYPES.register("pure_soul", PureSoul::new);
+    public static final RegistryObject<ForgeFlowingFluid.Source> PURE_SOUL = FLUIDS.register("pure_soul",
+            () -> new ForgeFlowingFluid.Source(pureSoul()));
+    public static final RegistryObject<ForgeFlowingFluid.Flowing> FLOWING_PURE_SOUL = FLUIDS.register("flowing_pure_soul",
+            () -> new ForgeFlowingFluid.Flowing(pureSoul()));
+    /** Soul faces (the game's soul particles) drift up out of it now and then. */
+    public static final RegistryObject<LiquidBlock> PURE_SOUL_BLOCK = BLOCKS.register("pure_soul",
+            () -> new LiquidBlock(PURE_SOUL, BlockBehaviour.Properties.copy(Blocks.WATER).lightLevel(state -> 10)) {
+                @Override
+                public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
+                    if (random.nextInt(6) != 0) return;
+                    level.addParticle(ParticleTypes.SOUL, pos.getX() + random.nextDouble(), pos.getY() + random.nextDouble() * 0.8,
+                            pos.getZ() + random.nextDouble(), 0, 0.03, 0);
+                }
+            });
+    /** Burns in any furnace, like lava. */
+    public static final RegistryObject<Item> PURE_SOUL_BUCKET = ITEMS.register("pure_soul_bucket",
+            () -> new BucketItem(PURE_SOUL, new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)) {
+                @Override
+                public int getBurnTime(ItemStack stack, @Nullable RecipeType<?> recipeType) {
+                    return 12000;
+                }
+            });
+    /** Stacks to one, like a potion: it pours into a bar from the one slot under it, leaving its bottle there. */
+    public static final RegistryObject<Item> PURE_SOUL_BOTTLE = ITEMS.register("pure_soul_bottle",
+            () -> new Item(new Item.Properties().craftRemainder(Items.GLASS_BOTTLE).stacksTo(1)));
+    /** Coal soaked in pure soul: burns twice as long as coal in any furnace. */
+    public static final RegistryObject<Item> SOUL_COAL = ITEMS.register("soul_coal", () -> new Item(new Item.Properties()) {
+        @Override
+        public int getBurnTime(ItemStack stack, @Nullable RecipeType<?> recipeType) {
+            return 3200;
+        }
+    });
+
+    private static ForgeFlowingFluid.Properties pureSoul() {
+        return new ForgeFlowingFluid.Properties(PURE_SOUL_TYPE, PURE_SOUL, FLOWING_PURE_SOUL)
+                .bucket(PURE_SOUL_BUCKET).block(PURE_SOUL_BLOCK).slopeFindDistance(2).levelDecreasePerBlock(2).tickRate(15);
+    }
+
+    /** A creature a foreign soul has corrupted: it looks like the creature, darkened, and attacks. */
+    public static final RegistryObject<EntityType<Corrupted>> CORRUPTED = ENTITIES.register("corrupted",
+            () -> EntityType.Builder.of(Corrupted::new, MobCategory.MONSTER).sized(0.9f, 1.4f).clientTrackingRange(10).build("corrupted"));
 
     // Hybrids: made by fusing two souls. Each is sized like the creature it is built on.
     public static final RegistryObject<EntityType<WoollyCow>> WOOLLY_COW = ENTITIES.register("woolly_cow",
@@ -130,6 +191,13 @@ public class DVSouls {
     public static final RegistryObject<MenuType<SoulDistiller.Menu>> SOUL_DISTILLER_MENU = MENUS.register("soul_distiller",
             () -> new MenuType<>(SoulDistiller.Menu::new, FeatureFlags.VANILLA_SET));
 
+    public static final RegistryObject<SoulRefiner.Block> SOUL_REFINER = BLOCKS.register("soul_refiner", SoulRefiner.Block::new);
+    @SuppressWarnings("DataFlowIssue")
+    public static final RegistryObject<BlockEntityType<SoulRefiner.Entity>> SOUL_REFINER_ENTITY = BLOCK_ENTITIES.register("soul_refiner",
+            () -> BlockEntityType.Builder.of(SoulRefiner.Entity::new, SOUL_REFINER.get()).build(null));
+    public static final RegistryObject<MenuType<SoulRefiner.Menu>> SOUL_REFINER_MENU = MENUS.register("soul_refiner",
+            () -> new MenuType<>(SoulRefiner.Menu::new, FeatureFlags.VANILLA_SET));
+
     // Soul charms: essences distilled from souls give their creatures' abilities.
     public static final RegistryObject<Item> SOUL_ESSENCE = ITEMS.register("soul_essence", EssenceItem::new);
     public static final Map<SoulCharm.Tier, RegistryObject<Item>> CHARMS = new EnumMap<>(SoulCharm.Tier.class);
@@ -154,6 +222,7 @@ public class DVSouls {
             CHARMS.put(tier, ITEMS.register(tier.id() + "_soul_charm", () -> new SoulCharm(tier)));
         }
         ITEMS.register("soul_distiller", () -> new BlockItem(SOUL_DISTILLER.get(), new Item.Properties()));
+        ITEMS.register("soul_refiner", () -> new BlockItem(SOUL_REFINER.get(), new Item.Properties()));
         ITEMS.register("soul_altar", () -> new BlockItem(SOUL_ALTAR.get(), new Item.Properties()));
         ITEMS.register("binding_altar", () -> new BlockItem(BINDING_ALTAR.get(), new Item.Properties()));
         ITEMS.register("soul_fuser", () -> new BlockItem(SOUL_FUSER.get(), new Item.Properties()));
@@ -163,6 +232,10 @@ public class DVSouls {
                 .displayItems((params, output) -> {
                     output.accept(SOUL_JAR.get());
                     output.accept(SOUL_COLLAR.get());
+                    output.accept(SOUL_REFINER.get());
+                    output.accept(PURE_SOUL_BUCKET.get());
+                    output.accept(PURE_SOUL_BOTTLE.get());
+                    output.accept(SOUL_COAL.get());
                     output.accept(BINDING_ALTAR.get());
                     output.accept(SOUL_ALTAR.get());
                     for (RegistryObject<SoulFurnace.Block> furnace : FURNACES.values()) output.accept(furnace.get());
@@ -189,6 +262,8 @@ public class DVSouls {
         MENUS.register(modBus);
         RECIPES.register(modBus);
         EFFECTS.register(modBus);
+        FLUID_TYPES.register(modBus);
+        FLUIDS.register(modBus);
         modBus.addListener(DVSouls::onAttributes);
         ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, SoulsConfig.SPEC);
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> DVConfigScreen.register(MOD_ID, null, SoulsConfig.SPEC, null));
@@ -200,5 +275,6 @@ public class DVSouls {
         event.put(FEATHERED_PIG.get(), Pig.createAttributes().build());
         event.put(LAVA_HORSE.get(), AbstractHorse.createBaseHorseAttributes().build());
         event.put(WOLF_FOX.get(), Wolf.createAttributes().build());
+        event.put(CORRUPTED.get(), Corrupted.createAttributes().build());
     }
 }

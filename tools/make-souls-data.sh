@@ -72,7 +72,7 @@ w $D/loot_tables/blocks/soul_altar.json <<EOF
   "conditions": [{"condition": "minecraft:survives_explosion"}]}]}
 EOF
 w $R/data/minecraft/tags/blocks/mineable/pickaxe.json <<EOF
-{"replace": false, "values": ["$M:soul_altar", "$M:binding_altar", "$M:soul_furnace", "$M:soul_smoker", "$M:soul_blast_furnace", "$M:soul_fuser", "$M:soul_distiller"]}
+{"replace": false, "values": ["$M:soul_altar", "$M:binding_altar", "$M:soul_furnace", "$M:soul_smoker", "$M:soul_blast_furnace", "$M:soul_fuser", "$M:soul_distiller", "$M:soul_refiner"]}
 EOF
 
 # ---------- the Soul Furnace, Soul Smoker and Soul Blast Furnace (the game's ones in blackstone, burning soul fire) and
@@ -253,6 +253,50 @@ mkdir -p $R/data/dvbackpack/tags/items
 w $R/data/dvbackpack/tags/items/upgrades.json <<EOF2
 {"replace": false, "values": ["$M:gold_soul_charm", "$M:diamond_soul_charm", "$M:netherite_soul_charm"]}
 EOF2
+
+# ---------- pure soul: the liquid (its block shows only particles), a bucket and a bottle of it, soul coal, and the Soul
+# Refiner (blackstone round a sculk catalyst's top, which blooms while it works)
+w $A/blockstates/pure_soul.json <<EOF
+{"variants": {"": {"model": "$M:block/pure_soul"}}}
+EOF
+w $A/models/block/pure_soul.json <<EOF
+{"textures": {"particle": "$M:block/pure_soul_still"}}
+EOF
+w $A/models/item/pure_soul_bottle.json <<EOF
+{"parent": "minecraft:item/generated", "textures": {"layer0": "$M:item/pure_soul_bottle"}}
+EOF
+# the game's bucket and coal under our liquid and veins
+w $A/models/item/pure_soul_bucket.json <<EOF
+{"parent": "minecraft:item/generated", "textures": {"layer0": "minecraft:item/bucket", "layer1": "$M:item/pure_soul_bucket"}}
+EOF
+w $A/models/item/soul_coal.json <<EOF
+{"parent": "minecraft:item/generated", "textures": {"layer0": "minecraft:item/coal", "layer1": "$M:item/soul_coal"}}
+EOF
+fuser soul_refiner minecraft:block/sculk_catalyst_top
+fuser soul_refiner_on minecraft:block/sculk_catalyst_top_bloom
+w $A/blockstates/soul_refiner.json <<EOF
+{"variants": {"lit=false": {"model": "$M:block/soul_refiner"}, "lit=true": {"model": "$M:block/soul_refiner_on"}}}
+EOF
+w $A/models/item/soul_refiner.json <<EOF
+{"parent": "$M:block/soul_refiner"}
+EOF
+w $D/loot_tables/blocks/soul_refiner.json <<EOF
+{"type": "minecraft:block", "pools": [{"rolls": 1, "bonus_rolls": 0,
+  "entries": [{"type": "minecraft:item", "name": "$M:soul_refiner"}],
+  "conditions": [{"condition": "minecraft:survives_explosion"}]}]}
+EOF
+w $D/recipes/soul_refiner.json <<EOF
+{"type": "minecraft:crafting_shaped", "category": "misc", "pattern": ["QJQ", "GHG", "BBB"],
+ "key": {"Q": {"item": "minecraft:quartz"}, "J": {"item": "$M:soul_jar"}, "G": {"item": "minecraft:glass"},
+         "H": {"item": "minecraft:hopper"}, "B": {"item": "minecraft:polished_blackstone"}},
+ "result": {"item": "$M:soul_refiner"}}
+EOF
+# A bottle of pure soul soaks four coal (or charcoal); the bottle is given back.
+w $D/recipes/soul_coal.json <<EOF
+{"type": "minecraft:crafting_shapeless", "category": "misc",
+ "ingredients": [{"item": "$M:pure_soul_bottle"}, {"tag": "minecraft:coals"}, {"tag": "minecraft:coals"}, {"tag": "minecraft:coals"}, {"tag": "minecraft:coals"}],
+ "result": {"item": "$M:soul_coal", "count": 4}}
+EOF
 
 # ---------- creatures no jar or collar can hold
 w $D/tags/entity_types/uncapturable.json <<EOF

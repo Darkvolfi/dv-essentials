@@ -27,9 +27,9 @@ import static com.darkvolfi.dvsouls.SoulMachine.FUEL;
 import static com.darkvolfi.dvsouls.SoulMachine.RESULT;
 
 /**
- * The Soul Distiller: with a soul burning as its fuel, it distils a soul and an amethyst shard into that creature's
+ * The Soul Distiller: burning souls from its bar, it distils a soul and an amethyst shard into that creature's
  * essence, for a soul charm. Only creatures with an {@link Ability} have one. The soul's jar is left empty. Hoppers put
- * the soul in from above, amethyst and fuel from the sides, and take from below.
+ * the soul in from above, amethyst and what fills the bar from the sides, and take from below.
  */
 public final class SoulDistiller {
     public static final int SOUL = 0, AMETHYST = 1;
@@ -89,7 +89,7 @@ public final class SoulDistiller {
                     worldPosition.getZ() + 0.5, 20, 0.3, 0.3, 0.3, 0.03);
         }
 
-        // ---- for hoppers: the soul in from above, amethyst and fuel from the sides, the results out from below
+        // ---- for hoppers: the soul in from above, amethyst and what fills the bar from the sides, the results out from below
 
         @Override
         public int[] getSlotsForFace(Direction side) {
@@ -101,7 +101,7 @@ public final class SoulDistiller {
             return switch (slot) {
                 case SOUL -> canDistil(stack);
                 case AMETHYST -> stack.is(Items.AMETHYST_SHARD);
-                case FUEL -> SoulFuser.isSoul(stack);
+                case FUEL -> SoulFurnace.isFuel(stack);
                 default -> false;
             };
         }
@@ -123,7 +123,7 @@ public final class SoulDistiller {
         }
     }
 
-    /** The soul with the amethyst beside it, the fuel below, and an arrow to the essence and the jar left empty. */
+    /** The soul over the amethyst, the bar of souls at the side with its slot under it, and an arrow to the essence and the jar left empty. */
     public static class Menu extends SoulMachine.Menu {
         public Menu(int id, Inventory inventory) {
             this(id, inventory, new SimpleContainer(SoulMachine.SIZE), new SimpleContainerData(4));
@@ -136,18 +136,18 @@ public final class SoulDistiller {
         @Override
         protected void addMachineSlots(Container distiller) {
             addSlot(new SoulMachine.FilterSlot(distiller, SOUL, 44, 17, SoulDistiller::canDistil));
-            addSlot(new SoulMachine.FilterSlot(distiller, AMETHYST, 20, 35, stack -> stack.is(Items.AMETHYST_SHARD)));
-            addSlot(new SoulMachine.FilterSlot(distiller, FUEL, 44, 53, SoulFuser::isSoul));
+            addSlot(new SoulMachine.FilterSlot(distiller, AMETHYST, 44, 35, stack -> stack.is(Items.AMETHYST_SHARD)));
+            addSlot(new SoulMachine.FilterSlot(distiller, FUEL, 9, 53, SoulFurnace::isFuel));
             addSlot(new SoulMachine.FilterSlot(distiller, RESULT, 116, 35, null));
             addSlot(new SoulMachine.FilterSlot(distiller, EMPTY, 144, 35, null));
         }
 
-        /** Amethyst to its slot; a soul with an essence to be distilled, any other soul as fuel. */
+        /** Amethyst to its slot; a soul with an essence to be distilled, anything else that fills the bar under it. */
         @Override
         protected boolean moveIn(ItemStack stack) {
             if (stack.is(Items.AMETHYST_SHARD)) return move(stack, AMETHYST, AMETHYST + 1);
             if (canDistil(stack) && move(stack, SOUL, SOUL + 1)) return true;
-            return SoulFuser.isSoul(stack) && move(stack, FUEL, FUEL + 1);
+            return SoulFurnace.isFuel(stack) && move(stack, FUEL, FUEL + 1);
         }
     }
 }

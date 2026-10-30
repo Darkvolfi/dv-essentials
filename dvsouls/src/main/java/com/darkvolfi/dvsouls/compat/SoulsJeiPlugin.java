@@ -36,14 +36,15 @@ import java.util.List;
 
 /**
  * Shows DV Science of Souls in JEI, when JEI is installed (JEI finds this class itself; nothing else loads it): the
- * Soul Furnace among the smelting recipes, and a page of the Soul Fuser's recipes, two souls and the hybrid they make.
+ * Soul Furnace among the smelting recipes, and pages of the Soul Fuser's, Distiller's and Refiner's recipes.
  */
 @JeiPlugin
 public class SoulsJeiPlugin implements IModPlugin {
     static final RecipeType<Fusion> FUSION = RecipeType.create(DVSouls.MOD_ID, "fusion", Fusion.class);
     static final RecipeType<Fusion> DISTILLING = RecipeType.create(DVSouls.MOD_ID, "distilling", Fusion.class);
+    static final RecipeType<Fusion> REFINING = RecipeType.create(DVSouls.MOD_ID, "refining", Fusion.class);
 
-    /** Two things in and one out: two souls and the hybrid's soul, or a soul and amethyst and its essence. */
+    /** Two things in and one out: two souls and the hybrid's soul, a soul and amethyst and its essence, or a soul and amethyst and pure soul. */
     record Fusion(ItemStack first, ItemStack second, ItemStack hybrid) {}
 
     private static ItemStack jar(EntityType<?> type) {
@@ -59,7 +60,8 @@ public class SoulsJeiPlugin implements IModPlugin {
     public void registerCategories(IRecipeCategoryRegistration registration) {
         IGuiHelper gui = registration.getJeiHelpers().getGuiHelper();
         registration.addRecipeCategories(new FusionCategory(gui, FUSION, "container.dvsouls.soul_fuser", DVSouls.SOUL_FUSER.get()),
-                new FusionCategory(gui, DISTILLING, "container.dvsouls.soul_distiller", DVSouls.SOUL_DISTILLER.get()));
+                new FusionCategory(gui, DISTILLING, "container.dvsouls.soul_distiller", DVSouls.SOUL_DISTILLER.get()),
+                new FusionCategory(gui, REFINING, "container.dvsouls.soul_refiner", DVSouls.SOUL_REFINER.get()));
     }
 
     @Override
@@ -75,6 +77,9 @@ public class SoulsJeiPlugin implements IModPlugin {
             distilling.add(new Fusion(jar(type), new ItemStack(Items.AMETHYST_SHARD), EssenceItem.of(new ItemStack(DVSouls.SOUL_ESSENCE.get()), type)));
         }
         registration.addRecipes(DISTILLING, distilling);
+        // A soul and amethyst give as many souls as it had hearts: a zombie's ten, a bucket of pure soul (at the default 100 mB a soul).
+        registration.addRecipes(REFINING, List.of(
+                new Fusion(jar(EntityType.ZOMBIE), new ItemStack(Items.AMETHYST_SHARD), new ItemStack(DVSouls.PURE_SOUL_BUCKET.get()))));
     }
 
     @Override
@@ -84,6 +89,7 @@ public class SoulsJeiPlugin implements IModPlugin {
         registration.addRecipeCatalyst(new ItemStack(DVSouls.FURNACES.get(SoulFurnace.Kind.BLAST_FURNACE).get()), RecipeTypes.BLASTING);
         registration.addRecipeCatalyst(new ItemStack(DVSouls.SOUL_FUSER.get()), FUSION);
         registration.addRecipeCatalyst(new ItemStack(DVSouls.SOUL_DISTILLER.get()), DISTILLING);
+        registration.addRecipeCatalyst(new ItemStack(DVSouls.SOUL_REFINER.get()), REFINING);
     }
 
     /** The plain full jar, collar shard and essence hold no soul: hidden, so they aren't taken from the list by mistake. */

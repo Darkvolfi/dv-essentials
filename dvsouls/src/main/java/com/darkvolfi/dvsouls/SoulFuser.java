@@ -31,10 +31,10 @@ import static com.darkvolfi.dvsouls.SoulMachine.FUEL;
 import static com.darkvolfi.dvsouls.SoulMachine.RESULT;
 
 /**
- * The Soul Fuser: two full soul jars go in, and with a soul burning as its fuel it fuses them into one. Two kinds that
+ * The Soul Fuser: two full soul jars go in, and burning souls from its bar it fuses them into one. Two kinds that
  * make a hybrid give the hybrid's soul (which two make which is fixed; the order doesn't matter); two of the same kind
- * give the first one stronger, with both their health (up to a server setting). One jar is left empty, and so is the
- * burnt fuel's; both go to the empty-jar slot. Hoppers put souls in from above, fuel from the sides, and take from below.
+ * give the first one stronger, with both their health (up to a server setting). One jar is left empty; it goes to the
+ * empty-jar slot. Hoppers put souls in from above, what fills the bar from the sides, and take from below.
  */
 public final class SoulFuser {
     public static final int A = 0, B = 1;
@@ -67,7 +67,7 @@ public final class SoulFuser {
     static CompoundTag empowered(ItemStack a, ItemStack b) {
         CompoundTag first = Soul.get(a), second = Soul.get(b);
         EntityType<?> type = Soul.type(first).orElse(null);
-        if (type == null || type != Soul.type(second).orElse(null)) return null;
+        if (type == null || type != Soul.type(second).orElse(null) || type == DVSouls.CORRUPTED.get()) return null;
         float health = Soul.hearts(first) * 2;
         float stronger = Math.min(health + Soul.hearts(second) * 2,
                 Soul.baseHealth(type) * SoulsConfig.EMPOWER_MAX.get().floatValue());
@@ -123,7 +123,7 @@ public final class SoulFuser {
                     worldPosition.getZ() + 0.5, 30, 0.3, 0.3, 0.3, 0.03);
         }
 
-        // ---- for hoppers: souls in from above, fuel from the sides, the results out from below
+        // ---- for hoppers: souls in from above, what fills the bar from the sides, the results out from below
 
         @Override
         public int[] getSlotsForFace(Direction side) {
@@ -132,7 +132,7 @@ public final class SoulFuser {
 
         @Override
         public boolean canPlaceItem(int slot, ItemStack stack) {
-            return slot <= FUEL && isSoul(stack);
+            return slot == FUEL ? SoulFurnace.isFuel(stack) : slot < FUEL && isSoul(stack);
         }
 
         @Override
@@ -146,7 +146,7 @@ public final class SoulFuser {
         }
     }
 
-    /** Two soul slots, the fuel below, an arrow to the hybrid's jar and the jar left empty; the inventory under it. */
+    /** Two soul slots, the bar of souls at the side with its slot under it, an arrow to the hybrid's jar and the jar left empty; the inventory under it. */
     public static class Menu extends SoulMachine.Menu {
         public Menu(int id, Inventory inventory) {
             this(id, inventory, new SimpleContainer(SoulMachine.SIZE), new SimpleContainerData(4));
@@ -160,15 +160,16 @@ public final class SoulFuser {
         protected void addMachineSlots(Container fuser) {
             addSlot(new SoulMachine.FilterSlot(fuser, A, 26, 17, SoulFuser::isSoul));
             addSlot(new SoulMachine.FilterSlot(fuser, B, 62, 17, SoulFuser::isSoul));
-            addSlot(new SoulMachine.FilterSlot(fuser, FUEL, 44, 53, SoulFuser::isSoul));
+            addSlot(new SoulMachine.FilterSlot(fuser, FUEL, 9, 53, SoulFurnace::isFuel));
             addSlot(new SoulMachine.FilterSlot(fuser, RESULT, 116, 35, null));
             addSlot(new SoulMachine.FilterSlot(fuser, EMPTY, 144, 35, null));
         }
 
-        /** A soul goes into the first free soul slot. */
+        /** A soul goes into the first free soul slot, or else under the bar; pure soul under the bar. */
         @Override
         protected boolean moveIn(ItemStack stack) {
-            return isSoul(stack) && move(stack, A, FUEL + 1);
+            if (isSoul(stack)) return move(stack, A, FUEL + 1);
+            return SoulFurnace.isFuel(stack) && move(stack, FUEL, FUEL + 1);
         }
     }
 }

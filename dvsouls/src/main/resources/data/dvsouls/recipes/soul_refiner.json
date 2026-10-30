@@ -1,0 +1,4 @@
+{"type": "minecraft:crafting_shaped", "category": "misc", "pattern": ["QJQ", "GHG", "BBB"],
+ "key": {"Q": {"item": "minecraft:quartz"}, "J": {"item": "dvsouls:soul_jar"}, "G": {"item": "minecraft:glass"},
+         "H": {"item": "minecraft:hopper"}, "B": {"item": "minecraft:polished_blackstone"}},
+ "result": {"item": "dvsouls:soul_refiner"}}

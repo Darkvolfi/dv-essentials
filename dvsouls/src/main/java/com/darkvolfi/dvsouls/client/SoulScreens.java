@@ -1,10 +1,15 @@
 package com.darkvolfi.dvsouls.client;
 
 import com.darkvolfi.dvlib.client.DVTheme;
+import com.darkvolfi.dvsouls.DVSouls;
 import com.darkvolfi.dvsouls.SoulDistiller;
+import com.darkvolfi.dvsouls.SoulTank;
+import net.minecraft.client.gui.Font;
+import java.util.Locale;
 import com.darkvolfi.dvsouls.SoulFuser;
 import com.darkvolfi.dvsouls.SoulMachine;
 import com.darkvolfi.dvsouls.SoulFurnace;
+import com.darkvolfi.dvsouls.SoulRefiner;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractFurnaceScreen;
@@ -19,12 +24,52 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-/** The soul furnaces', Soul Fuser's and Soul Distiller's screens. */
+/** The soul furnaces', Soul Fuser's, Soul Distiller's and Soul Refiner's screens. */
 final class SoulScreens {
     private SoulScreens() {}
 
-    /** The game's own furnace, smoker or blast furnace screen, recipe book and all. */
+    /** The bar of souls at a machine's side: dark blue filling from the bottom, with a lighter streak down it. */
+    record Bar(int x, int y, int w, int h, int capacity) {
+        private static final int FILL = 0xFF1E3A8A;
+        private static final int STREAK = 0xFF4F7BD8;
+
+        void draw(GuiGraphics g, int left, int top, int amount) {
+            int bx = left + x, by = top + y;
+            MachineScreen.sunken(g, bx, by, w, h);
+            int level = Math.round(Math.min(amount, capacity) / (float) capacity * (h - 2));
+            if (level <= 0) return;
+            g.fill(bx + 1, by + h - 1 - level, bx + w - 1, by + h - 1, DVTheme.shade(FILL));
+            g.fill(bx + 3, by + h - 1 - level, bx + 5, by + h - 1, DVTheme.shade(STREAK));
+        }
+
+        /** "12 / 40 souls" while the mouse is over it. */
+        void tooltip(GuiGraphics g, Font font, int left, int top, int mouseX, int mouseY, int amount) {
+            int bx = left + x, by = top + y;
+            if (mouseX < bx || mouseX >= bx + w || mouseY < by || mouseY >= by + h) return;
+            g.renderTooltip(font, Component.translatable("dvsouls.bar", souls(amount), souls(capacity)), mouseX, mouseY);
+        }
+
+        private static String souls(int amount) {
+            float souls = SoulTank.souls(amount);
+            return souls == Math.round(souls) ? String.valueOf(Math.round(souls)) : String.format(Locale.ROOT, "%.1f", souls);
+        }
+    }
+
+    /** A faded item in an empty slot, so it's clear what goes there. */
+    static void ghost(GuiGraphics g, int left, int top, Slot slot, ItemStack item) {
+        if (slot.hasItem()) return;
+        int x = left + slot.x, y = top + slot.y;
+        g.renderFakeItem(item, x, y);
+        g.pose().pushPose();
+        g.pose().translate(0, 0, 200);
+        g.fill(x, y, x + 16, y + 16, 0xA0000000 | (DVTheme.shade(MachineScreen.SLOT_BG) & 0xFFFFFF));
+        g.pose().popPose();
+    }
+
+    /** The game's own furnace, smoker or blast furnace screen, recipe book and all, with the bar of souls left of the slot under it. */
     static final class FurnaceScreen extends AbstractFurnaceScreen<SoulFurnace.Menu> {
+        private static final Bar BAR = new Bar(41, 17, 12, 52, SoulFurnace.Entity.CAPACITY);
+
         FurnaceScreen(SoulFurnace.Menu menu, Inventory inventory, Component title) {
             super(menu, book(menu.kind()), inventory, title, new ResourceLocation("textures/gui/container/" + switch (menu.kind()) {
                 case FURNACE -> "furnace";
@@ -40,11 +85,26 @@ final class SoulScreens {
                 case BLAST_FURNACE -> new BlastingRecipeBookComponent();
             };
         }
+
+        @Override
+        protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
+            super.renderBg(g, partialTick, mouseX, mouseY);
+            BAR.draw(g, leftPos, topPos, menu.amount());
+            ghost(g, leftPos, topPos, menu.slots.get(1), BUCKET);
+        }
+
+        @Override
+        public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+            super.render(g, mouseX, mouseY, partialTick);
+            BAR.tooltip(g, font, leftPos, topPos, mouseX, mouseY, menu.amount());
+        }
     }
 
+    private static final ItemStack BUCKET = new ItemStack(DVSouls.PURE_SOUL_BUCKET.get());
+
     /**
-     * A plain grey panel like the backpack's: the inputs (the Fuser's two souls with a plus between them), the fuel under
-     * them with a soul flame showing how much is left, and an arrow filling towards the result.
+     * A plain grey panel like the backpack's: the bar of souls at the side with its slot under it, the inputs (the Fuser's two
+     * souls with a plus between them), and an arrow filling towards the result.
      */
     static final class MachineScreen<M extends SoulMachine.Menu> extends AbstractContainerScreen<M> {
         private static final int PANEL = 0xFFC6C6C6;
@@ -53,8 +113,9 @@ final class SoulScreens {
         private static final int SLOT_BG = 0xFF8B8B8B;
         private static final int SLOT_DARK = 0xFF373737;
         private static final int SOUL = 0xFF4FD8E8;
-        private static final int SOUL_LIGHT = 0xFFB8F4FF;
         private static final ItemStack AMETHYST = new ItemStack(Items.AMETHYST_SHARD);
+
+        private static final Bar BAR = new Bar(8, 17, 16, 34, SoulMachine.CAPACITY);
 
         MachineScreen(M menu, Inventory inventory, Component title) {
             super(menu, inventory, title);
@@ -65,6 +126,7 @@ final class SoulScreens {
             renderBackground(g);
             super.render(g, mouseX, mouseY, partialTick);
             renderTooltip(g, mouseX, mouseY);
+            BAR.tooltip(g, font, leftPos, topPos, mouseX, mouseY, menu.amount());
         }
 
         @Override
@@ -77,24 +139,10 @@ final class SoulScreens {
             if (menu instanceof SoulFuser.Menu) g.fill(x + 48, y + 24, x + 56, y + 26, DVTheme.shade(SHADOW));
             if (menu instanceof SoulFuser.Menu) g.fill(x + 51, y + 21, x + 53, y + 29, DVTheme.shade(SHADOW));
 
-            // The Distiller's empty amethyst slot shows a faded shard, so it's clear what goes there.
-            Slot amethyst = menu.slots.get(SoulDistiller.AMETHYST);
-            if (menu instanceof SoulDistiller.Menu && !amethyst.hasItem()) {
-                g.renderFakeItem(AMETHYST, x + amethyst.x, y + amethyst.y);
-                g.pose().pushPose();
-                g.pose().translate(0, 0, 200);
-                g.fill(x + amethyst.x, y + amethyst.y, x + amethyst.x + 16, y + amethyst.y + 16, 0xA0000000 | (DVTheme.shade(SLOT_BG) & 0xFFFFFF));
-                g.pose().popPose();
-            }
-
-            // The fuel's flame, above its slot: a column of soul fire that sinks as the fuel burns.
-            int fx = x + 46, fy = y + 37, fh = 13;
-            sunken(g, fx, fy, 12, fh + 2);
-            int lit = Math.round(menu.fuel() * fh);
-            if (lit > 0) {
-                g.fill(fx + 1, fy + 1 + fh - lit, fx + 11, fy + 1 + fh, DVTheme.shade(SOUL));
-                g.fill(fx + 4, fy + 1 + fh - lit, fx + 8, fy + 1 + fh, DVTheme.shade(SOUL_LIGHT));
-            }
+            // Empty slots show faded what goes in them: the Distiller's amethyst, and a bucket under the bar.
+            if (menu instanceof SoulDistiller.Menu) ghost(g, x, y, menu.slots.get(SoulDistiller.AMETHYST), AMETHYST);
+            ghost(g, x, y, menu.slots.get(SoulMachine.FUEL), BUCKET);
+            BAR.draw(g, x, y, menu.amount());
 
             // The arrow: a shaft and a head, outlined, filling left to right with the fusion's progress.
             int ax = x + 86, ay = y + 35, filled = Math.round(menu.progress() * 24);
@@ -105,7 +153,7 @@ final class SoulScreens {
             }
         }
 
-        private static void raised(GuiGraphics g, int x, int y, int w, int h) {
+        static void raised(GuiGraphics g, int x, int y, int w, int h) {
             g.fill(x, y, x + w, y + h, DVTheme.shade(PANEL));
             g.fill(x, y, x + w - 1, y + 1, DVTheme.shade(LIGHT));
             g.fill(x, y, x + 1, y + h - 1, DVTheme.shade(LIGHT));
@@ -113,12 +161,51 @@ final class SoulScreens {
             g.fill(x + w - 1, y + 1, x + w, y + h, DVTheme.shade(SHADOW));
         }
 
-        private static void sunken(GuiGraphics g, int x, int y, int w, int h) {
+        static void sunken(GuiGraphics g, int x, int y, int w, int h) {
             g.fill(x, y, x + w, y + h, DVTheme.shade(SLOT_BG));
             g.fill(x, y, x + w - 1, y + 1, DVTheme.shade(SLOT_DARK));
             g.fill(x, y, x + 1, y + h - 1, DVTheme.shade(SLOT_DARK));
             g.fill(x + 1, y + h - 1, x + w, y + h, DVTheme.shade(LIGHT));
             g.fill(x + w - 1, y + 1, x + w, y + h, DVTheme.shade(LIGHT));
+        }
+    }
+
+    /**
+     * The Soul Refiner's panel, like the machines': the soul over the amethyst, an arrow filling from the soul into the
+     * bar of souls, the empty jar beside the amethyst, and a bucket or bottle to fill under the bar.
+     */
+    static final class RefinerScreen extends AbstractContainerScreen<SoulRefiner.Menu> {
+        private static final Bar BAR = new Bar(86, 17, 18, 34, SoulRefiner.CAPACITY);
+        private static final ItemStack AMETHYST = new ItemStack(Items.AMETHYST_SHARD);
+        private static final ItemStack EMPTY_BUCKET = new ItemStack(Items.BUCKET);
+
+        RefinerScreen(SoulRefiner.Menu menu, Inventory inventory, Component title) {
+            super(menu, inventory, title);
+        }
+
+        @Override
+        public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+            renderBackground(g);
+            super.render(g, mouseX, mouseY, partialTick);
+            renderTooltip(g, mouseX, mouseY);
+            BAR.tooltip(g, font, leftPos, topPos, mouseX, mouseY, menu.amount());
+        }
+
+        @Override
+        protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
+            int x = leftPos, y = topPos;
+            MachineScreen.raised(g, x, y, imageWidth, imageHeight);
+            for (Slot slot : menu.slots) MachineScreen.sunken(g, x + slot.x - 1, y + slot.y - 1, 18, 18);
+            ghost(g, x, y, menu.slots.get(SoulRefiner.AMETHYST), AMETHYST);
+            ghost(g, x, y, menu.slots.get(SoulRefiner.CONTAINER), EMPTY_BUCKET);
+            BAR.draw(g, x, y, menu.amount());
+
+            // The arrow from the soul to the bar, filling with the refining.
+            int ax = x + 54, ay = y + 17, filled = Math.round(menu.progress() * 26);
+            for (int col = 0; col < 26; col++) {
+                int half = col < 18 ? 2 : 8 - (col - 18);
+                g.fill(ax + col, ay + 8 - half, ax + col + 1, ay + 8 + half, DVTheme.shade(col < filled ? MachineScreen.SOUL : MachineScreen.SLOT_BG));
+            }
         }
     }
 }

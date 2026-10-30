@@ -13,8 +13,9 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Binds a creature to a player: lay its soul jar on the altar, then offer a soul with at least half as many hearts
- * (the share is a server setting). The offering is spent and the creature stands up on the altar as the player's pet;
- * its emptied jar goes back to the player. A creature that can be tamed the usual way (a wolf, a horse) is tamed instead.
+ * (the share is a server setting), in a jar or as pure soul. The offering is spent and the creature stands up on the
+ * altar as the player's pet; its emptied jar goes back to the player. A creature that can be tamed the usual way (a wolf,
+ * a horse) is tamed instead. A soul of another kind of creature may corrupt it instead ({@link SoulFuel#corrupts}).
  */
 public class BindingAltarBlock extends SoulAltarBlock {
     @Nullable
@@ -33,16 +34,19 @@ public class BindingAltarBlock extends SoulAltarBlock {
         return "dvsouls.binding.offer";
     }
 
+    @Nullable
     @Override
-    protected boolean complete(ServerLevel level, Vec3 top, Player player, ItemStack laid) {
+    protected Entity complete(ServerLevel level, Vec3 top, Player player, ItemStack laid, boolean corrupt) {
         Entity creature = Soul.spawn(Soul.get(laid), level, top, player.getYRot() + 180);
-        if (creature == null) return false;
-        if (creature instanceof TamableAnimal tamable) tamable.tame(player);
-        else if (creature instanceof AbstractHorse horse) horse.tameWithName(player);
-        else if (creature instanceof Mob mob) Pets.bind(mob, player);
-        player.displayClientMessage(Component.translatable("dvsouls.binding.bound", creature.getName()), true);
+        if (creature == null) return null;
+        if (!corrupt) {
+            if (creature instanceof TamableAnimal tamable) tamable.tame(player);
+            else if (creature instanceof AbstractHorse horse) horse.tameWithName(player);
+            else if (creature instanceof Mob mob) Pets.bind(mob, player);
+            player.displayClientMessage(Component.translatable("dvsouls.binding.bound", creature.getName()), true);
+        }
         ItemStack jar = new ItemStack(DVSouls.SOUL_JAR.get());
         if (!player.getInventory().add(jar)) player.drop(jar, false);
-        return true;
+        return creature;
     }
 }

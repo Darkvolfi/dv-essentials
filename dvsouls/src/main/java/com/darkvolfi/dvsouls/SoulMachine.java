@@ -23,6 +23,13 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.fluids.FluidType;
+import net.minecraftforge.fluids.FluidUtil;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import org.jetbrains.annotations.NotNull;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Blocks;
@@ -42,11 +49,14 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * What the Soul Fuser and the Soul Distiller share: five slots (two inputs, a soul burning as fuel, the result and the
- * jars left empty), the fire, and a job that takes a while and leaves one jar empty. Hoppers take from below.
+ * What the Soul Fuser and the Soul Distiller share: five slots (two inputs, the slot under the bar, the result and the
+ * jars left empty), the bar of souls it burns ({@link SoulTank}), and a job that takes a while and leaves one jar empty.
+ * Hoppers take from below.
  */
 public final class SoulMachine {
+    /** FUEL is the slot under the bar, which pours into it. */
     public static final int FUEL = 2, RESULT = 3, EMPTY = 4, SIZE = 5;
+    public static final int CAPACITY = 4 * FluidType.BUCKET_VOLUME;
 
     private SoulMachine() {}
 
@@ -85,6 +95,7 @@ public final class SoulMachine {
         @Override
         @SuppressWarnings("deprecation")
         public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+            if (FluidUtil.interactWithFluidHandler(player, hand, level, pos, hit.getDirection())) return InteractionResult.sidedSuccess(level.isClientSide);
             if (!level.isClientSide && level.getBlockEntity(pos) instanceof Entity machine) player.openMenu(machine);
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
@@ -107,7 +118,7 @@ public final class SoulMachine {
     }
 
     public abstract static class Entity extends BlockEntity implements MenuProvider, WorldlyContainer {
-        private static final int[] BOTTOM = {RESULT, EMPTY};
+        private static final int[] BOTTOM = {RESULT, EMPTY, FUEL};
 
         final SimpleContainer items = new SimpleContainer(SIZE) {
             @Override
@@ -122,15 +133,16 @@ public final class SoulMachine {
             }
         };
         private int progress;
+        /** Ticks left of the soul it burns now. */
         private int fuel;
-        private int fuelMax;
+        final SoulTank tank = new SoulTank(CAPACITY, this::setChanged);
+        private final LazyOptional<IFluidHandler> tankHandler = LazyOptional.of(() -> tank);
         final ContainerData data = new ContainerData() {
             @Override
             public int get(int index) {
                 return switch (index) {
                     case 0 -> progress;
-                    case 1 -> fuel;
-                    case 2 -> fuelMax;
+                    case 1 -> tank.getFluidAmount();
                     default -> workTime();
                 };
             }
@@ -139,15 +151,13 @@ public final class SoulMachine {
             public void set(int index, int value) {
                 switch (index) {
                     case 0 -> progress = value;
-                    case 1 -> fuel = value;
-                    case 2 -> fuelMax = value;
                     default -> { }
                 }
             }
 
             @Override
             public int getCount() {
-                return 4;
+                return 3;
             }
         };
 
@@ -169,31 +179,28 @@ public final class SoulMachine {
             return canWork() && (spare.isEmpty() || spare.getCount() < spare.getMaxStackSize());
         }
 
-        /** One more empty jar: into the empty-jar slot, or else back where the fuel was. */
-        private void putAwayJar(int otherwise) {
+        /** One more empty jar, into the empty-jar slot ({@link #ready} made sure of room). */
+        private void putAwayJar() {
             ItemStack spare = items.getItem(EMPTY);
             if (spare.isEmpty()) items.setItem(EMPTY, new ItemStack(DVSouls.SOUL_JAR.get()));
-            else if (spare.getCount() < spare.getMaxStackSize()) spare.grow(1);
-            else items.setItem(otherwise, new ItemStack(DVSouls.SOUL_JAR.get()));
+            else spare.grow(1);
         }
 
         static void tick(Level level, BlockPos pos, BlockState state, Entity machine) {
+            machine.tank.pour(machine.items, FUEL);
             boolean ready = machine.ready();
-            ItemStack fuelStack = machine.items.getItem(FUEL);
-            if (machine.fuel <= 0 && ready && SoulFuser.isSoul(fuelStack)) {
-                machine.fuelMax = machine.fuel = Math.max(1, Math.round(Soul.hearts(Soul.get(fuelStack)) * SoulsConfig.FUSER_FUEL_PER_HEART.get()));
-                machine.items.setItem(FUEL, ItemStack.EMPTY);
-                machine.putAwayJar(FUEL);
+            // out of fire with a job to do: burns one soul from the bar
+            if (machine.fuel <= 0 && ready && machine.tank.spend(SoulTank.soul())) {
+                machine.fuel = SoulsConfig.FUSER_FUEL_PER_HEART.get();
                 level.playSound(null, pos, SoundEvents.SOUL_ESCAPE, SoundSource.BLOCKS, 1, 0.7f);
             }
             if (machine.fuel > 0) {
                 machine.fuel--;
                 machine.progress = ready ? machine.progress + 1 : 0;
-                // ready again: burning new fuel this tick may have taken the last room for an empty jar
                 if (machine.progress >= machine.workTime() && machine.ready()) {
                     machine.progress = 0;
                     machine.work((ServerLevel) level);
-                    machine.putAwayJar(EMPTY);
+                    machine.putAwayJar();
                 }
             } else {
                 machine.progress = 0;
@@ -201,6 +208,17 @@ public final class SoulMachine {
             boolean lit = machine.fuel > 0;
             if (state.getValue(Block.LIT) != lit) level.setBlock(pos, state.setValue(Block.LIT, lit), 3);
             machine.setChanged();
+        }
+
+        @Override
+        public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+            return cap == ForgeCapabilities.FLUID_HANDLER ? tankHandler.cast() : super.getCapability(cap, side);
+        }
+
+        @Override
+        public void invalidateCaps() {
+            super.invalidateCaps();
+            tankHandler.invalidate();
         }
 
         // ---- for hoppers: each machine says what goes in where; the results come out from below
@@ -212,7 +230,8 @@ public final class SoulMachine {
 
         @Override
         public boolean canTakeItemThroughFace(int slot, ItemStack stack, Direction side) {
-            return side == Direction.DOWN && slot >= RESULT;
+            // the slot under the bar gives up the empty jar, bucket or bottle it leaves
+            return side == Direction.DOWN && (slot >= RESULT || slot == FUEL && SoulTank.isEmptied(stack));
         }
 
         protected static int[] bottom() {
@@ -267,7 +286,7 @@ public final class SoulMachine {
             ContainerHelper.saveAllItems(tag, list);
             tag.putInt("Progress", progress);
             tag.putInt("Fuel", fuel);
-            tag.putInt("FuelMax", fuelMax);
+            tag.put("Tank", tank.writeToNBT(new CompoundTag()));
         }
 
         @Override
@@ -278,7 +297,7 @@ public final class SoulMachine {
             for (int i = 0; i < list.size(); i++) items.setItem(i, list.get(i));
             progress = tag.getInt("Progress");
             fuel = tag.getInt("Fuel");
-            fuelMax = tag.getInt("FuelMax");
+            tank.readFromNBT(tag.getCompound("Tank"));
         }
     }
 
@@ -306,11 +325,12 @@ public final class SoulMachine {
         protected abstract boolean moveIn(ItemStack stack);
 
         public float progress() {
-            return data.get(3) <= 0 ? 0 : data.get(0) / (float) data.get(3);
+            return data.get(2) <= 0 ? 0 : data.get(0) / (float) data.get(2);
         }
 
-        public float fuel() {
-            return data.get(2) <= 0 ? 0 : data.get(1) / (float) data.get(2);
+        /** Souls in the bar, mB. */
+        public int amount() {
+            return data.get(1);
         }
 
         @Override

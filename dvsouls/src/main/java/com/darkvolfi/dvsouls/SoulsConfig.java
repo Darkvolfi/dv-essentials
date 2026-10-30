@@ -11,6 +11,10 @@ public final class SoulsConfig {
     public static final ForgeConfigSpec.IntValue FUSER_FUEL_PER_HEART;
     public static final ForgeConfigSpec.IntValue FUSE_TIME;
     public static final ForgeConfigSpec.IntValue DISTIL_TIME;
+    public static final ForgeConfigSpec.IntValue REFINE_TIME;
+    public static final ForgeConfigSpec.IntValue PURE_SOUL_PER_HEART;
+    public static final ForgeConfigSpec.IntValue SOULS_PER_AMETHYST;
+    public static final ForgeConfigSpec.DoubleValue CORRUPT_CHANCE;
     public static final ForgeConfigSpec.DoubleValue BIND_COST;
     public static final ForgeConfigSpec.DoubleValue EMPOWER_MAX;
     public static final ForgeConfigSpec.DoubleValue HORSE_SPEED_MAX;
@@ -21,10 +25,10 @@ public final class SoulsConfig {
     static {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
         FURNACE_ITEMS_PER_HEART = builder
-                .comment("Items the Soul Furnace smelts per heart of the soul it burns.")
+                .comment("Items the soul furnaces cook per soul from their bar.")
                 .defineInRange("furnaceItemsPerHeart", 2, 1, 64);
         FUSER_FUEL_PER_HEART = builder
-                .comment("Ticks the Soul Fuser and the Soul Distiller burn per heart of its fuel's soul.")
+                .comment("Ticks the Soul Fuser and the Soul Distiller work on one soul from their bar.")
                 .defineInRange("fuserFuelPerHeart", 400, 20, 10000);
         FUSE_TIME = builder
                 .comment("Ticks one fusion takes in the Soul Fuser.")
@@ -32,6 +36,18 @@ public final class SoulsConfig {
         DISTIL_TIME = builder
                 .comment("Ticks one soul takes to distil into an essence in the Soul Distiller.")
                 .defineInRange("distilTime", 200, 20, 2400);
+        REFINE_TIME = builder
+                .comment("Ticks one soul takes to refine into pure soul in the Soul Refiner.")
+                .defineInRange("refineTime", 100, 10, 2400);
+        SOULS_PER_AMETHYST = builder
+                .comment("Souls the Soul Refiner refines before its amethyst shard wears away.")
+                .defineInRange("soulsPerAmethyst", 8, 1, 1000);
+        PURE_SOUL_PER_HEART = builder
+                .comment("Pure soul (mB) in one soul, the worth of one heart; a bucket is 1000.")
+                .defineInRange("pureSoulPerHeart", 100, 10, 1000);
+        CORRUPT_CHANCE = builder
+                .comment("Chance that a creature's soul offered for another kind (bringing back, binding) corrupts it.")
+                .defineInRange("corruptChance", 0.25, 0.0, 1.0);
         BIND_COST = builder
                 .comment("At the Binding Altar, the offered soul needs this share of the bound creature's hearts.")
                 .defineInRange("bindCost", 0.5, 0.0, 4.0);

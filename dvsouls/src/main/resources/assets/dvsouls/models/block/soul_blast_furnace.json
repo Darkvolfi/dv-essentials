@@ -1,0 +1,2 @@
+{"parent": "minecraft:block/orientable", "textures": {"top": "minecraft:block/polished_blackstone",
+ "front": "dvsouls:block/soul_blast_furnace_front", "side": "minecraft:block/polished_blackstone_bricks"}}

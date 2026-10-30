@@ -216,7 +216,7 @@ The library behind the DV mods. Install it together with any DV mod.
 - **Binding Altar:** lay a creature's jar on it and offer a soul with half its hearts: it stands up as your pet. Pets follow, wait or wander (sneak + right-click), defend you, and never turn on you or your other pets — monsters too
 - **Soul Collar:** a collared pet that dies leaves a **collar shard**; offer a soul as strong as it at the **Soul Altar** to bring it back
 - **Soul Fuser:** fuse two souls into a hybrid — **Woolly Cow** (shear it, it grazes its wool back), **Feathered Pig** (lays eggs, falls slowly), **Lava Horse** (walks on lava), **Wolf Fox** (fetches items) — or two of the same kind into a stronger soul
-- **Soul Furnace:** a fast furnace that burns souls
+- **Soul Furnace, Soul Smoker, Soul Blast Furnace:** twice as fast as the game's own, burning souls; with **DV Backpack** they also come as upgrade cards that cook inside the backpack
 - Feed a soul to a horse to raise its speed, jump and health
 - **Soul charms:** distil a soul with amethyst into an **essence** in the **Soul Distiller**, and set essences in a gold, diamond or netherite charm (1, 2 or 3). In a worn **DV Backpack**'s upgrade slot it gives the creatures' powers: water breathing, night vision, wall climbing, walking on lava, strength, speed, creepers keeping away, item magnet... 18 in all; more essences of one creature make it stronger
 - JEI shows the fusions and distilling; works without JEI and DV Backpack (charms then work from the inventory)

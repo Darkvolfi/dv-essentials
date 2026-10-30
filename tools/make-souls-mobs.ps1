@@ -4,7 +4,7 @@
 #   textures/entity/feathered_pig.png       the pig with a feathered body, and its wings below (64x64)
 #   textures/entity/lava_horse.png          a basalt-dark horse with ember cracks; _glow is the cracks alone
 #   textures/entity/wolf_fox.png            the fox's texture fitted onto the wolf model
-#   textures/block/soul_furnace_front*.png  the furnace's front in blackstone with blue soul fire
+#   textures/block/soul_*_front*.png        the furnace, smoker and blast furnace fronts in blackstone with blue soul fire
 # Run from the repo root:  powershell -ExecutionPolicy Bypass -File tools\make-souls-mobs.ps1
 
 Add-Type -AssemblyName System.Drawing
@@ -158,11 +158,16 @@ Paint $wolfFox 0 14 @('oooo', 'cccc', 'cccc') $faceColours                      
 Paint $wolfFox 7 14 @('oooo', 'cccc', 'cccc') $faceColours                                      # snout, other side (4x3)
 Save $wolfFox 'wolf_fox'
 
-# ---------- Soul Furnace: the furnace's front in blackstone, its fire turned to blue soul fire (the lit one is
-# animated, so its .mcmeta goes along).
+# ---------- Soul Furnace, Soul Smoker and Soul Blast Furnace: the game's fronts in blackstone, their fire turned to blue
+# soul fire (the lit ones are animated, so their .mcmeta goes along). The smoker's wood keeps its colour.
 $blocks = Join-Path $root 'dvsouls\src\main\resources\assets\dvsouls\textures\block'
 New-Item -ItemType Directory -Force $blocks | Out-Null
-foreach ($pair in @(@('furnace_front', 'soul_furnace_front'), @('furnace_front_on', 'soul_furnace_front_on'))) {
+$fronts = @(
+    @('furnace_front', 'soul_furnace_front'), @('furnace_front_on', 'soul_furnace_front_on'),
+    @('smoker_front', 'soul_smoker_front'), @('smoker_front_on', 'soul_smoker_front_on'),
+    @('blast_furnace_front', 'soul_blast_furnace_front'), @('blast_furnace_front_on', 'soul_blast_furnace_front_on'))
+foreach ($pair in $fronts) {
+    $furnace = $pair[0].StartsWith('furnace')
     $front = Load "block/$($pair[0])"
     for ($y = 0; $y -lt $front.Height; $y++) {
         for ($x = 0; $x -lt $front.Width; $x++) {
@@ -170,8 +175,16 @@ foreach ($pair in @(@('furnace_front', 'soul_furnace_front'), @('furnace_front_o
             if ($c.A -eq 0) { continue }
             $max = [Math]::Max($c.R, [Math]::Max($c.G, $c.B)); $min = [Math]::Min($c.R, [Math]::Min($c.G, $c.B))
             $v = (0.299 * $c.R + 0.587 * $c.G + 0.114 * $c.B) / 255.0
-            # Fire is the coloured pixels, and the near-white ones in its heart (the bottom rows, below the stone ledge).
-            if (($max -gt 0 -and ($max - $min) / $max -gt 0.3) -or ($v -gt 0.72 -and $y -ge 11)) {
+            $saturated = $max -gt 0 -and ($max - $min) / $max -gt 0.3
+            if ($furnace) {
+                # Fire is the coloured pixels, and the near-white ones in its heart (the bottom rows, below the stone ledge).
+                $fire = $saturated -or ($v -gt 0.72 -and ($y % 16) -ge 11)
+            } else {
+                # Fire is strong orange to yellow (the smoker's wood is a duller brown, so it stays), or near-white.
+                $hue = $c.GetHue()
+                $fire = ($max -gt 0 -and ($max - $min) / $max -gt 0.65 -and $hue -le 65) -or ($v -gt 0.85 -and -not $pair[0].EndsWith('front'))
+            }
+            if ($fire) {
                 # Fire: its brightness on soul fire's colours, deep teal through cyan to white, so its dark embers
                 # stay dark instead of turning a pale blue that reads as stone.
                 $stops = @(@(0.0, '#06323A'), @(0.35, '#0B6470'), @(0.55, '#14A8BC'), @(0.75, '#46E2F2'), @(0.9, '#BDFAFF'), @(1.0, '#FFFFFF'))
@@ -184,7 +197,7 @@ foreach ($pair in @(@('furnace_front', 'soul_furnace_front'), @('furnace_front_o
                         break
                     }
                 }
-            } else {
+            } elseif ($furnace -or -not $saturated) {
                 # Stone: blackstone's dark purple-grey.
                 $front.SetPixel($x, $y, [System.Drawing.Color]::FromArgb($c.A, [int](18 + 70 * $v), [int](15 + 62 * $v), [int](22 + 78 * $v)))
             }

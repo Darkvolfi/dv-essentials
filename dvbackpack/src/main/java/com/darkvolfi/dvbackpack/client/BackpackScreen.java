@@ -356,8 +356,8 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
         if (cardTabAt(mouseX, mouseY) == menu.openTool()) g.fill(x0 + 4, y0 + 2, x0 + 22, y0 + 20, DVTheme.shade(0xFFDADADA));
         g.renderItem(menu.upgrade(menu.openTool()), x0 + 5, y0 + 3);
         int cx = x0 + w - BUTTON - 5;
-        String name = (tool == UpgradeType.HELD ? menu.upgrade(menu.openTool()).getHoverName()
-                : Component.translatable("dvbackpack.upgrade." + tool.id())).getString();
+        ItemStack card = menu.upgrade(menu.openTool());
+        String name = (card.getItem() instanceof UpgradeItem item ? item.panelName() : card.getHoverName()).getString();
         g.drawString(font, font.plainSubstrByWidth(name, cx - 4 - (x0 + 26)), x0 + 26, y0 + 8, DVTheme.shade(TEXT), false);
         int cy = y0 + 5;
         raised(g, cx, cy, BUTTON, BUTTON, overRemove(mouseX, mouseY) ? 0xFFDADADA : PANEL);
@@ -374,7 +374,6 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
         }
         if (tool.filter()) {
             // The nine filter places are slots; beside them the "only / except" switch and, for pickup, the magnet.
-            ItemStack card = menu.upgrade(menu.openTool());
             int hot = filterButtonAt(mouseX, mouseY);
             boolean only = FilterUpgrade.only(card);
             textButton(g, x0 + FILTER_BUTTON_X, y0 + 27, Component.translatable(only ? "dvbackpack.filter.only" : "dvbackpack.filter.except"),

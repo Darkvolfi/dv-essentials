@@ -1,0 +1,3 @@
+{"type": "minecraft:crafting_shaped", "category": "misc", "pattern": [" L ", "LFL", " L "],
+ "key": {"L": {"tag": "minecraft:logs"}, "F": {"item": "dvsouls:soul_furnace"}},
+ "result": {"item": "dvsouls:soul_smoker"}}

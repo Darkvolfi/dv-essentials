@@ -3,6 +3,7 @@ package com.darkvolfi.dvsouls.compat;
 import com.darkvolfi.dvsouls.DVSouls;
 import com.darkvolfi.dvsouls.Soul;
 import com.darkvolfi.dvsouls.SoulFuser;
+import com.darkvolfi.dvsouls.SoulFurnace;
 import com.darkvolfi.dvsouls.charm.Ability;
 import com.darkvolfi.dvsouls.charm.EssenceItem;
 import net.minecraft.world.item.Items;
@@ -78,7 +79,9 @@ public class SoulsJeiPlugin implements IModPlugin {
 
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
-        registration.addRecipeCatalyst(new ItemStack(DVSouls.SOUL_FURNACE.get()), RecipeTypes.SMELTING);
+        registration.addRecipeCatalyst(new ItemStack(DVSouls.FURNACES.get(SoulFurnace.Kind.FURNACE).get()), RecipeTypes.SMELTING);
+        registration.addRecipeCatalyst(new ItemStack(DVSouls.FURNACES.get(SoulFurnace.Kind.SMOKER).get()), RecipeTypes.SMOKING);
+        registration.addRecipeCatalyst(new ItemStack(DVSouls.FURNACES.get(SoulFurnace.Kind.BLAST_FURNACE).get()), RecipeTypes.BLASTING);
         registration.addRecipeCatalyst(new ItemStack(DVSouls.SOUL_FUSER.get()), FUSION);
         registration.addRecipeCatalyst(new ItemStack(DVSouls.SOUL_DISTILLER.get()), DISTILLING);
     }

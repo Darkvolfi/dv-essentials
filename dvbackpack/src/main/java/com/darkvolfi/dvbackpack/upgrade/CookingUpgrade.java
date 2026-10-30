@@ -66,8 +66,7 @@ public final class CookingUpgrade {
     }
 
     public static boolean isFuel(ItemStack card, ItemStack stack) {
-        UpgradeType type = UpgradeItem.typeOf(card);
-        return type != null && type.cooking() != null && ForgeHooks.getBurnTime(stack, type.cooking()) > 0;
+        return isCooking(card) && ((UpgradeItem) card.getItem()).burnTime(stack) > 0;
     }
 
     private static Optional<? extends AbstractCookingRecipe> recipe(ItemStack card, ItemStack input, Level level) {
@@ -79,8 +78,14 @@ public final class CookingUpgrade {
         return recipe(card, stack, level).isPresent();
     }
 
-    /** One tick of cooking; returns whether anything changed. */
+    /** One tick of cooking (as many steps as the card is fast); returns whether anything changed. */
     public static boolean tick(ItemStack card, ServerLevel level) {
+        boolean changed = false;
+        for (int i = ((UpgradeItem) card.getItem()).speed(); i > 0; i--) changed |= step(card, level);
+        return changed;
+    }
+
+    private static boolean step(ItemStack card, ServerLevel level) {
         CompoundTag tag = tag(card);
         int burn = tag.getInt("burn");
         int cook = tag.getInt("cook");
@@ -101,7 +106,7 @@ public final class CookingUpgrade {
 
         if (burn <= 0 && fits) {
             ItemStack fuel = slots.getStackInSlot(FUEL);
-            int fuelTime = ForgeHooks.getBurnTime(fuel, UpgradeItem.typeOf(card).cooking());
+            int fuelTime = ((UpgradeItem) card.getItem()).burnTime(fuel);
             if (fuelTime > 0) {
                 burn = fuelTime;
                 tag.putInt("burnMax", fuelTime);

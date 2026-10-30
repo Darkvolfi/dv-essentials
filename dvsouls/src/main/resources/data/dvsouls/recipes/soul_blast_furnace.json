@@ -1,0 +1,3 @@
+{"type": "minecraft:crafting_shaped", "category": "misc", "pattern": ["III", "IFI", "BBB"],
+ "key": {"I": {"item": "minecraft:iron_ingot"}, "F": {"item": "dvsouls:soul_furnace"}, "B": {"item": "minecraft:polished_blackstone"}},
+ "result": {"item": "dvsouls:soul_blast_furnace"}}

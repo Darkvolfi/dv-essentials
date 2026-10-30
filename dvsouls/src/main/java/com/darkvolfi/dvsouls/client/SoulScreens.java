@@ -8,7 +8,10 @@ import com.darkvolfi.dvsouls.SoulFurnace;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractFurnaceScreen;
+import net.minecraft.client.gui.screens.recipebook.AbstractFurnaceRecipeBookComponent;
+import net.minecraft.client.gui.screens.recipebook.BlastingRecipeBookComponent;
 import net.minecraft.client.gui.screens.recipebook.SmeltingRecipeBookComponent;
+import net.minecraft.client.gui.screens.recipebook.SmokingRecipeBookComponent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -16,14 +19,26 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-/** The Soul Furnace's, Soul Fuser's and Soul Distiller's screens. */
+/** The soul furnaces', Soul Fuser's and Soul Distiller's screens. */
 final class SoulScreens {
     private SoulScreens() {}
 
-    /** The game's own furnace screen, recipe book and all. */
+    /** The game's own furnace, smoker or blast furnace screen, recipe book and all. */
     static final class FurnaceScreen extends AbstractFurnaceScreen<SoulFurnace.Menu> {
         FurnaceScreen(SoulFurnace.Menu menu, Inventory inventory, Component title) {
-            super(menu, new SmeltingRecipeBookComponent(), inventory, title, new ResourceLocation("textures/gui/container/furnace.png"));
+            super(menu, book(menu.kind()), inventory, title, new ResourceLocation("textures/gui/container/" + switch (menu.kind()) {
+                case FURNACE -> "furnace";
+                case SMOKER -> "smoker";
+                case BLAST_FURNACE -> "blast_furnace";
+            } + ".png"));
+        }
+
+        private static AbstractFurnaceRecipeBookComponent book(SoulFurnace.Kind kind) {
+            return switch (kind) {
+                case FURNACE -> new SmeltingRecipeBookComponent();
+                case SMOKER -> new SmokingRecipeBookComponent();
+                case BLAST_FURNACE -> new BlastingRecipeBookComponent();
+            };
         }
     }
 

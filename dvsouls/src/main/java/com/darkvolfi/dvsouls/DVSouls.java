@@ -5,6 +5,8 @@ import com.darkvolfi.dvsouls.charm.CharmRecipes;
 import com.darkvolfi.dvsouls.charm.Charms;
 import com.darkvolfi.dvsouls.charm.EssenceItem;
 import com.darkvolfi.dvsouls.charm.SoulCharm;
+import com.darkvolfi.dvsouls.compat.BackpackCards;
+import net.minecraftforge.fml.ModList;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.item.crafting.RecipeSerializer;
@@ -93,12 +95,26 @@ public class DVSouls {
     public static final RegistryObject<BlockEntityType<SoulAltarBlock.SoulAltarBlockEntity>> SOUL_ALTAR_ENTITY = BLOCK_ENTITIES.register("soul_altar",
             () -> BlockEntityType.Builder.of(SoulAltarBlock.SoulAltarBlockEntity::new, SOUL_ALTAR.get(), BINDING_ALTAR.get()).build(null));
 
-    public static final RegistryObject<SoulFurnace.Block> SOUL_FURNACE = BLOCKS.register("soul_furnace", SoulFurnace.Block::new);
-    @SuppressWarnings("DataFlowIssue")
-    public static final RegistryObject<BlockEntityType<SoulFurnace.Entity>> SOUL_FURNACE_ENTITY = BLOCK_ENTITIES.register("soul_furnace",
-            () -> BlockEntityType.Builder.of(SoulFurnace.Entity::new, SOUL_FURNACE.get()).build(null));
-    public static final RegistryObject<MenuType<SoulFurnace.Menu>> SOUL_FURNACE_MENU = MENUS.register("soul_furnace",
-            () -> new MenuType<>(SoulFurnace.Menu::new, FeatureFlags.VANILLA_SET));
+    // The Soul Furnace, Soul Smoker and Soul Blast Furnace, each with its block entity and menu.
+    public static final Map<SoulFurnace.Kind, RegistryObject<SoulFurnace.Block>> FURNACES = new EnumMap<>(SoulFurnace.Kind.class);
+    public static final Map<SoulFurnace.Kind, RegistryObject<BlockEntityType<SoulFurnace.Entity>>> FURNACE_ENTITIES = new EnumMap<>(SoulFurnace.Kind.class);
+    public static final Map<SoulFurnace.Kind, RegistryObject<MenuType<SoulFurnace.Menu>>> FURNACE_MENUS = new EnumMap<>(SoulFurnace.Kind.class);
+    /** Their DV Backpack upgrade cards; empty without DV Backpack. */
+    public static final Map<SoulFurnace.Kind, RegistryObject<Item>> FURNACE_CARDS = new EnumMap<>(SoulFurnace.Kind.class);
+
+    static {
+        for (SoulFurnace.Kind kind : SoulFurnace.Kind.values()) {
+            RegistryObject<SoulFurnace.Block> block = BLOCKS.register(kind.id(), () -> new SoulFurnace.Block(kind));
+            FURNACES.put(kind, block);
+            //noinspection DataFlowIssue: the data fixer type is unused for mod block entities
+            FURNACE_ENTITIES.put(kind, BLOCK_ENTITIES.register(kind.id(),
+                    () -> BlockEntityType.Builder.of((pos, state) -> new SoulFurnace.Entity(kind, pos, state), block.get()).build(null)));
+            FURNACE_MENUS.put(kind, MENUS.register(kind.id(),
+                    () -> new MenuType<>((id, inventory) -> new SoulFurnace.Menu(kind, id, inventory), FeatureFlags.VANILLA_SET)));
+            ITEMS.register(kind.id(), () -> new BlockItem(block.get(), new Item.Properties()));
+        }
+        if (ModList.get().isLoaded("dvbackpack")) BackpackCards.register(ITEMS, FURNACE_CARDS);
+    }
 
     public static final RegistryObject<SoulFuser.Block> SOUL_FUSER = BLOCKS.register("soul_fuser", SoulFuser.Block::new);
     @SuppressWarnings("DataFlowIssue")
@@ -140,7 +156,6 @@ public class DVSouls {
         ITEMS.register("soul_distiller", () -> new BlockItem(SOUL_DISTILLER.get(), new Item.Properties()));
         ITEMS.register("soul_altar", () -> new BlockItem(SOUL_ALTAR.get(), new Item.Properties()));
         ITEMS.register("binding_altar", () -> new BlockItem(BINDING_ALTAR.get(), new Item.Properties()));
-        ITEMS.register("soul_furnace", () -> new BlockItem(SOUL_FURNACE.get(), new Item.Properties()));
         ITEMS.register("soul_fuser", () -> new BlockItem(SOUL_FUSER.get(), new Item.Properties()));
         TABS.register("souls", () -> CreativeModeTab.builder()
                 .title(Component.translatable("itemGroup.dvsouls"))
@@ -150,7 +165,8 @@ public class DVSouls {
                     output.accept(SOUL_COLLAR.get());
                     output.accept(BINDING_ALTAR.get());
                     output.accept(SOUL_ALTAR.get());
-                    output.accept(SOUL_FURNACE.get());
+                    for (RegistryObject<SoulFurnace.Block> furnace : FURNACES.values()) output.accept(furnace.get());
+                    for (RegistryObject<Item> card : FURNACE_CARDS.values()) output.accept(card.get());
                     output.accept(SOUL_FUSER.get());
                     output.accept(SOUL_DISTILLER.get());
                     for (RegistryObject<Item> charm : CHARMS.values()) output.accept(charm.get());

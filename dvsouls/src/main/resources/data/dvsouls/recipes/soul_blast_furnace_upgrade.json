@@ -1,0 +1,4 @@
+{"type": "minecraft:crafting_shapeless", "category": "misc",
+ "conditions": [{"type": "forge:mod_loaded", "modid": "dvbackpack"}],
+ "ingredients": [{"item": "dvbackpack:upgrade_base"}, {"item": "dvsouls:soul_blast_furnace"}],
+ "result": {"item": "dvsouls:soul_blast_furnace_upgrade"}}

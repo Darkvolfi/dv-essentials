@@ -72,33 +72,30 @@ w $D/loot_tables/blocks/soul_altar.json <<EOF
   "conditions": [{"condition": "minecraft:survives_explosion"}]}]}
 EOF
 w $R/data/minecraft/tags/blocks/mineable/pickaxe.json <<EOF
-{"replace": false, "values": ["$M:soul_altar", "$M:binding_altar", "$M:soul_furnace", "$M:soul_fuser", "$M:soul_distiller"]}
+{"replace": false, "values": ["$M:soul_altar", "$M:binding_altar", "$M:soul_furnace", "$M:soul_smoker", "$M:soul_blast_furnace", "$M:soul_fuser", "$M:soul_distiller"]}
 EOF
 
-# ---------- the Soul Furnace (a furnace in blackstone, burning soul fire) and the Soul Fuser (blackstone, with a
-# respawn anchor's top that lights up while it works)
-w $A/models/block/soul_furnace.json <<EOF
+# ---------- the Soul Furnace, Soul Smoker and Soul Blast Furnace (the game's ones in blackstone, burning soul fire) and
+# the Soul Fuser (blackstone, with a respawn anchor's top that lights up while it works)
+for b in soul_furnace soul_smoker soul_blast_furnace; do
+    for on in "" _on; do
+        w $A/models/block/$b$on.json <<EOF
 {"parent": "minecraft:block/orientable", "textures": {"top": "minecraft:block/polished_blackstone",
- "front": "$M:block/soul_furnace_front", "side": "minecraft:block/polished_blackstone_bricks"}}
+ "front": "$M:block/${b}_front$on", "side": "minecraft:block/polished_blackstone_bricks"}}
 EOF
-w $A/models/block/soul_furnace_on.json <<EOF
-{"parent": "minecraft:block/orientable", "textures": {"top": "minecraft:block/polished_blackstone",
- "front": "$M:block/soul_furnace_front_on", "side": "minecraft:block/polished_blackstone_bricks"}}
-EOF
-printf '{"variants": {' > $A/blockstates/soul_furnace.json
-sep=""
-for lit in false true; do
-    model=$M:block/soul_furnace; [ $lit = true ] && model=${model}_on
-    for f in "north 0" "east 90" "south 180" "west 270"; do
-        set -- $f
-        printf '%s
-  "facing=%s,lit=%s": {"model": "%s", "y": %s}' "$sep" $1 $lit $model $2 >> $A/blockstates/soul_furnace.json
-        sep=","
     done
+    printf '{"variants": {' > $A/blockstates/$b.json
+    sep=""
+    for lit in false true; do
+        model=$M:block/$b; [ $lit = true ] && model=${model}_on
+        for f in "north 0" "east 90" "south 180" "west 270"; do
+            set -- $f
+            printf '%s\n  "facing=%s,lit=%s": {"model": "%s", "y": %s}' "$sep" $1 $lit $model $2 >> $A/blockstates/$b.json
+            sep=","
+        done
+    done
+    printf '\n}}\n' >> $A/blockstates/$b.json
 done
-printf '
-}}
-' >> $A/blockstates/soul_furnace.json
 fuser() {
     w $A/models/block/$1.json <<EOF
 {"parent": "minecraft:block/cube_bottom_top", "textures": {"top": "$2",
@@ -110,7 +107,7 @@ fuser soul_fuser_on minecraft:block/respawn_anchor_top
 w $A/blockstates/soul_fuser.json <<EOF
 {"variants": {"lit=false": {"model": "$M:block/soul_fuser"}, "lit=true": {"model": "$M:block/soul_fuser_on"}}}
 EOF
-for b in soul_furnace soul_fuser binding_altar; do
+for b in soul_furnace soul_smoker soul_blast_furnace soul_fuser binding_altar; do
     w $A/models/item/$b.json <<EOF
 {"parent": "$M:block/$b"}
 EOF
@@ -165,6 +162,29 @@ w $D/recipes/soul_furnace.json <<EOF
  "key": {"B": {"item": "minecraft:polished_blackstone"}, "F": {"item": "minecraft:furnace"}, "J": {"item": "$M:soul_jar"}},
  "result": {"item": "$M:soul_furnace"}}
 EOF
+# The smoker and blast furnace are built round a Soul Furnace, like the game's are round a furnace.
+w $D/recipes/soul_smoker.json <<EOF
+{"type": "minecraft:crafting_shaped", "category": "misc", "pattern": [" L ", "LFL", " L "],
+ "key": {"L": {"tag": "minecraft:logs"}, "F": {"item": "$M:soul_furnace"}},
+ "result": {"item": "$M:soul_smoker"}}
+EOF
+w $D/recipes/soul_blast_furnace.json <<EOF
+{"type": "minecraft:crafting_shaped", "category": "misc", "pattern": ["III", "IFI", "BBB"],
+ "key": {"I": {"item": "minecraft:iron_ingot"}, "F": {"item": "$M:soul_furnace"}, "B": {"item": "minecraft:polished_blackstone"}},
+ "result": {"item": "$M:soul_blast_furnace"}}
+EOF
+# DV Backpack cards of the three (registered only with DV Backpack, so their recipes ask for it): a card base and the block.
+for b in soul_furnace soul_smoker soul_blast_furnace; do
+    w $A/models/item/${b}_upgrade.json <<EOF
+{"parent": "dvbackpack:item/upgrade_card", "textures": {"face": "$M:block/${b}_front"}}
+EOF
+    w $D/recipes/${b}_upgrade.json <<EOF
+{"type": "minecraft:crafting_shapeless", "category": "misc",
+ "conditions": [{"type": "forge:mod_loaded", "modid": "dvbackpack"}],
+ "ingredients": [{"item": "dvbackpack:upgrade_base"}, {"item": "$M:$b"}],
+ "result": {"item": "$M:${b}_upgrade"}}
+EOF
+done
 w $D/recipes/binding_altar.json <<EOF
 {"type": "minecraft:crafting_shaped", "category": "misc", "pattern": ["QJQ", "LSL", "BBB"],
  "key": {"Q": {"item": "minecraft:quartz"}, "J": {"item": "$M:soul_jar"}, "L": {"item": "minecraft:lead"},

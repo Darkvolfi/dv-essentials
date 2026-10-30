@@ -56,7 +56,7 @@ public final class SoulsClient {
     @SubscribeEvent
     public static void onSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
-            MenuScreens.register(DVSouls.SOUL_FURNACE_MENU.get(), SoulScreens.FurnaceScreen::new);
+            for (var menu : DVSouls.FURNACE_MENUS.values()) MenuScreens.register(menu.get(), SoulScreens.FurnaceScreen::new);
             MenuScreens.register(DVSouls.SOUL_FUSER_MENU.get(), SoulScreens.MachineScreen<SoulFuser.Menu>::new);
             MenuScreens.register(DVSouls.SOUL_DISTILLER_MENU.get(), SoulScreens.MachineScreen<SoulDistiller.Menu>::new);
         });

@@ -123,6 +123,7 @@ The library behind the DV mods. Install it together with any DV mod.
 - Dark label text is brightened so it stays readable
 - Choose how dark, and an accent colour (blue, purple, green, red, orange)
 - Dark item tooltips with an accent-coloured border
+- Night title screen: the main menu's background shows the same place at night, with stars, a moon and moonlit land (made from the game's own image as it loads; can be turned off)
 - Exception list: leave chosen mods' screens as they are
 - Toggle with a key or from the DV menu
 - Client-side only

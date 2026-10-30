@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
-/** Recolours GUI textures right after they are read, before they are uploaded to the GPU. */
+/** Recolours GUI textures (and turns the title panorama to night) right after they are read, before they are uploaded to the GPU. */
 @Mixin(SimpleTexture.class)
 abstract class SimpleTextureMixin {
     @Shadow @Final protected ResourceLocation location;
@@ -18,6 +18,8 @@ abstract class SimpleTextureMixin {
     @ModifyVariable(method = "load", at = @At("STORE"))
     private NativeImage dvdark$darken(NativeImage image) {
         if (DarkTextures.shouldDarken(location)) DarkTextures.darken(image);
+        int face = DarkTextures.nightFace(location);
+        if (face >= 0) DarkTextures.night(image, face);
         return image;
     }
 }

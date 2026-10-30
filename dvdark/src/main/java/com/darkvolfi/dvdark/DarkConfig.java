@@ -11,6 +11,7 @@ public final class DarkConfig {
     public static final ForgeConfigSpec.BooleanValue TINT;
     public static final ForgeConfigSpec.ConfigValue<String> ACCENT;
     public static final ForgeConfigSpec.BooleanValue DARK_TOOLTIPS;
+    public static final ForgeConfigSpec.BooleanValue NIGHT_PANORAMA;
     public static final ForgeConfigSpec.ConfigValue<List<? extends String>> EXCEPTIONS;
 
     static {
@@ -25,6 +26,8 @@ public final class DarkConfig {
                 .define("accent", "#8060C0", o -> o instanceof String s && s.matches("#[0-9A-Fa-f]{6}"));
         DARK_TOOLTIPS = b.comment("Item tooltips get a dark grey background and an accent-coloured border.")
                 .define("darkTooltips", true);
+        NIGHT_PANORAMA = b.comment("The title screen's background shows the same place at night: a starry sky, a moon and moonlit land.")
+                .define("nightPanorama", true);
         EXCEPTIONS = b.comment("Never darken these: mod ids (e.g. create) or texture paths (e.g. minecraft:textures/gui/book.png).")
                 .defineListAllowEmpty(List.of("exceptions"), List::of, o -> o instanceof String s && !s.isBlank());
         SPEC = b.build();

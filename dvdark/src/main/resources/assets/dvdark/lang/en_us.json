@@ -2,6 +2,7 @@
   "key.dvdark.toggle": "Toggle DV Dark",
   "dvdark.config.enabled": "Dark mode",
   "dvdark.config.darkness": "Darkness (%%)",
+  "dvdark.config.nightPanorama": "Night title screen background",
   "dvdark.config.tint": "Tint menus",
   "dvdark.config.accent": "Accent colour",
   "dvdark.config.darkTooltips": "Dark tooltips",

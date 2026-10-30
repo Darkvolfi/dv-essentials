@@ -13,6 +13,7 @@ import java.util.List;
  */
 public final class DarkTextures {
     private static final float MAX_SATURATION = 0.15f;
+    private static final String PANORAMA = "textures/gui/title/background/panorama_";
 
     /** HUD icons and artwork that should keep their own colours. */
     private static final List<String> SKIPPED = List.of(
@@ -22,6 +23,28 @@ public final class DarkTextures {
             "textures/gui/advancements/backgrounds/");
 
     private DarkTextures() {}
+
+    /** The face (0-5) of the title screen's panorama this texture is, to be turned to night; -1 if it isn't one or that is off. */
+    public static int nightFace(ResourceLocation location) {
+        if (!DarkConfig.enabled() || !DarkConfig.NIGHT_PANORAMA.get() || !location.getNamespace().equals("minecraft")) return -1;
+        String path = location.getPath();
+        if (!path.startsWith(PANORAMA) || !path.endsWith(".png") || path.length() != PANORAMA.length() + 5) return -1;
+        char face = path.charAt(PANORAMA.length());
+        return face >= '0' && face <= '5' ? face - '0' : -1;
+    }
+
+    /** Turns a panorama face to night ({@link NightSky}). */
+    public static void night(NativeImage image, int face) {
+        if (image.format() != NativeImage.Format.RGBA) return;
+        int size = image.getWidth();
+        for (int y = 0; y < image.getHeight(); y++) {
+            for (int x = 0; x < size; x++) {
+                int abgr = image.getPixelRGBA(x, y);
+                int rgb = NightSky.night(abgr & 0xFF, abgr >> 8 & 0xFF, abgr >> 16 & 0xFF, x, y, size, face);
+                image.setPixelRGBA(x, y, (abgr & 0xFF000000) | (rgb & 0xFF) << 16 | (rgb & 0xFF00) | rgb >> 16 & 0xFF);
+            }
+        }
+    }
 
     public static boolean shouldDarken(ResourceLocation location) {
         if (!DarkConfig.enabled()) return false;

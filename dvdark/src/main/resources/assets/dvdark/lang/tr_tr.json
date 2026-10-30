@@ -2,6 +2,7 @@
   "key.dvdark.toggle": "DV Dark aç/kapa",
   "dvdark.config.enabled": "Koyu mod",
   "dvdark.config.darkness": "Koyuluk (%%)",
+  "dvdark.config.nightPanorama": "Ana menü arka planı gece",
   "dvdark.config.tint": "Menüleri renklendir",
   "dvdark.config.accent": "Vurgu rengi",
   "dvdark.config.darkTooltips": "Koyu ipuçları",

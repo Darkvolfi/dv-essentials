@@ -37,6 +37,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import net.minecraft.client.server.IntegratedServer;
+import net.minecraft.world.level.storage.LevelResource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -510,9 +512,17 @@ public final class MapData {
         return FMLPaths.GAMEDIR.get().resolve("dvmap").resolve(worldId).resolve(dimFolder);
     }
 
+    /**
+     * A single-player world is told apart by its save folder and its seed, not its name: worlds often share a name ("New
+     * World"), and a deleted world's folder name is given to the next one made with that name.
+     */
     public static String resolveWorldId(Minecraft mc) {
-        if (mc.getSingleplayerServer() != null) {
-            return "sp_" + sanitize(mc.getSingleplayerServer().getWorldData().getLevelName());
+        IntegratedServer local = mc.getSingleplayerServer();
+        if (local != null) {
+            Path folder = local.getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize().getFileName();
+            long seed = local.getWorldData().worldGenOptions().seed();
+            return "sp_" + sanitize(folder == null ? local.getWorldData().getLevelName() : folder.toString())
+                    + "_" + Long.toHexString(seed);
         }
         ServerData server = mc.getCurrentServer();
         if (server != null) {

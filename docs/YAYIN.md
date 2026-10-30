@@ -238,4 +238,4 @@ The library behind the DV mods. Install it together with any DV mod.
 - [ ] GitHub deposu açılınca `displayURL` ve `issueTrackerURL` ekle
 - [ ] Modrinth projeleri açılınca her modun `mods.toml`'una `updateJSONURL` ekle (DV menüsündeki güncelleme işareti bunu kullanır)
 - [ ] Ekran görüntüleri (her sayfa için 2–3)
-- [ ] DV New Crafts ve DV Science of Souls dokuları: vanilyadan türetilenler dağıtılmadan önce karar (bkz. `YOL-HARITASI.md` → Açık)
+- [ ] DV Science of Souls dokularını yeniden tasarla (bakır eşyalar böyle kalıyor; bkz. `YOL-HARITASI.md` → Açık)

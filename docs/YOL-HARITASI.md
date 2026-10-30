@@ -58,4 +58,4 @@ M5 en büyük iş: kayıt, sunucu senkronu, envanter ekranı, elytra uçuşu iç
 
 ## Açık
 - Ekran görüntüleri, sürüm adı (şimdilik 0.1.0). İkonlar: 32×32 piksel sanatı (tools/make-icons.ps1). DV Lib: tüplü monitör (ekranda dik ":3" kedi yüzü) ve kitaplardan kasa; diğer modlarda köşe işareti yok. Zoom teleskop. Kullanıcının tarifi.
-- **Dokular:** DV New Crafts ve DV Science of Souls'un bazı dokuları (bakır eşyalar, melez canlılar) betiklerle oyunun kendi dokularından türetilip jar'a giriyor. Bu, "hiçbir vanilya dokusu dağıtılmaz" kararıyla çelişiyor; yayından önce karar verilmeli (dokuları sıfırdan çizmek ya da çalışma anında üretmek).
+- **Dokular:** DV New Crafts ve DV Science of Souls'un bazı dokuları (bakır eşyalar, melez canlılar) betiklerle oyunun kendi dokularından türetilip jar'a giriyor. Bu, "hiçbir vanilya dokusu dağıtılmaz" kararıyla çelişiyor. Kullanıcının kararı (2026-10-30): bakır eşyalar böyle kalıyor; Souls'un dokuları ileride yeniden tasarlanacak (tasarımlar henüz yok).

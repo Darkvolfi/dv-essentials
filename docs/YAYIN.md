@@ -1,6 +1,6 @@
 # DV modları — yayın metinleri (Modrinth / CurseForge)
 
-Her mod ayrı bir proje sayfası olarak yüklenir; DV Lib diğerlerinin zorunlu bağımlılığıdır (DV Food sunucuda DV Lib istemez).
+Her mod ayrı bir proje sayfası olarak yüklenir; DV Lib diğerlerinin zorunlu bağımlılığıdır (DV Food sunucuda DV Lib istemez, DV New Crafts hiç istemez).
 Ortak bilgiler: **Minecraft 1.20.1 · Forge 47+ ve NeoForge 47.1+ · Lisans MIT · Yazar Darkvolfi**
 
 | Mod | Jar | Taraf | Bağımlılık | Kategori önerisi |
@@ -14,6 +14,11 @@ Ortak bilgiler: **Minecraft 1.20.1 · Forge 47+ ve NeoForge 47.1+ · Lisans MIT 
 | DV Dark | `dvdark-1.20.1-0.1.0.jar` | istemci | DV Lib | Decoration, Utility |
 | DV Map | `dvmap-1.20.1-0.1.0.jar` | istemci | DV Lib | Map, Utility |
 | DV Team | `dvteam-1.20.1-0.1.0.jar` | ikisi (zorunlu) | DV Lib, DV Map (istemci) | Utility, Multiplayer |
+| DV Grave | `dvgrave-1.20.1-0.1.0.jar` | ikisi (zorunlu) | DV Lib; DV Slots, DV Team isteğe bağlı | Utility, Storage |
+| DV Music | `dvmusic-1.20.1-0.1.0.jar` | istemci | DV Lib | Utility, Audio |
+| DV Backpack | `dvbackpack-1.20.1-0.1.0.jar` | ikisi (zorunlu) | DV Lib; DV Slots, Curios isteğe bağlı | Storage, Equipment |
+| DV New Crafts | `dvnewcrafts-1.20.1-0.1.0.jar` | ikisi (zorunlu) | — | Equipment, Decoration |
+| DV Science of Souls | `dvsouls-1.20.1-0.1.0.jar` | ikisi (zorunlu) | DV Lib; DV Backpack, JEI isteğe bağlı | Mobs, Magic, Technology |
 
 Jar'lar: `<mod>/build/libs/` (`.\gradlew.bat build` ile üretilir).
 
@@ -155,12 +160,75 @@ The library behind the DV mods. Install it together with any DV mod.
 - Claim from the world map (**M** → Claims), or `/clan claim`; force-load chunks with Shift
 - Required on both client and server; requires **DV Map** on the client
 
+
+## DV Grave
+**Summary:** A gravestone keeps everything you had when you died — and one button puts it all back.
+
+- Dying places a **gravestone** that holds your items and your experience
+- Catches items from other mods too: DV Slots, Curios (including cosmetic slots), Cosmetic Armor Reworked, backpacks, and anything a mod drops on death
+- Right-click to open it: your items show where they were, armour and offhand included
+- **One button** puts everything back where it was
+- For the first 30 minutes only you (and your clan, with **DV Team**) can open it; then anyone. Configurable, or owner-only forever
+- Experience: keep all of it, the vanilla amount, or none (server setting)
+- Unbreakable, blast-proof, can't be pushed; disappears once empty. Your name is carved on it
+- Required on both client and server
+
+## DV Music
+**Summary:** See which song is playing, skip or pick one, and add your own music.
+
+- Press **U** (or use the DV menu) to see the current song, its progress and length
+- Previous, play/pause, next; volume; search
+- Pick any Minecraft song from the list — shown with its real name and composer (C418, Lena Raine, Kumi Tanioka, Aaron Cherof), including songs from resource packs
+- **Your own music:** drop `.ogg` files into the `dvmusic` folder; sub-folders become playlists for the menu, the world, creative, underwater, the Nether and the End. "Artist - Title.ogg" names are split for you
+- Play mode: mixed, Minecraft only, or yours only
+- Small player in the pause menu (choose its corner)
+- Music discs keep working: background music stops while one plays
+- Client-side only
+
+## DV Backpack
+**Summary:** Backpacks from leather to netherite, with tools, auto-pickup, tanks and a sleeping bag.
+
+- Six tiers: leather (27 slots), copper, iron, gold, diamond, netherite (135); upgrading keeps the contents
+- Wear it in the **DV Slots** backpack slot, the chest slot or a **Curios** back slot — or set it down as a block
+- **Upgrade cards** on tabs at the side: crafting table, furnace, smoker, blast furnace (they keep cooking wherever the backpack is), pickup with magnet, void, auto-feeding, refill, and an 8-bucket fluid tank
+- Filters on the automatic cards: "only these" or "everything except these"
+- **Sleeping bag:** lay it out from the backpack and sleep anywhere; it doesn't change your spawn point (world setting)
+- Sort, deposit and take buttons; big backpacks scroll
+- Other mods can put their own items in the upgrade slots (`dvbackpack:upgrades` item tag); items with their own slots open as a panel
+- Required on both client and server
+
+## DV New Crafts
+**Summary:** Recipes for saddles, name tags, horse armour and chainmail — plus simple copper gear.
+
+- Craft what you could only find before: **saddle**, **name tag**, **iron, gold and diamond horse armour**, **chainmail armour**
+- **Copper tools and armour**, between stone and iron
+- Copper nuggets; worn copper gear smelts back into nuggets
+- **Copper torch and lantern** with a green flame
+- **Copper chain and bars**
+- Everything appears in the vanilla creative tabs next to its stone or iron version
+- No dependency, not even DV Lib
+- Required on both client and server
+
+## DV Science of Souls
+**Summary:** Catch souls in jars, fuse them into hybrid creatures, bind any creature as your pet, and wear their powers.
+
+- **Soul Jar:** right-click a creature to catch its soul (bosses excepted), right-click a block to release it — name, health and gear included
+- **Binding Altar:** lay a creature's jar on it and offer a soul with half its hearts: it stands up as your pet. Pets follow, wait or wander (sneak + right-click), defend you, and never turn on you or your other pets — monsters too
+- **Soul Collar:** a collared pet that dies leaves a **collar shard**; offer a soul as strong as it at the **Soul Altar** to bring it back
+- **Soul Fuser:** fuse two souls into a hybrid — **Woolly Cow** (shear it, it grazes its wool back), **Feathered Pig** (lays eggs, falls slowly), **Lava Horse** (walks on lava), **Wolf Fox** (fetches items) — or two of the same kind into a stronger soul
+- **Soul Furnace:** a fast furnace that burns souls
+- Feed a soul to a horse to raise its speed, jump and health
+- **Soul charms:** distil a soul with amethyst into an **essence** in the **Soul Distiller**, and set essences in a gold, diamond or netherite charm (1, 2 or 3). In a worn **DV Backpack**'s upgrade slot it gives the creatures' powers: water breathing, night vision, wall climbing, walking on lava, strength, speed, creepers keeping away, item magnet... 18 in all; more essences of one creature make it stronger
+- JEI shows the fusions and distilling; works without JEI and DV Backpack (charms then work from the inventory)
+- Server settings for costs, times and limits
+- Required on both client and server
+
 ---
 
 ## Değişiklik listesi
 
 ### 0.1.0 (ilk sürüm)
-İlk yayın: DV Lib, DV Zoom, DV Food, DV Lens, DV Vein, DV Slots, DV Dark.
+İlk yayın: DV Lib, DV Zoom, DV Food, DV Lens, DV Vein, DV Slots, DV Dark, DV Map, DV Team, DV Grave, DV Music, DV Backpack, DV New Crafts, DV Science of Souls.
 
 ## Yayın öncesi kontrol listesi
 - [x] Forge 1.20.1 ayrılmış sunucuda açılıyor (2026-10-25)
@@ -170,3 +238,4 @@ The library behind the DV mods. Install it together with any DV mod.
 - [ ] GitHub deposu açılınca `displayURL` ve `issueTrackerURL` ekle
 - [ ] Modrinth projeleri açılınca her modun `mods.toml`'una `updateJSONURL` ekle (DV menüsündeki güncelleme işareti bunu kullanır)
 - [ ] Ekran görüntüleri (her sayfa için 2–3)
+- [ ] DV New Crafts ve DV Science of Souls dokuları: vanilyadan türetilenler dağıtılmadan önce karar (bkz. `YOL-HARITASI.md` → Açık)

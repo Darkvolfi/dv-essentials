@@ -169,5 +169,6 @@
   "dvteam.chat.ally": "[Allies]",
   "dvteam.chat.mode.all": "Your chat now goes to everyone.",
   "dvteam.chat.mode.clan": "Your chat now goes to your clan. Back to everyone: /clan chat all",
-  "dvteam.chat.mode.ally": "Your chat now goes to your clan and allies. Back to everyone: /clan chat all"
+  "dvteam.chat.mode.ally": "Your chat now goes to your clan and allies. Back to everyone: /clan chat all",
+  "dvteam.map.places": "%s Settlements"
 }

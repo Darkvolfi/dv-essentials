@@ -169,5 +169,6 @@
   "dvteam.chat.ally": "[Müttefik]",
   "dvteam.chat.mode.all": "Sohbetin artık herkese gidiyor.",
   "dvteam.chat.mode.clan": "Sohbetin artık klanına gidiyor. Herkese dönmek için: /klan chat all",
-  "dvteam.chat.mode.ally": "Sohbetin artık klanına ve müttefiklerine gidiyor. Herkese dönmek için: /klan chat all"
+  "dvteam.chat.mode.ally": "Sohbetin artık klanına ve müttefiklerine gidiyor. Herkese dönmek için: /klan chat all",
+  "dvteam.map.places": "%s Yerleşimleri"
 }

@@ -23,6 +23,8 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 /** Clan territory on DV Map: borders, settlement names and icons, and claiming from the world map. */
@@ -51,6 +53,30 @@ public final class TeamMapIntegration implements MapOverlayHook {
             claim[0].selected(claimMode).setTooltip(Tooltip.create(claimModeLabel()));
         }).selected(claimMode);
         addWidget.accept(claim[0]);
+    }
+
+    @Override
+    public Component placesTitle() {
+        ClanData.Clan clan = ClientClanCache.myClan();
+        return clan == null ? null : Component.translatable("dvteam.map.places", clan.name);
+    }
+
+    /** The own clan's settlements, the capital first. */
+    @Override
+    public List<Place> places(ResourceKey<Level> dimension) {
+        ClanData.Clan clan = ClientClanCache.myClan();
+        List<Place> places = new ArrayList<>();
+        if (clan == null) return places;
+        String dim = dimension.location().toString();
+        for (ClanData.Settlement s : ClientClanCache.settlementsOf(clan.id)) {
+            double[] centre = ClientClanCache.centre(s.id);
+            if (!s.dimension.equals(dim) || centre == null) continue;
+            String[] icon = s.type == SettlementType.CAPITAL ? CASTLE : s.type == SettlementType.TRADE ? BAG : HOUSE;
+            Place place = new Place(Component.literal(s.name), icon, clan.color, (int) Math.floor(centre[0]), NO_Y, (int) Math.floor(centre[1]));
+            if (s.type == SettlementType.CAPITAL) places.add(0, place);
+            else places.add(place);
+        }
+        return places;
     }
 
     private Component claimModeLabel() {

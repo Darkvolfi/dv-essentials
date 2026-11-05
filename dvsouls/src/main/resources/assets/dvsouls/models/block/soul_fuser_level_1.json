@@ -1,0 +1,2 @@
+{"textures": {"particle": "dvsouls:block/pure_soul_still", "soul": "dvsouls:block/pure_soul_still"}, "render_type": "minecraft:translucent",
+ "elements": [{"from": [13, 1.5, -0.2], "to": [14, 3.5, -0.15], "faces": {"north": {"texture": "#soul"}}}]}

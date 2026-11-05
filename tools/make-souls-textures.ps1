@@ -5,11 +5,14 @@
 #   textures/item/soul_jar_spots.png     swirls in it (tinted: the egg's spot colour)
 #   textures/item/soul_collar.png        a leather collar with a soul gem
 #   textures/item/collar_shard*.png      a piece of a dead pet's collar; its gem is tinted
-#   textures/item/soul_essence*.png      a soul's essence: a glowing drop, its inside tinted
-#   textures/item/*_soul_charm.png       soul charms, a pendant per tier
+#   textures/item/soul_tube.png          an empty glass test tube; soul_essence*.png the same tube filled with an essence (tinted)
+#   textures/item/soul_card_*.png        soul cards (the soul charms): a frame per tier and the dark rack the tubes stand in
 #   textures/mob_effect/*.png             the climbing and lava walking effects' icons
 #   textures/item/pure_soul_*.png, soul_coal.png   a bottle of pure soul; overlays on the game's bucket and coal
 #   textures/block/pure_soul_*.png       the pure soul liquid, still and flowing (animated)
+#   textures/block/soul_flow.png         souls flowing along the Soul Refiner's amethyst (animated)
+#   textures/block/amethyst_crack_*.png  cracks over the Soul Refiner's amethyst as it wears
+#   textures/block/refiner_*.png         gold inlays over the Soul Refiner's stone
 # Run from the repo root:  powershell -ExecutionPolicy Bypass -File tools\make-souls-textures.ps1
 
 Add-Type -AssemblyName System.Drawing
@@ -117,51 +120,57 @@ $shard = @(
 Sprite 'collar_shard' $shard @{ k = '#3A2414'; l = '#7A4E2C'; m = '#C0C0C8' }
 Sprite 'collar_shard_gem' $shard @{ c = '#B4B4B4'; e = '#FFFFFF' }
 
-# A soul essence: a glowing drop with a dark rim (o) and a glint (h); its inside (i) is tinted with the egg's body colour.
-$drop = @(
+# A glass test tube (made from two glass and a quartz stopper), standing: the stopper (q, p shade), the glass's edges (g)
+# and a glint (h). Filled, it is a soul's essence: the soul (i, layer 1) is tinted with the egg's body colour.
+$tube = @(
     '................',
-    '.......o........',
-    '.......oo.......',
-    '......oiio......',
-    '......oiio......',
-    '.....oiiiio.....',
-    '.....oihiio.....',
-    '....oihiiiio....',
-    '....oihiiiio....',
-    '....oiiiiiio....',
-    '....oiiiiiio....',
-    '.....oiiiio.....',
-    '......oooo......',
-    '................',
-    '................',
+    '......qqqq......',
+    '......pqqp......',
+    '......g..g......',
+    '......gh.g......',
+    '......gh.g......',
+    '......gh.g......',
+    '......giig......',
+    '......giig......',
+    '......giig......',
+    '......giig......',
+    '......giig......',
+    '......giig......',
+    '......giig......',
+    '.......gg.......',
     '................'
 )
-Sprite 'soul_essence' $drop @{ o = '#22343A'; h = '#FFFFFF' }
-Sprite 'soul_essence_glow' $drop @{ i = '#D8D8D8' }
+Sprite 'soul_tube' $tube @{ q = '#EDE6DA'; p = '#C9BFB0'; g = '#9FC4CC'; h = '#E6F6F8' }
+Sprite 'soul_essence' $tube @{ q = '#EDE6DA'; p = '#C9BFB0'; g = '#9FC4CC'; h = '#E6F6F8' }
+Sprite 'soul_essence_glow' $tube @{ i = '#D8D8D8' }
 
-# Soul charms: a chain (m) holding a pendant framed in the tier's metal (f dark, g light) round a soul gem (e, h).
-$charm = @(
-    '...m........m...',
-    '...m........m...',
-    '....m......m....',
-    '.....m....m.....',
-    '......m..m......',
-    '......ffff......',
-    '.....fggggf.....',
-    '....fgeeeegf....',
-    '...fgeehheegf...',
-    '...fgeehheegf...',
-    '...fgeeeeeegf...',
-    '....fgeeeegf....',
-    '.....fgeegf.....',
-    '......fggf......',
-    '.......ff.......',
-    '................'
-)
-$frames = @{ gold = @('#B07A12', '#F2C230'); diamond = @('#1E8C86', '#6FF0E8'); netherite = @('#2A2426', '#5A5052') }
-foreach ($tier in 'gold', 'diamond', 'netherite') {
-    Sprite "${tier}_soul_charm" $charm @{ m = '#8A8A92'; f = $frames[$tier][0]; g = $frames[$tier][1]; e = '#3FB8C8'; h = '#E0FFFF' }
+# Soul cards (what were soul charms), shaped like DV Backpack's upgrade cards so they sit in its upgrade slots the same
+# way: a frame with rounded corners in the tier's metal (l dark, s a stitch of the light one), rivets (r) in the corners and
+# a dark inside (i). The face is a dark rack with a gold shelf the tubes stand on; the tubes are the model's own.
+$cardFrame = @()
+for ($y = 0; $y -lt 16; $y++) {
+    $row = ''
+    for ($x = 0; $x -lt 16; $x++) {
+        $edge = [Math]::Min([Math]::Min($x, 15 - $x), [Math]::Min($y, 15 - $y))
+        $corner = ($x -eq 0 -or $x -eq 15) -and ($y -eq 0 -or $y -eq 15)
+        if ($corner) { $row += '.' }
+        elseif (($x -eq 2 -or $x -eq 13) -and ($y -eq 2 -or $y -eq 13)) { $row += 'r' }
+        elseif ($edge -eq 0) { $row += 'o' }
+        elseif ($edge -eq 1 -and (($x + $y) % 2 -eq 0)) { $row += 's' }
+        elseif ($edge -le 2) { $row += 'l' }
+        else { $row += 'i' }
+    }
+    $cardFrame += $row
 }
+$metals = @{ gold = @('#B07A12', '#F2C230'); diamond = @('#1E8C86', '#6FF0E8'); netherite = @('#2A2426', '#6A6062') }
+foreach ($tier in 'gold', 'diamond', 'netherite') {
+    Sprite "soul_card_$tier" $cardFrame @{ o = '#14101A'; l = $metals[$tier][0]; s = $metals[$tier][1]; r = '#D8D8E0'; i = '#2A2034' }
+}
+$rack = @()
+for ($y = 0; $y -lt 16; $y++) {
+    $rack += $(if ($y -eq 13) { 'ssssssssssssssss' } elseif ($y -eq 14) { 'dddddddddddddddd' } elseif ($y % 4 -eq 1) { 'b.b.b.b.b.b.b.b.' } else { 'bbbbbbbbbbbbbbbb' })
+}
+Sprite 'soul_card_face' $rack @{ b = '#1E1826'; s = '#C9A13A'; d = '#8C6A1E' }
 
 # Status effect icons (18x18, the 16x16 drawing in the middle): a spider's essence climbing, a lava horse's walking on lava.
 $effects = Join-Path $root 'dvsouls\src\main\resources\assets\dvsouls\textures\mob_effect'
@@ -287,3 +296,71 @@ function Liquid([string]$name, [int]$frames, [bool]$flows) {
 }
 Liquid 'pure_soul_still' 32 $false
 Liquid 'pure_soul_flow' 32 $true
+
+# Souls flowing along the Soul Refiner's amethyst (animated, see-through): pale blue wisps with fading tails drifting
+# right, one every other row, each row at its own place and speed so they don't move as one.
+$flow = New-Object System.Drawing.Bitmap 16, (16 * 16)
+for ($f = 0; $f -lt 16; $f++) {
+    for ($y = 0; $y -lt 16; $y += 2) {
+        $speed = 1 + ($y / 2) % 2
+        $head = ($y * 7 + $f * $speed) % 16
+        for ($t = 0; $t -lt 4; $t++) {
+            $x = ($head - $t + 16) % 16
+            $a = @(255, 190, 120, 60)[$t]
+            $flow.SetPixel($x, $f * 16 + $y, [System.Drawing.Color]::FromArgb($a, 170 + 20 * (3 - $t), 215, 255))
+        }
+    }
+}
+$flow.Save((Join-Path $blocks 'soul_flow.png'), [System.Drawing.Imaging.ImageFormat]::Png)
+$flow.Dispose()
+Set-Content -Encoding ascii (Join-Path $blocks 'soul_flow.png.mcmeta') '{"animation": {"frametime": 2}}'
+
+# Cracks over the Soul Refiner's amethyst as it wears (model and screen), three stages, each with the last one's cracks
+# and more: dark violet jagged lines walked from fixed starts, opaque so they draw the same in any render layer.
+$crackDark = [System.Drawing.Color]::FromArgb(255, 42, 18, 64)
+$starts = @(@(2, 3, 1, 1), @(13, 2, -1, 1), @(7, 14, 1, -1), @(0, 9, 1, 0), @(15, 11, -1, -1), @(9, 0, 0, 1))
+$crack = New-Object System.Drawing.Bitmap 16, 16
+for ($stage = 1; $stage -le 3; $stage++) {
+    foreach ($s in $starts[(($stage - 1) * 2)..(($stage - 1) * 2 + 1)]) {
+        $x = $s[0]; $y = $s[1]; $seed = $x * 31 + $y * 7
+        for ($i = 0; $i -lt 4 + 2 * $stage; $i++) {
+            if ($x -lt 0 -or $x -gt 15 -or $y -lt 0 -or $y -gt 15) { break }
+            $crack.SetPixel($x, $y, $crackDark)
+            $seed = ($seed * 1103515245 + 12345) -band 0x7FFFFFFF
+            $x += $s[2]; $y += $s[3]
+            if ($seed % 3 -eq 0) { if ($s[2] -eq 0) { $x += 1 - 2 * ($seed % 2) } else { $y += 1 - 2 * ($seed % 2) } }
+        }
+    }
+    $crack.Save((Join-Path $blocks "amethyst_crack_$stage.png"), [System.Drawing.Imaging.ImageFormat]::Png)
+}
+$crack.Dispose()
+
+# Gold inlays laid over the Soul Refiner's polished blackstone (the game's stone stays underneath, only these are ours).
+# Each is drawn where its part's faces read the texture: the slab's sides rows 11-15, the box's front columns 0-5 and
+# its sides 4-11 (rows 0-4), the tower's sides columns 4-11 (rows 0-10), the wall's front rows 0-10.
+$inlay = @{ 'g' = '#C9A13A'; 'o' = '#8C6A1E' }
+function Inlay([string]$name, [hashtable]$rows) {
+    $bmp = New-Object System.Drawing.Bitmap 16, 16
+    foreach ($y in $rows.Keys) {
+        $row = $rows[$y]
+        if ($row.Length -ne 16) { throw "Row $y of $name is $($row.Length) wide" }
+        for ($x = 0; $x -lt 16; $x++) {
+            $c = [string]$row[$x]
+            if ($inlay.ContainsKey($c)) { $bmp.SetPixel($x, $y, (Col $inlay[$c])) }
+        }
+    }
+    $bmp.Save((Join-Path $blocks "$name.png"), [System.Drawing.Imaging.ImageFormat]::Png)
+    $bmp.Dispose()
+}
+# the slab: a trim along its top, small diamonds along it
+Inlay 'refiner_band' @{ 11 = 'gggggggggggggggg'; 12 = '...g.......g....'; 13 = '..gog.....gog...'; 14 = '...g.......g....' }
+# the box: a trim along its bottom, a short bar on the front and on each side
+Inlay 'refiner_box' @{ 2 = '..gg...gg.......'; 4 = 'gggggggggggg....' }
+# the tower: a trim along each side's top and a small diamond under it
+Inlay 'refiner_tower' @{ 0 = '....gggggggg....'; 4 = '.......g........'; 5 = '......gog.......'; 6 = '.......g........' }
+# the wall: a small diamond seen under the amethyst
+Inlay 'refiner_wall' @{ 7 = '.........g......'; 8 = '........gog.....'; 9 = '.........g......' }
+# the soul furnaces: a frame round their sides and top, a diamond on each edge's middle
+Inlay 'furnace_inlay' @{ 1 = '.gggggggggggggg.'; 2 = '.g.....gg.....g.'; 6 = '.g............g.'; 7 = '.gg..........gg.'
+    8 = '.gg..........gg.'; 9 = '.g............g.'; 13 = '.g.....gg.....g.'; 14 = '.gggggggggggggg.'
+    3 = '.g............g.'; 4 = '.g............g.'; 5 = '.g............g.'; 10 = '.g............g.'; 11 = '.g............g.'; 12 = '.g............g.' }

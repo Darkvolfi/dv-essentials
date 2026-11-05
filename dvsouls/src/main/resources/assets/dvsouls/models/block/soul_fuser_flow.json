@@ -1,0 +1,3 @@
+{"textures": {"particle": "dvsouls:block/soul_flow", "flow": "dvsouls:block/soul_flow"}, "render_type": "minecraft:translucent",
+ "elements": [{"from": [8, 12, 5.98], "to": [15, 15, 6], "shade": false, "faces": {"north": {"uv": [1, 1, 8, 4], "texture": "#flow"}}},
+  {"from": [1, 12, 5.98], "to": [8, 15, 6], "shade": false, "faces": {"north": {"uv": [15, 1, 8, 4], "texture": "#flow"}}}]}

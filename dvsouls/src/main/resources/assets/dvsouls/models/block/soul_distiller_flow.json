@@ -1,0 +1,4 @@
+{"textures": {"particle": "dvsouls:block/soul_flow", "flow": "dvsouls:block/soul_flow"}, "render_type": "minecraft:translucent",
+ "elements": [{"from": [8.98, 7, 6.98], "to": [11.02, 10.5, 9.02], "shade": false, "faces": {
+   "north": {"uv": [4, 5, 7.5, 7], "rotation": 90, "texture": "#flow"}, "south": {"uv": [4, 5, 7.5, 7], "rotation": 90, "texture": "#flow"},
+   "east": {"uv": [4, 5, 7.5, 7], "rotation": 90, "texture": "#flow"}, "west": {"uv": [4, 5, 7.5, 7], "rotation": 90, "texture": "#flow"}}}]}

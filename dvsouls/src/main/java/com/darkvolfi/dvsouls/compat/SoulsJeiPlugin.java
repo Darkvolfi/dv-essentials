@@ -4,6 +4,7 @@ import com.darkvolfi.dvsouls.DVSouls;
 import com.darkvolfi.dvsouls.Soul;
 import com.darkvolfi.dvsouls.SoulFuser;
 import com.darkvolfi.dvsouls.SoulFurnace;
+import com.darkvolfi.dvsouls.SoulsConfig;
 import com.darkvolfi.dvsouls.charm.Ability;
 import com.darkvolfi.dvsouls.charm.EssenceItem;
 import net.minecraft.world.item.Items;
@@ -148,6 +149,13 @@ public class SoulsJeiPlugin implements IModPlugin {
             var font = Minecraft.getInstance().font;
             g.drawString(font, "+", 25, 7, 0xFF808080, false);
             g.drawString(font, "→", 72, 7, 0xFF808080, false);
+        }
+
+        /** The Refiner's arrow tells how it works: a heart at a time, the jar keeping what is left, the amethyst wearing. */
+        @Override
+        public List<Component> getTooltipStrings(Fusion fusion, IRecipeSlotsView slots, double mouseX, double mouseY) {
+            if (type != REFINING || mouseX < 60 || mouseX > 92) return List.of();
+            return List.of(Component.translatable("dvsouls.jei.refining", SoulsConfig.SOULS_PER_AMETHYST.get()));
         }
     }
 }

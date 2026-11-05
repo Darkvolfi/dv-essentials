@@ -4,7 +4,13 @@ import com.darkvolfi.dvsouls.DVSouls;
 import com.darkvolfi.dvsouls.Soul;
 import com.darkvolfi.dvsouls.SoulDistiller;
 import com.darkvolfi.dvsouls.SoulFuser;
+import com.darkvolfi.dvsouls.SoulMachine;
+import com.darkvolfi.dvsouls.SoulRefiner;
 import com.darkvolfi.dvsouls.charm.EssenceItem;
+import com.darkvolfi.dvsouls.charm.SoulCharm;
+import net.minecraft.world.item.Item;
+import net.minecraftforge.registries.RegistryObject;
+import java.util.List;
 import net.minecraft.world.entity.EntityType;
 import org.jetbrains.annotations.Nullable;
 import net.minecraft.world.item.ItemStack;
@@ -34,6 +40,11 @@ public final class SoulsClient {
                 DVSouls.FILLED_SOUL_JAR.get(), DVSouls.COLLAR_SHARD.get());
         // An essence's glow (layer 1) takes its creature's egg body colour.
         event.register((stack, layer) -> layer == 0 ? -1 : 0xFF000000 | eggColor(EssenceItem.creature(stack), 0), DVSouls.SOUL_ESSENCE.get());
+        // A soul card's i-th tube is tinted like its i-th essence; an empty place in its rack stays dark.
+        event.register((stack, tube) -> {
+            List<EntityType<?>> essences = SoulCharm.essences(stack);
+            return tube < essences.size() ? 0xFF000000 | eggColor(essences.get(tube), 0) : 0xFF2A2034;
+        }, DVSouls.CHARMS.values().stream().map(RegistryObject::get).toArray(Item[]::new));
     }
 
     /** A corrupted creature's soul is dark red, with black swirls. */
@@ -57,6 +68,17 @@ public final class SoulsClient {
     public static void onRenderers(EntityRenderersEvent.RegisterRenderers event) {
         HybridRenderers.registerRenderers(event);
         event.registerEntityRenderer(DVSouls.CORRUPTED.get(), CorruptedRenderer::new);
+        // The jars stand on their pads with their necks in the gold sockets; a fused soul on the Fuser's middle pedestal;
+        // the Distiller's jar hangs upside down over its amethyst (the model's), the test tube it drips into below.
+        event.registerBlockEntityRenderer(DVSouls.SOUL_REFINER_ENTITY.get(), MachineRenderer.of(
+                new MachineRenderer.Place(SoulRefiner.SOUL, 12.5f, 8.3f, 8, 0.4f, 0)));
+        event.registerBlockEntityRenderer(DVSouls.SOUL_FUSER_ENTITY.get(), MachineRenderer.of(
+                new MachineRenderer.Place(SoulFuser.A, 12.5f, 8.3f, 8, 0.4f, 0),
+                new MachineRenderer.Place(SoulFuser.B, 3.5f, 8.3f, 8, 0.4f, 0),
+                new MachineRenderer.Place(SoulMachine.RESULT, 8, 9.1f, 8, 0.3f, 0)));
+        event.registerBlockEntityRenderer(DVSouls.SOUL_DISTILLER_ENTITY.get(), MachineRenderer.of(
+                new MachineRenderer.Place(SoulDistiller.SOUL, 10, 13.52f, 8, 0.36f, 180),
+                new MachineRenderer.Place(SoulMachine.RESULT, 10, 4.4f, 8, 0.3f, 0)));
     }
 
     @SubscribeEvent

@@ -19,7 +19,12 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 import static com.darkvolfi.dvsouls.SoulMachine.EMPTY;
@@ -36,22 +41,51 @@ public final class SoulDistiller {
 
     private SoulDistiller() {}
 
+    /** An empty test tube, for the essence to drip into. */
+    public static boolean isTube(ItemStack stack) {
+        return stack.is(DVSouls.SOUL_TUBE.get());
+    }
+
     /** A soul that has an essence. */
     public static boolean canDistil(ItemStack stack) {
         return SoulFuser.isSoul(stack) && Soul.type(Soul.get(stack)).map(Ability::of).isPresent();
     }
 
+    /** AMETHYST: a shard in its slot, standing in the model between the funnel and the tube. */
     public static class Block extends SoulMachine.Block {
+        public static final BooleanProperty AMETHYST_IN = BooleanProperty.create("amethyst");
+
         public Block() {
             super(DVSouls.SOUL_DISTILLER_ENTITY);
+            registerDefaultState(defaultBlockState().setValue(AMETHYST_IN, false));
+        }
+
+        @Override
+        protected void createBlockStateDefinition(StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder) {
+            super.createBlockStateDefinition(builder);
+            builder.add(AMETHYST_IN);
+        }
+
+        /** While it works, drops fall from the funnel's tip onto the essence below. */
+        @Override
+        public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
+            super.animateTick(state, level, pos, random);
+            if (!state.getValue(LIT) || random.nextInt(3) != 0) return;
+            Vec3 tip = modelPoint(state, 10, 10.3, 8);
+            level.addParticle(ParticleTypes.FALLING_OBSIDIAN_TEAR, pos.getX() + tip.x, pos.getY() + tip.y, pos.getZ() + tip.z, 0, 0, 0);
         }
     }
 
     public static class Entity extends SoulMachine.Entity {
-        private static final int[] TOP = {SOUL}, SIDES = {AMETHYST, FUEL};
+        private static final int[] TOP = {SOUL}, SIDES = {AMETHYST, FUEL, RESULT};
 
         public Entity(BlockPos pos, BlockState state) {
             super(DVSouls.SOUL_DISTILLER_ENTITY.get(), pos, state);
+        }
+
+        @Override
+        protected BlockState shown(BlockState state) {
+            return state.setValue(Block.AMETHYST_IN, !items.getItem(AMETHYST).isEmpty());
         }
 
         private @Nullable ItemStack essence() {
@@ -61,13 +95,10 @@ public final class SoulDistiller {
             return EssenceItem.of(new ItemStack(DVSouls.SOUL_ESSENCE.get()), type);
         }
 
-        /** A soul with an essence, an amethyst shard, and room for the essence. */
+        /** A soul with an essence, an amethyst shard, and an empty test tube standing under the funnel for it. */
         @Override
         protected boolean canWork() {
-            ItemStack essence = essence();
-            ItemStack result = items.getItem(RESULT);
-            return essence != null && items.getItem(AMETHYST).is(Items.AMETHYST_SHARD)
-                    && (result.isEmpty() || ItemStack.isSameItemSameTags(result, essence) && result.getCount() < result.getMaxStackSize());
+            return essence() != null && items.getItem(AMETHYST).is(Items.AMETHYST_SHARD) && isTube(items.getItem(RESULT));
         }
 
         @Override
@@ -79,9 +110,8 @@ public final class SoulDistiller {
         protected void work(ServerLevel level) {
             ItemStack essence = essence();
             if (essence == null) return;
-            ItemStack result = items.getItem(RESULT);
-            if (result.isEmpty()) items.setItem(RESULT, essence);
-            else result.grow(1);
+            // the tube under the funnel fills: it is the essence now
+            items.setItem(RESULT, essence);
             items.setItem(SOUL, ItemStack.EMPTY);
             items.getItem(AMETHYST).shrink(1);
             level.playSound(null, worldPosition, SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.BLOCKS, 1, 1);
@@ -89,7 +119,8 @@ public final class SoulDistiller {
                     worldPosition.getZ() + 0.5, 20, 0.3, 0.3, 0.3, 0.03);
         }
 
-        // ---- for hoppers: the soul in from above, amethyst and what fills the bar from the sides, the results out from below
+        // ---- for hoppers: the soul in from above, amethyst, empty tubes and what fills the bar from the sides, the results out
+        // from below
 
         @Override
         public int[] getSlotsForFace(Direction side) {
@@ -102,14 +133,21 @@ public final class SoulDistiller {
                 case SOUL -> canDistil(stack);
                 case AMETHYST -> stack.is(Items.AMETHYST_SHARD);
                 case FUEL -> SoulFurnace.isFuel(stack);
+                case RESULT -> isTube(stack);
                 default -> false;
             };
         }
 
-        /** Amethyst stacks up; the jars go in one at a time. */
+        /** Amethyst stacks up; the jars and tubes go in one at a time. */
         @Override
         public boolean canPlaceItemThroughFace(int slot, ItemStack stack, @Nullable Direction side) {
             return slot == AMETHYST ? canPlaceItem(slot, stack) : super.canPlaceItemThroughFace(slot, stack, side);
+        }
+
+        /** An empty tube waiting under the funnel stays; a filled one comes out. */
+        @Override
+        public boolean canTakeItemThroughFace(int slot, ItemStack stack, Direction side) {
+            return !(slot == RESULT && isTube(stack)) && super.canTakeItemThroughFace(slot, stack, side);
         }
 
         @Override
@@ -138,14 +176,22 @@ public final class SoulDistiller {
             addSlot(new SoulMachine.FilterSlot(distiller, SOUL, 44, 17, SoulDistiller::canDistil));
             addSlot(new SoulMachine.FilterSlot(distiller, AMETHYST, 44, 35, stack -> stack.is(Items.AMETHYST_SHARD)));
             addSlot(new SoulMachine.FilterSlot(distiller, FUEL, 9, 53, SoulFurnace::isFuel));
-            addSlot(new SoulMachine.FilterSlot(distiller, RESULT, 116, 35, null));
+            // one empty tube at a time: it is filled where it stands
+            addSlot(new SoulMachine.FilterSlot(distiller, RESULT, 116, 35, SoulDistiller::isTube) {
+                @Override
+                public int getMaxStackSize() {
+                    return 1;
+                }
+            });
             addSlot(new SoulMachine.FilterSlot(distiller, EMPTY, 144, 35, null));
         }
 
-        /** Amethyst to its slot; a soul with an essence to be distilled, anything else that fills the bar under it. */
+        /** Amethyst to its slot, an empty tube under the funnel; a soul with an essence to be distilled, anything else that
+         * fills the bar under it. */
         @Override
         protected boolean moveIn(ItemStack stack) {
             if (stack.is(Items.AMETHYST_SHARD)) return move(stack, AMETHYST, AMETHYST + 1);
+            if (isTube(stack)) return move(stack, RESULT, RESULT + 1);
             if (canDistil(stack) && move(stack, SOUL, SOUL + 1)) return true;
             return SoulFurnace.isFuel(stack) && move(stack, FUEL, FUEL + 1);
         }

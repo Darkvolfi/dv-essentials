@@ -5,6 +5,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -27,10 +29,14 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemUtils;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -39,10 +45,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidType;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -50,15 +59,17 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The Soul Refiner: refines a creature's soul into pure soul, which belongs to none: as many souls in its bar as the
- * creature had hearts ({@link SoulTank}). It wears down an amethyst shard every 8 souls (a server setting). An empty
- * bucket or glass bottle in the slot under the bar is filled from it; a bucket can also be filled by clicking the block,
- * and pipes of other mods reach the bar from any side. Hoppers put souls in from above, amethyst, buckets and bottles
+ * The Soul Refiner: refines a creature's soul into pure soul, which belongs to none, one heart at a time: each heart is
+ * a soul in its bar ({@link SoulTank}), and the creature left in the jar has one heart fewer. It wears down an amethyst
+ * shard every 8 souls (a server setting). An empty bucket or glass bottle in the slot under the bar is filled from it; a
+ * bucket can also be filled by clicking the block, and pipes of other mods reach the bar from any side. Hoppers put souls in from above, amethyst, buckets and bottles
  * from the sides, and take the empty jars and filled buckets and bottles from below.
  */
 public final class SoulRefiner {
     public static final int SOUL = 0, AMETHYST = 1, JARS = 2, CONTAINER = 3, SIZE = 4;
     public static final int CAPACITY = 16 * FluidType.BUCKET_VOLUME;
+    /** The column of the amethyst slot, and above it of the shard in use on the way from the soul to the bar. */
+    public static final int LENS_X = 62;
 
     private SoulRefiner() {}
 
@@ -67,17 +78,46 @@ public final class SoulRefiner {
         return stack.is(Items.BUCKET) || stack.is(Items.GLASS_BOTTLE);
     }
 
+    /**
+     * The block as its model shows it: a blackstone box on a slab before a wall, an amethyst bar from the box to a tower
+     * whose window shows how full the bar of souls is. The jar under the box is drawn by the client's renderer.
+     * CRACK: 0 without amethyst, else 1 (whole) to 4 (about to wear away); LEVEL: the bar, 0-8; LIT: souls flowing along
+     * the amethyst.
+     */
     public static class Block extends BaseEntityBlock {
+        public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
         public static final BooleanProperty LIT = BlockStateProperties.LIT;
+        public static final IntegerProperty CRACK = IntegerProperty.create("crack", 0, 4);
+        public static final IntegerProperty LEVEL = IntegerProperty.create("level", 0, 8);
 
         public Block() {
-            super(BlockBehaviour.Properties.copy(Blocks.POLISHED_BLACKSTONE).lightLevel(state -> state.getValue(LIT) ? 12 : 2));
-            registerDefaultState(defaultBlockState().setValue(LIT, false));
+            super(BlockBehaviour.Properties.copy(Blocks.POLISHED_BLACKSTONE).noOcclusion()
+                    .lightLevel(state -> state.getValue(LIT) ? 12 : 2));
+            registerDefaultState(defaultBlockState().setValue(FACING, Direction.NORTH).setValue(LIT, false)
+                    .setValue(CRACK, 0).setValue(LEVEL, 0));
         }
 
         @Override
         protected void createBlockStateDefinition(StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder) {
-            builder.add(LIT);
+            builder.add(FACING, LIT, CRACK, LEVEL);
+        }
+
+        /** Its front, the side the jar, amethyst and window are seen from, faces whoever places it. */
+        @Override
+        public BlockState getStateForPlacement(BlockPlaceContext context) {
+            return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+        }
+
+        @Override
+        @SuppressWarnings("deprecation")
+        public BlockState rotate(BlockState state, Rotation rotation) {
+            return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
+        }
+
+        @Override
+        @SuppressWarnings("deprecation")
+        public BlockState mirror(BlockState state, Mirror mirror) {
+            return state.rotate(mirror.getRotation(state.getValue(FACING)));
         }
 
         @Override
@@ -150,7 +190,12 @@ public final class SoulRefiner {
         private final SoulTank tank = new SoulTank(CAPACITY, this::setChanged);
         private final LazyOptional<IFluidHandler> tankHandler = LazyOptional.of(() -> tank);
         private int progress;
-        /** Souls refined since the amethyst shard last wore away. */
+        /**
+         * The amethyst shard in use: drawn from the slot into the machine, out of reach until it wears away. It is the
+         * one the model shows, cracking as it wears.
+         */
+        private boolean lens;
+        /** Souls refined through the shard in use. */
         private int wear;
         final ContainerData data = new ContainerData() {
             @Override
@@ -158,7 +203,9 @@ public final class SoulRefiner {
                 return switch (index) {
                     case 0 -> progress;
                     case 1 -> SoulsConfig.REFINE_TIME.get();
-                    default -> tank.getFluidAmount();
+                    case 2 -> tank.getFluidAmount();
+                    case 3 -> lens ? wear : -1;
+                    default -> SoulsConfig.SOULS_PER_AMETHYST.get();
                 };
             }
 
@@ -169,7 +216,7 @@ public final class SoulRefiner {
 
             @Override
             public int getCount() {
-                return 3;
+                return 5;
             }
         };
 
@@ -177,37 +224,104 @@ public final class SoulRefiner {
             super(DVSouls.SOUL_REFINER_ENTITY.get(), pos, state);
         }
 
-        /** A soul whose pure soul fits (or one too big for the whole bar, when it's empty: the rest is lost), an amethyst shard, and room for its jar. */
+        /** The pure soul the next step draws: one heart's worth, or what is left of the last one. */
+        private int nextAmount() {
+            float hearts = Soul.hearts(Soul.get(items.getItem(SOUL)));
+            return hearts <= 0 ? 0 : Math.max(1, Math.round(Math.min(1, hearts) * SoulTank.soul()));
+        }
+
+        /** A soul whose next heart fits in the bar, an amethyst shard (in use or to draw in), and room for its jar once it is empty. */
         private boolean canRefine() {
-            int amount = SoulTank.amount(items.getItem(SOUL));
+            int amount = nextAmount();
             ItemStack jars = items.getItem(JARS);
-            return amount > 0 && (tank.getSpace() >= amount || tank.isEmpty()) && items.getItem(AMETHYST).is(Items.AMETHYST_SHARD)
+            return amount > 0 && tank.getSpace() >= amount && (lens || items.getItem(AMETHYST).is(Items.AMETHYST_SHARD))
                     && (jars.isEmpty() || jars.getCount() < jars.getMaxStackSize());
+        }
+
+        /**
+         * Draws one heart out of the jar into the bar. The creature in it is left with that many hearts fewer, so a jar
+         * taken out halfway keeps what is left: a 10 heart creature taken out after 4 has 6.
+         */
+        private void refineOne(Level level, BlockPos pos) {
+            if (!lens) {
+                items.getItem(AMETHYST).shrink(1);
+                lens = true;
+                wear = 0;
+            }
+            ItemStack jar = items.getItem(SOUL);
+            CompoundTag soul = Soul.get(jar);
+            float left = Soul.hearts(soul) - 1;
+            tank.fill(new FluidStack(DVSouls.PURE_SOUL.get(), nextAmount()), IFluidHandler.FluidAction.EXECUTE);
+            if (left > 0.01f) {
+                items.setItem(SOUL, Soul.put(jar.copy(), Soul.withMaxHealth(soul, left * 2)));
+            } else {
+                items.setItem(SOUL, ItemStack.EMPTY);
+                ItemStack jars = items.getItem(JARS);
+                if (jars.isEmpty()) items.setItem(JARS, new ItemStack(DVSouls.SOUL_JAR.get()));
+                else jars.grow(1);
+                level.playSound(null, pos, SoundEvents.SOUL_ESCAPE, SoundSource.BLOCKS, 1, 1.3f);
+            }
+            if (++wear >= SoulsConfig.SOULS_PER_AMETHYST.get()) {
+                wear = 0;
+                lens = false;
+                level.playSound(null, pos, SoundEvents.AMETHYST_CLUSTER_BREAK, SoundSource.BLOCKS, 0.8f, 1.2f);
+            }
+            level.playSound(null, pos, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 0.6f, 0.8f);
+            ((ServerLevel) level).sendParticles(ParticleTypes.SOUL, pos.getX() + 0.5, pos.getY() + 1.1, pos.getZ() + 0.5,
+                    4, 0.2, 0.1, 0.2, 0.02);
+        }
+
+        /** The block state that shows what is inside: how worn the amethyst is, and how full the bar. */
+        private BlockState shown(BlockState state, boolean working) {
+            int per = SoulsConfig.SOULS_PER_AMETHYST.get();
+            int crack = lens ? 1 + Math.min(3, wear * 4 / per) : 0;
+            int bar = tank.isEmpty() ? 0 : Math.max(1, Math.round(tank.getFluidAmount() * 8f / CAPACITY));
+            return state.setValue(Block.LIT, working).setValue(Block.CRACK, crack).setValue(Block.LEVEL, bar);
         }
 
         static void tick(Level level, BlockPos pos, BlockState state, Entity refiner) {
             boolean working = refiner.canRefine();
             if (working && ++refiner.progress >= SoulsConfig.REFINE_TIME.get()) {
                 refiner.progress = 0;
-                refiner.wear += Math.round(Soul.hearts(Soul.get(refiner.items.getItem(SOUL))));
-                refiner.tank.pour(refiner.items, SOUL);
-                refiner.items.setItem(SOUL, ItemStack.EMPTY);
-                for (int per = SoulsConfig.SOULS_PER_AMETHYST.get(); refiner.wear >= per && !refiner.items.getItem(AMETHYST).isEmpty(); refiner.wear -= per) {
-                    refiner.items.getItem(AMETHYST).shrink(1);
-                    level.playSound(null, pos, SoundEvents.AMETHYST_CLUSTER_BREAK, SoundSource.BLOCKS, 0.8f, 1.2f);
-                }
-                ItemStack jars = refiner.items.getItem(JARS);
-                if (jars.isEmpty()) refiner.items.setItem(JARS, new ItemStack(DVSouls.SOUL_JAR.get()));
-                else jars.grow(1);
-                level.playSound(null, pos, SoundEvents.SOUL_ESCAPE, SoundSource.BLOCKS, 1, 1.3f);
-                ((ServerLevel) level).sendParticles(ParticleTypes.SOUL, pos.getX() + 0.5, pos.getY() + 1.1, pos.getZ() + 0.5,
-                        15, 0.3, 0.2, 0.3, 0.02);
+                refiner.refineOne(level, pos);
             } else if (!working) {
                 refiner.progress = 0;
             }
             refiner.tank.fillInto(refiner.items, CONTAINER);
-            if (state.getValue(Block.LIT) != working) level.setBlock(pos, state.setValue(Block.LIT, working), 3);
+            BlockState shown = refiner.shown(state, working);
+            if (shown != state) level.setBlock(pos, shown, 3);
+            // the client draws the jar: tell it when another one is put in or it is taken out
+            ItemStack jar = refiner.items.getItem(SOUL);
+            if (!ItemStack.isSameItemSameTags(jar, refiner.shownJar)) {
+                refiner.shownJar = jar.copy();
+                level.sendBlockUpdated(pos, shown, shown, 2);
+            }
             refiner.setChanged();
+        }
+
+        /** The jar the client was last told about. */
+        private ItemStack shownJar = ItemStack.EMPTY;
+
+        @Override
+        public CompoundTag getUpdateTag() {
+            CompoundTag tag = new CompoundTag();
+            tag.put("Jar", items.getItem(SOUL).save(new CompoundTag()));
+            return tag;
+        }
+
+        @Override
+        public void handleUpdateTag(CompoundTag tag) {
+            items.setItem(SOUL, ItemStack.of(tag.getCompound("Jar")));
+        }
+
+        @Override
+        public ClientboundBlockEntityDataPacket getUpdatePacket() {
+            return ClientboundBlockEntityDataPacket.create(this);
+        }
+
+        @Override
+        public void onDataPacket(Connection connection, ClientboundBlockEntityDataPacket packet) {
+            if (packet.getTag() != null) handleUpdateTag(packet.getTag());
         }
 
         @Override
@@ -308,6 +422,7 @@ public final class SoulRefiner {
             tag.put("Tank", tank.writeToNBT(new CompoundTag()));
             tag.putInt("Progress", progress);
             tag.putInt("Wear", wear);
+            tag.putBoolean("Lens", lens);
         }
 
         @Override
@@ -319,16 +434,20 @@ public final class SoulRefiner {
             tank.readFromNBT(tag.getCompound("Tank"));
             progress = tag.getInt("Progress");
             wear = tag.getInt("Wear");
+            lens = tag.getBoolean("Lens");
         }
     }
 
-    /** The soul over the amethyst on the left, an arrow to the bar of souls, the empty jar beside the amethyst, and the slot under the bar. */
+    /**
+     * The soul on the left with its empty jar under it, an arrow through the amethyst in use to the bar of souls, the
+     * amethyst slot under the one in use (it is drawn up from there), and the slot under the bar.
+     */
     public static class Menu extends AbstractContainerMenu {
         private final Container refiner;
         private final ContainerData data;
 
         public Menu(int id, Inventory inventory) {
-            this(id, inventory, new SimpleContainer(SIZE), new SimpleContainerData(3));
+            this(id, inventory, new SimpleContainer(SIZE), new SimpleContainerData(5));
         }
 
         Menu(int id, Inventory inventory, Container refiner, ContainerData data) {
@@ -336,8 +455,8 @@ public final class SoulRefiner {
             this.refiner = refiner;
             this.data = data;
             addSlot(new SoulMachine.FilterSlot(refiner, SOUL, 30, 17, SoulFuser::isSoul));
-            addSlot(new SoulMachine.FilterSlot(refiner, AMETHYST, 30, 53, stack -> stack.is(Items.AMETHYST_SHARD)));
-            addSlot(new SoulMachine.FilterSlot(refiner, JARS, 56, 53, null));
+            addSlot(new SoulMachine.FilterSlot(refiner, AMETHYST, LENS_X, 53, stack -> stack.is(Items.AMETHYST_SHARD)));
+            addSlot(new SoulMachine.FilterSlot(refiner, JARS, 30, 53, null));
             // one bucket or bottle at a time: it is filled where it lies
             addSlot(new SoulMachine.FilterSlot(refiner, CONTAINER, 87, 53, SoulRefiner::isContainer) {
                 @Override
@@ -359,6 +478,16 @@ public final class SoulRefiner {
         /** The pure soul in the bar, mB. */
         public int amount() {
             return data.get(2);
+        }
+
+        /** Souls refined through the amethyst in use, or -1 when none is drawn in. */
+        public int lensWear() {
+            return data.get(3);
+        }
+
+        /** Souls an amethyst shard lasts. */
+        public int lensLife() {
+            return data.get(4);
         }
 
         @Override

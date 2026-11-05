@@ -37,8 +37,8 @@ public final class SoulsConfig {
                 .comment("Ticks one soul takes to distil into an essence in the Soul Distiller.")
                 .defineInRange("distilTime", 200, 20, 2400);
         REFINE_TIME = builder
-                .comment("Ticks one soul takes to refine into pure soul in the Soul Refiner.")
-                .defineInRange("refineTime", 100, 10, 2400);
+                .comment("Ticks the Soul Refiner takes to draw one soul (one heart) out of a jar into pure soul.")
+                .defineInRange("refineTime", 20, 5, 2400);
         SOULS_PER_AMETHYST = builder
                 .comment("Souls the Soul Refiner refines before its amethyst shard wears away.")
                 .defineInRange("soulsPerAmethyst", 8, 1, 1000);

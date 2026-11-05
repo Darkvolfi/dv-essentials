@@ -199,6 +199,8 @@ public class DVSouls {
             () -> new MenuType<>(SoulRefiner.Menu::new, FeatureFlags.VANILLA_SET));
 
     // Soul charms: essences distilled from souls give their creatures' abilities.
+    /** An empty glass test tube, for the Soul Distiller to drip an essence into. */
+    public static final RegistryObject<Item> SOUL_TUBE = ITEMS.register("soul_tube", () -> new Item(new Item.Properties().stacksTo(16)));
     public static final RegistryObject<Item> SOUL_ESSENCE = ITEMS.register("soul_essence", EssenceItem::new);
     public static final Map<SoulCharm.Tier, RegistryObject<Item>> CHARMS = new EnumMap<>(SoulCharm.Tier.class);
     public static final RegistryObject<RecipeSerializer<CharmRecipes.Essences>> CHARM_ESSENCES = RECIPES.register("charm_essences",
@@ -242,6 +244,7 @@ public class DVSouls {
                     for (RegistryObject<Item> card : FURNACE_CARDS.values()) output.accept(card.get());
                     output.accept(SOUL_FUSER.get());
                     output.accept(SOUL_DISTILLER.get());
+                    output.accept(SOUL_TUBE.get());
                     for (RegistryObject<Item> charm : CHARMS.values()) output.accept(charm.get());
                     output.accept(WOOLLY_COW_EGG.get());
                     output.accept(FEATHERED_PIG_EGG.get());

@@ -1,6 +1,7 @@
 package com.darkvolfi.dvsouls.client;
 
 import com.darkvolfi.dvlib.client.DVTheme;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.darkvolfi.dvsouls.DVSouls;
 import com.darkvolfi.dvsouls.SoulDistiller;
 import com.darkvolfi.dvsouls.SoulTank;
@@ -139,8 +140,11 @@ final class SoulScreens {
             if (menu instanceof SoulFuser.Menu) g.fill(x + 48, y + 24, x + 56, y + 26, DVTheme.shade(SHADOW));
             if (menu instanceof SoulFuser.Menu) g.fill(x + 51, y + 21, x + 53, y + 29, DVTheme.shade(SHADOW));
 
-            // Empty slots show faded what goes in them: the Distiller's amethyst, and a bucket under the bar.
-            if (menu instanceof SoulDistiller.Menu) ghost(g, x, y, menu.slots.get(SoulDistiller.AMETHYST), AMETHYST);
+            // Empty slots show faded what goes in them: the Distiller's amethyst and test tube, and a bucket under the bar.
+            if (menu instanceof SoulDistiller.Menu) {
+                ghost(g, x, y, menu.slots.get(SoulDistiller.AMETHYST), AMETHYST);
+                ghost(g, x, y, menu.slots.get(SoulMachine.RESULT), new ItemStack(DVSouls.SOUL_TUBE.get()));
+            }
             ghost(g, x, y, menu.slots.get(SoulMachine.FUEL), BUCKET);
             BAR.draw(g, x, y, menu.amount());
 
@@ -189,6 +193,12 @@ final class SoulScreens {
             super.render(g, mouseX, mouseY, partialTick);
             renderTooltip(g, mouseX, mouseY);
             BAR.tooltip(g, font, leftPos, topPos, mouseX, mouseY, menu.amount());
+            int lx = leftPos + SoulRefiner.LENS_X, ly = topPos + 17;
+            if (mouseX >= lx - 1 && mouseX < lx + 17 && mouseY >= ly - 1 && mouseY < ly + 17) {
+                int wear = menu.lensWear();
+                g.renderTooltip(font, wear < 0 ? Component.translatable("dvsouls.refiner.no_lens")
+                        : Component.translatable("dvsouls.refiner.lens", menu.lensLife() - wear, menu.lensLife()), mouseX, mouseY);
+            }
         }
 
         @Override
@@ -200,11 +210,34 @@ final class SoulScreens {
             ghost(g, x, y, menu.slots.get(SoulRefiner.CONTAINER), EMPTY_BUCKET);
             BAR.draw(g, x, y, menu.amount());
 
-            // The arrow from the soul to the bar, filling with the refining.
-            int ax = x + 54, ay = y + 17, filled = Math.round(menu.progress() * 26);
-            for (int col = 0; col < 26; col++) {
-                int half = col < 18 ? 2 : 8 - (col - 18);
-                g.fill(ax + col, ay + 8 - half, ax + col + 1, ay + 8 + half, DVTheme.shade(col < filled ? MachineScreen.SOUL : MachineScreen.SLOT_BG));
+            // The amethyst in use, out of reach in its own frame, cracking as it wears; a dotted line from the slot it
+            // is drawn up from.
+            int lx = x + SoulRefiner.LENS_X, ly = y + 17, wear = menu.lensWear();
+            MachineScreen.sunken(g, lx - 1, ly - 1, 18, 18);
+            for (int dy = 36; dy < 52; dy += 3) g.fill(lx + 7, y + dy, lx + 9, y + dy + 2, DVTheme.shade(MachineScreen.SLOT_BG));
+            if (wear >= 0) {
+                g.renderItem(AMETHYST, lx, ly);
+                int stage = 1 + Math.min(2, wear * 3 / Math.max(1, menu.lensLife()));
+                if (wear > 0) {
+                    RenderSystem.enableBlend();
+                    g.pose().pushPose();
+                    g.pose().translate(0, 0, 200);
+                    g.blit(new ResourceLocation(DVSouls.MOD_ID, "textures/block/amethyst_crack_" + stage + ".png"), lx, ly, 0, 0, 16, 16, 16, 16);
+                    g.pose().popPose();
+                    RenderSystem.disableBlend();
+                }
+            }
+
+            // The arrow from the soul through the amethyst to the bar, filling with the refining.
+            int[][] parts = {{48, 11, 0}, {SoulRefiner.LENS_X + 18, 86 - SoulRefiner.LENS_X - 18, 1}};
+            int total = parts[0][1] + parts[1][1], done = Math.round(menu.progress() * total), col = 0;
+            for (int[] part : parts) {
+                for (int i = 0; i < part[1]; i++, col++) {
+                    int fromEnd = part[1] - 1 - i;
+                    int half = part[2] == 1 && fromEnd < 5 ? 1 + fromEnd : 2;
+                    g.fill(x + part[0] + i, ly + 8 - half, x + part[0] + i + 1, ly + 8 + half,
+                            DVTheme.shade(col < done ? MachineScreen.SOUL : MachineScreen.SLOT_BG));
+                }
             }
         }
     }

@@ -5,6 +5,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -23,6 +25,7 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
@@ -33,6 +36,9 @@ import org.jetbrains.annotations.NotNull;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -42,7 +48,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Predicate;
@@ -60,19 +69,53 @@ public final class SoulMachine {
 
     private SoulMachine() {}
 
+    /**
+     * Shaped like the Soul Refiner, its front facing whoever places it, with a window showing the bar of souls (LEVEL,
+     * 0-8). The jars and what they make are drawn by the client's renderer from the slots.
+     */
     public abstract static class Block extends BaseEntityBlock {
+        public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
         public static final BooleanProperty LIT = BlockStateProperties.LIT;
+        public static final IntegerProperty LEVEL = SoulRefiner.Block.LEVEL;
         private final Supplier<? extends BlockEntityType<? extends Entity>> type;
 
         protected Block(Supplier<? extends BlockEntityType<? extends Entity>> type) {
-            super(BlockBehaviour.Properties.copy(Blocks.POLISHED_BLACKSTONE).lightLevel(state -> state.getValue(LIT) ? 12 : 2));
+            super(BlockBehaviour.Properties.copy(Blocks.POLISHED_BLACKSTONE).noOcclusion()
+                    .lightLevel(state -> state.getValue(LIT) ? 12 : 2));
             this.type = type;
-            registerDefaultState(defaultBlockState().setValue(LIT, false));
+            registerDefaultState(defaultBlockState().setValue(FACING, Direction.NORTH).setValue(LIT, false).setValue(LEVEL, 0));
+        }
+
+        
+        protected void createBlockStateDefinition(StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder) {
+            builder.add(FACING, LIT, LEVEL);
         }
 
         @Override
-        protected void createBlockStateDefinition(StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder) {
-            builder.add(LIT);
+        public BlockState getStateForPlacement(BlockPlaceContext context) {
+            return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+        }
+
+        /** A point given in the model's pixels (front to the north) as it lies in the block, turned the way it faces. */
+        protected static Vec3 modelPoint(BlockState state, double x, double y, double z) {
+            for (int turns = (state.getValue(FACING).get2DDataValue() + 2) % 4; turns > 0; turns--) {
+                double was = x;
+                x = 16 - z;
+                z = was;
+            }
+            return new Vec3(x / 16, y / 16, z / 16);
+        }
+
+        @Override
+        @SuppressWarnings("deprecation")
+        public BlockState rotate(BlockState state, Rotation rotation) {
+            return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
+        }
+
+        @Override
+        @SuppressWarnings("deprecation")
+        public BlockState mirror(BlockState state, Mirror mirror) {
+            return state.rotate(mirror.getRotation(state.getValue(FACING)));
         }
 
         @Override
@@ -206,8 +249,50 @@ public final class SoulMachine {
                 machine.progress = 0;
             }
             boolean lit = machine.fuel > 0;
-            if (state.getValue(Block.LIT) != lit) level.setBlock(pos, state.setValue(Block.LIT, lit), 3);
+            int bar = machine.tank.isEmpty() ? 0 : Math.max(1, Math.round(machine.tank.getFluidAmount() * 8f / CAPACITY));
+            BlockState shown = machine.shown(state.setValue(Block.LIT, lit).setValue(Block.LEVEL, bar));
+            if (shown != state) level.setBlock(pos, shown, 3);
+            // the client draws the souls and the result: tell it when they change
+            for (int slot : SHOWN) {
+                if (!ItemStack.isSameItemSameTags(machine.items.getItem(slot), machine.shown[slot])) {
+                    for (int s : SHOWN) machine.shown[s] = machine.items.getItem(s).copy();
+                    level.sendBlockUpdated(pos, shown, shown, 2);
+                    break;
+                }
+            }
             machine.setChanged();
+        }
+
+        /** The block state with anything else the model shows of what is inside; the Distiller's amethyst. */
+        protected BlockState shown(BlockState state) {
+            return state;
+        }
+
+        /** The slots the renderer draws: both inputs and the result. */
+        private static final int[] SHOWN = {0, 1, RESULT};
+        /** What the client was last told is in them. */
+        private final ItemStack[] shown = {ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY};
+
+        @Override
+        public CompoundTag getUpdateTag() {
+            CompoundTag tag = new CompoundTag();
+            for (int slot : SHOWN) tag.put("Slot" + slot, items.getItem(slot).save(new CompoundTag()));
+            return tag;
+        }
+
+        @Override
+        public void handleUpdateTag(CompoundTag tag) {
+            for (int slot : SHOWN) items.setItem(slot, ItemStack.of(tag.getCompound("Slot" + slot)));
+        }
+
+        @Override
+        public ClientboundBlockEntityDataPacket getUpdatePacket() {
+            return ClientboundBlockEntityDataPacket.create(this);
+        }
+
+        @Override
+        public void onDataPacket(Connection connection, ClientboundBlockEntityDataPacket packet) {
+            if (packet.getTag() != null) handleUpdateTag(packet.getTag());
         }
 
         @Override

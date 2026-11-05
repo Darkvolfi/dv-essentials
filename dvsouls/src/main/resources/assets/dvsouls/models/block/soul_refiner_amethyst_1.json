@@ -1,0 +1,2 @@
+{"textures": {"particle": "minecraft:block/amethyst_block", "amethyst": "minecraft:block/amethyst_block",
+ "crack": "dvsouls:block/amethyst_crack_1"}, "render_type": "minecraft:cutout", "elements": [{"from": [5, 12, 7], "to": [9, 14, 9], "faces": {"north": {"texture": "#amethyst"}, "east": {"texture": "#amethyst"}, "south": {"texture": "#amethyst"}, "west": {"texture": "#amethyst"}, "up": {"texture": "#amethyst"}, "down": {"texture": "#amethyst"}}}]}

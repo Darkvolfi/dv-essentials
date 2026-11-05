@@ -59,4 +59,19 @@ public interface MapOverlayHook {
 
     /** Renders extra HUD text or indicators on the world map screen. */
     default void renderWorldMapExtra(GuiGraphics g, WorldMapScreen screen, int mouseX, int mouseY) {}
+
+    /** A place another mod lists in its own section of the waypoint list; {@code y} is {@link #NO_Y} when unknown. */
+    record Place(Component name, String[] icon, int color, int x, int y, int z) {}
+
+    int NO_Y = Integer.MIN_VALUE;
+
+    /** Title of this mod's section at the bottom of the waypoint list, or null for none. */
+    default Component placesTitle() {
+        return null;
+    }
+
+    /** The places in this mod's waypoint list section for a dimension. */
+    default List<Place> places(ResourceKey<Level> dimension) {
+        return List.of();
+    }
 }

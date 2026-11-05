@@ -20,8 +20,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /** Structures the player has been inside (reported by DV Map on the server), saved per world like waypoints. */
 public final class StructureMarkers {
@@ -88,12 +90,22 @@ public final class StructureMarkers {
     }
 
     public static List<Entry> forDimension(ResourceKey<Level> dim) {
-        String name = dim.location().toString();
+        return forDimension(dim.location().toString());
+    }
+
+    public static List<Entry> forDimension(String name) {
         List<Entry> result = new ArrayList<>();
         if (!MapConfig.SHOW_STRUCTURES.get()) return result;
         for (Entry e : ENTRIES) {
             if (e.dimension.equals(name)) result.add(e);
         }
+        return result;
+    }
+
+    /** Every dimension a structure has been found in. */
+    public static Set<String> dimensions() {
+        Set<String> result = new LinkedHashSet<>();
+        for (Entry e : ENTRIES) result.add(e.dimension);
         return result;
     }
 

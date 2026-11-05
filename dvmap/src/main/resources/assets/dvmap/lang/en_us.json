@@ -129,5 +129,12 @@
   "dvmap.structure.minecraft.ruined_portal_ocean": "Ruined Portal",
   "dvmap.structure.minecraft.ruined_portal_nether": "Ruined Portal",
   "dvmap.structure.minecraft.ancient_city": "Ancient City",
-  "dvmap.structure.minecraft.trail_ruins": "Trail Ruins"
+  "dvmap.structure.minecraft.trail_ruins": "Trail Ruins",
+  "dvmap.waypoint.section.own": "My Waypoints",
+  "dvmap.waypoint.section.auto": "Automatic",
+  "dvmap.waypoint.section.structures": "Structures",
+  "dvmap.waypoint.spawn": "World Spawn",
+  "dvmap.dimension.minecraft.overworld": "Overworld",
+  "dvmap.dimension.minecraft.the_nether": "Nether",
+  "dvmap.dimension.minecraft.the_end": "The End"
 }

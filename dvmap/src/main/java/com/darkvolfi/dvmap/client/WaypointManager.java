@@ -93,8 +93,13 @@ public final class WaypointManager {
     }
 
     public static void teleportTo(Minecraft mc, Waypoint wp) {
+        teleport(mc, wp.dimension, wp.x, String.valueOf(wp.y), wp.z);
+    }
+
+    /** Teleports into {@code dimension} (which may not be the current one); {@code y} may be "~". */
+    public static void teleport(Minecraft mc, String dimension, int x, String y, int z) {
         if (mc.player == null || mc.getConnection() == null) return;
-        mc.getConnection().sendUnsignedCommand("tp @s " + wp.x + " " + wp.y + " " + wp.z);
+        mc.getConnection().sendUnsignedCommand("execute in " + dimension + " run tp @s " + x + " " + y + " " + z);
     }
 
     private static Path waypointFile(String worldId) {

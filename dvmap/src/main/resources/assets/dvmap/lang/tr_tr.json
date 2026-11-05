@@ -129,5 +129,12 @@
   "dvmap.structure.minecraft.ruined_portal_ocean": "Yıkık Geçit",
   "dvmap.structure.minecraft.ruined_portal_nether": "Yıkık Geçit",
   "dvmap.structure.minecraft.ancient_city": "Kadim Şehir",
-  "dvmap.structure.minecraft.trail_ruins": "Patika Kalıntıları"
+  "dvmap.structure.minecraft.trail_ruins": "Patika Kalıntıları",
+  "dvmap.waypoint.section.own": "İşaretlerim",
+  "dvmap.waypoint.section.auto": "Otomatik",
+  "dvmap.waypoint.section.structures": "Yapılar",
+  "dvmap.waypoint.spawn": "Doğma Noktası",
+  "dvmap.dimension.minecraft.overworld": "Dünya",
+  "dvmap.dimension.minecraft.the_nether": "Nether",
+  "dvmap.dimension.minecraft.the_end": "End"
 }

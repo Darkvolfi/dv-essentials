@@ -6,20 +6,20 @@ DV New Crafts'in bakır dokuları Minecraft dokularından türetilmiştir ve MIT
 
 | Mod | Jar | Taraf | Bağımlılık | Kategori önerisi |
 |---|---|---|---|---|
-| DV Lib | `dvlib-1.20.1-0.1.0.jar` | ikisi | — | Library |
-| DV Zoom | `dvzoom-1.20.1-0.1.0.jar` | istemci | DV Lib | Utility |
-| DV Food | `dvfood-1.20.1-0.1.0.jar` | ikisi (ikisi de isteğe bağlı) | DV Lib (istemci) | Food, Utility |
-| DV Lens | `dvlens-1.20.1-0.1.0.jar` | istemci (sunucuda isteğe bağlı) | DV Lib (istemci) | Utility |
-| DV Vein | `dvvein-1.20.1-0.1.0.jar` | ikisi (zorunlu) | DV Lib | Utility |
-| DV Slots | `dvslots-1.20.1-0.1.0.jar` | ikisi (zorunlu) | DV Lib | Equipment |
-| DV Dark | `dvdark-1.20.1-0.1.0.jar` | istemci | DV Lib | Decoration, Utility |
-| DV Map | `dvmap-1.20.1-0.1.0.jar` | istemci | DV Lib | Map, Utility |
-| DV Team | `dvteam-1.20.1-0.1.0.jar` | ikisi (zorunlu) | DV Lib, DV Map (istemci) | Utility, Multiplayer |
-| DV Grave | `dvgrave-1.20.1-0.1.0.jar` | ikisi (zorunlu) | DV Lib; DV Slots, DV Team isteğe bağlı | Utility, Storage |
-| DV Music | `dvmusic-1.20.1-0.1.0.jar` | istemci | DV Lib | Utility, Audio |
-| DV Backpack | `dvbackpack-1.20.1-0.1.0.jar` | ikisi (zorunlu) | DV Lib; DV Slots, Curios isteğe bağlı | Storage, Equipment |
-| DV New Crafts | `dvnewcrafts-1.20.1-0.1.0.jar` | ikisi (zorunlu) | — | Equipment, Decoration |
-| DV Science of Souls | `dvsouls-1.20.1-0.1.0.jar` | ikisi (zorunlu) | DV Lib; DV Backpack, JEI isteğe bağlı | Mobs, Magic, Technology |
+| DV Lib | `dvlib-1.20.1-1.0.0.0.jar` | ikisi | — | Library |
+| DV Zoom | `dvzoom-1.20.1-1.0.0.0.jar` | istemci | DV Lib | Utility |
+| DV Food | `dvfood-1.20.1-1.0.0.0.jar` | ikisi (ikisi de isteğe bağlı) | DV Lib (istemci) | Food, Utility |
+| DV Lens | `dvlens-1.20.1-1.0.0.0.jar` | istemci (sunucuda isteğe bağlı) | DV Lib (istemci) | Utility |
+| DV Vein | `dvvein-1.20.1-1.0.0.0.jar` | ikisi (zorunlu) | DV Lib | Utility |
+| DV Slots | `dvslots-1.20.1-1.0.0.0.jar` | ikisi (zorunlu) | DV Lib | Equipment |
+| DV Dark | `dvdark-1.20.1-1.0.0.0.jar` | istemci | DV Lib | Decoration, Utility |
+| DV Map | `dvmap-1.20.1-1.0.0.0.jar` | istemci | DV Lib | Map, Utility |
+| DV Team | `dvteam-1.20.1-1.0.0.0.jar` | ikisi (zorunlu) | DV Lib, DV Map (istemci) | Utility, Multiplayer |
+| DV Grave | `dvgrave-1.20.1-1.0.0.0.jar` | ikisi (zorunlu) | DV Lib; DV Slots, DV Team isteğe bağlı | Utility, Storage |
+| DV Music | `dvmusic-1.20.1-1.0.0.0.jar` | istemci | DV Lib | Utility, Audio |
+| DV Backpack | `dvbackpack-1.20.1-1.0.0.0.jar` | ikisi (zorunlu) | DV Lib; DV Slots, Curios isteğe bağlı | Storage, Equipment |
+| DV New Crafts | `dvnewcrafts-1.20.1-1.0.0.0.jar` | ikisi (zorunlu) | — | Equipment, Decoration |
+| DV Science of Souls | `dvsouls-1.20.1-1.0.0.0.jar` | ikisi (zorunlu) | DV Lib; DV Backpack, JEI isteğe bağlı | Mobs, Magic, Technology |
 
 Jar'lar: `<mod>/build/libs/` (`.\gradlew.bat build` ile üretilir).
 
@@ -231,7 +231,7 @@ The library behind the DV mods. Install it together with any DV mod.
 
 ## Değişiklik listesi
 
-### 0.1.0 (ilk sürüm)
+### 1.0.0.0 (ilk sürüm)
 İlk yayın: DV Lib, DV Zoom, DV Food, DV Lens, DV Vein, DV Slots, DV Dark, DV Map, DV Team, DV Grave, DV Music, DV Backpack, DV New Crafts, DV Science of Souls.
 
 ## Yayın öncesi kontrol listesi

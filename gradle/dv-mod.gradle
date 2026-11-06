@@ -2,6 +2,8 @@
 // Each subproject applies the ForgeGradle plugin itself, then applies this script.
 
 def isLib = project.name == 'dvlib'
+// Versions are x.y.z.a; x is DV Lib's first number, and only a DV Lib with that number satisfies a mod.
+def dvlibMajor = (project(':dvlib').property('mod_version') as String).tokenize('.')[0] as int
 if (!isLib) {
     evaluationDependsOn(':dvlib')
 }
@@ -59,7 +61,7 @@ tasks.named('processResources', ProcessResources).configure {
             loader_version_range: loader_version_range,
             mod_id: mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
             mod_authors: mod_authors, mod_description: mod_description,
-            dvlib_version: project(':dvlib').property('mod_version'),
+            dvlib_range: "[${dvlibMajor},${dvlibMajor + 1})",
     ]
     inputs.properties replaceProperties
 

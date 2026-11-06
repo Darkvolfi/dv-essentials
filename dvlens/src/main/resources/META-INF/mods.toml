@@ -29,7 +29,7 @@ displayTest="IGNORE_ALL_VERSION"
 [[dependencies.${mod_id}]]
     modId="dvlib"
     mandatory=true
-    versionRange="[${dvlib_version},)"
+    versionRange="${dvlib_range}"
     ordering="AFTER"
     side="CLIENT"
 

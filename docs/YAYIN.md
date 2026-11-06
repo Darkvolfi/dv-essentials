@@ -223,7 +223,7 @@ The library behind the DV mods. Install it together with any DV mod.
 - **Corruption:** offer a soul of another kind for a creature (bringing back, binding) and it may turn into a **corrupted** one: its own shape, darkened, red-eyed and hostile. Pure soul or the creature's own kind never corrupts
 - Feed a soul to a horse to raise its speed, jump and health
 - **Soul cards:** make glass test tubes (two glass and a quartz, four at a time); the **Soul Distiller** drips a soul's essence through amethyst into one, and soul tubes stand in the rack of a gold, diamond or netherite **soul card** (1, 2 or 3). In a worn **DV Backpack**'s upgrade slot it gives the creatures' powers: water breathing, night vision, wall climbing, walking on lava, strength, speed, creepers keeping away, item magnet... 18 in all; more essences of one creature make it stronger
-- JEI shows the fusions, distilling and refining; works without JEI and DV Backpack (charms then work from the inventory)
+- JEI shows the fusions, distilling and refining; works without JEI and DV Backpack (cards then work from the inventory)
 - Server settings for costs, times and limits
 - Required on both client and server
 

@@ -231,13 +231,22 @@ Part (RectS 14.5 14 3 3) '#E0E0E8'                                # buckle
 Paint (Mask (RectS 8 11 16 1)) (Col '#E59A72')                    # lid shine
 Save-Icon 'dvbackpack'
 
-# ---------- DV New Crafts: a copper pickaxe
-New-Icon '#E07B50'
-Part (Seg 9 24 21 12 1.8) '#7A5230'                               # handle
-Part (Seg 8 11 13 7 2) '#C1613B'                                  # head, left arm
-Part (Seg 13 7 19 6 2) '#C1613B'                                  # head, middle
-Part (Seg 19 6 25 11 2) '#C1613B'                                 # head, right arm
-Paint (Mask (Seg 9 10 13 7.5 0.6)) (Col '#F59E70')                # head shine
+# ---------- DV New Crafts: a workbench seen from above the corner, its top a 3x3 grid, a copper tool on its side
+New-Icon '#E27C4E'
+$benchTop = { param($x, $y) ([Math]::Abs($x - 16) / 13 + [Math]::Abs($y - 10) / 6.5) -le 1 }
+Part (Poly @(3, 10, 16, 16.5, 16, 29, 3, 22.5)) '#8A5F35'          # left side
+Part (Poly @(29, 10, 16, 16.5, 16, 29, 29, 22.5)) '#6B4628'        # right side
+Part $benchTop '#C4935A'                                           # top
+# The grid: u and v run along the top's two edges, each from -1 to 1.
+Paint (Mask { param($x, $y)
+    $u = ($x - 16) / 13 + ($y - 10) / 6.5; $v = ($y - 10) / 6.5 - ($x - 16) / 13
+    (& $benchTop $x $y) -and ([Math]::Abs([Math]::Abs($u) - 0.36) -lt 0.11 -or [Math]::Abs([Math]::Abs($v) - 0.36) -lt 0.11)
+}) (Col '#5A3A20')
+Paint (Mask (Seg 4.5 14 15 19.2 0.5)) (Col '#6B4628')              # plank lines on the left side
+Paint (Mask (Seg 4.5 18 15 23.2 0.5)) (Col '#6B4628')
+Paint (Mask (Seg 20.5 25 26 19 0.8)) (Col '#3A2412')               # tool's handle on the right side
+Paint (Mask (Seg 23 18.5 27.5 22 1.1)) (Col '#E27C4E')             # its copper head
+Paint (Mask (Seg 23.5 18.5 26 20.5 0.5)) (Col '#FFC79C')
 Save-Icon 'dvnewcrafts'
 
 # ---------- DV Science of Souls: a jar holding a glowing soul

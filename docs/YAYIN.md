@@ -239,7 +239,7 @@ The library behind the DV mods. Install it together with any DV mod.
 - [x] NeoForge 1.20.1 (47.1.106) ayrılmış sunucuda gerçek jar'larla açılıyor, mixin'ler uygulanıyor (2026-10-25)
 - [ ] NeoForge istemcisinde (başlatıcıyla) bir kez dene
 - [x] Mod ikonları: `art/icons/<mod>.png` (512, sayfalar için), jar içinde `<mod>_logo.png` (128); yeniden üretmek için `tools/make-icons.ps1`
-- [ ] GitHub deposu açılınca `displayURL` ve `issueTrackerURL` ekle
+- [x] GitHub bağlantıları eklendi: `displayURL`, `issueTrackerURL` (2026-11-06)
 - [ ] Modrinth projeleri açılınca her modun `mods.toml`'una `updateJSONURL` ekle (DV menüsündeki güncelleme işareti bunu kullanır)
 - [ ] Ekran görüntüleri (her sayfa için 2–3)
 - [x] DV Science of Souls dokuları özgün çizimle değişti (2026-11-05); oyun içinde bakılacak. DV New Crafts bakır dokuları kullanıcının kararıyla vanilyadan türetilmiş olarak kalıyor

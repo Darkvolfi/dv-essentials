@@ -1,216 +1,253 @@
-# Makes DV Science of Souls' hybrid creature textures from the game's own (read from Minecraft's client jar in the
-# Gradle cache), so each hybrid fits the model of the creature it is built on:
-#   textures/entity/woolly_cow.png          the cow with bare, pinkish skin; _wool is its coat, drawn over it
-#   textures/entity/feathered_pig.png       the pig with a feathered body, and its wings below (64x64)
-#   textures/entity/lava_horse.png          a basalt-dark horse with ember cracks; _glow is the cracks alone
-#   textures/entity/wolf_fox.png            the fox's texture fitted onto the wolf model
-#   textures/block/soul_*_front*.png        the furnace, smoker and blast furnace fronts in blackstone with blue soul fire
+# Draws DV Science of Souls' hybrid creatures and soul furnace fronts from scratch. Nothing is read from the game; only the
+# layouts of the models they are drawn on are followed:
+#   textures/entity/woolly_cow.png, _wool    bare pink skin, and a thick curly coat drawn puffed out over it
+#   textures/entity/feathered_pig.png        a pink pig with a feathered back, wings and a comb (64x64)
+#   textures/entity/lava_horse.png, _glow    basalt plates with ember cracks and a burning mane; _glow is what shines
+#   textures/entity/wolf_fox.png             a wolf in a fox's coat
+#   textures/block/soul_*_front*.png         furnace, smoker and blast furnace fronts in dark stone with blue soul fire
 # Run from the repo root:  powershell -ExecutionPolicy Bypass -File tools\make-souls-mobs.ps1
 
 Add-Type -AssemblyName System.Drawing
-Add-Type -AssemblyName System.IO.Compression.FileSystem
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $out = Join-Path $root 'dvsouls\src\main\resources\assets\dvsouls\textures\entity'
-New-Item -ItemType Directory -Force $out | Out-Null
-$jarPath = Join-Path $env:USERPROFILE '.gradle\caches\forge_gradle\minecraft_repo\versions\1.20.1\client-extra.jar'
-if (-not (Test-Path $jarPath)) { throw "Minecraft's client jar not found: $jarPath (run a Gradle build once first)" }
-$jar = [System.IO.Compression.ZipFile]::OpenRead($jarPath)
+$blocks = Join-Path $root 'dvsouls\src\main\resources\assets\dvsouls\textures\block'
+New-Item -ItemType Directory -Force $out, $blocks | Out-Null
 
-function Load([string]$name) {
-    $stream = $jar.GetEntry("assets/minecraft/textures/$name.png").Open()
-    $bmp = New-Object System.Drawing.Bitmap $stream
-    $copy = New-Object System.Drawing.Bitmap $bmp
-    $bmp.Dispose(); $stream.Dispose()
-    return $copy
-}
-
-function Col([string]$hex, [int]$a = 255) {
+function Col([string]$hex) {
     $v = [Convert]::ToInt32($hex.TrimStart('#'), 16)
-    [System.Drawing.Color]::FromArgb($a, ($v -shr 16) -band 255, ($v -shr 8) -band 255, $v -band 255)
+    [System.Drawing.Color]::FromArgb(255, ($v -shr 16) -band 255, ($v -shr 8) -band 255, $v -band 255)
+}
+function Save($bmp, [string]$name) { $bmp.Save((Join-Path $out "$name.png"), [System.Drawing.Imaging.ImageFormat]::Png) }
+
+# A repeatable pseudo-random number 0-99 for a pixel, so running the script again gives the same picture.
+function Noise([int]$x, [int]$y) { (($x * 73 + $y * 151 + ($x * $y) * 7 + ($x -bxor $y) * 31) % 100) }
+
+# Picks one colour per pixel from a list by noise: mostly the first, sometimes the later ones.
+function Fur([string[]]$cols, [int]$x, [int]$y) {
+    $n = Noise $x $y
+    if ($n -lt 60) { return Col $cols[0] }
+    if ($n -lt 85) { return Col $cols[1] }
+    return Col $cols[$cols.Count - 1]
 }
 
-function Save($bmp, [string]$name) {
-    $bmp.Save((Join-Path $out "$name.png"), [System.Drawing.Imaging.ImageFormat]::Png)
+function Rect($bmp, [int]$x0, [int]$y0, [int]$w, [int]$h, [string[]]$cols) {
+    for ($y = $y0; $y -lt $y0 + $h; $y++) { for ($x = $x0; $x -lt $x0 + $w; $x++) { $bmp.SetPixel($x, $y, (Fur $cols $x $y)) } }
 }
 
-# Maps each pixel's brightness (0-1) onto a list of colour stops @(position, '#hex'), keeping its alpha.
-function Gradient($bmp, $stops) {
-    for ($y = 0; $y -lt $bmp.Height; $y++) {
-        for ($x = 0; $x -lt $bmp.Width; $x++) {
-            $c = $bmp.GetPixel($x, $y)
-            if ($c.A -eq 0) { continue }
-            $v = (0.299 * $c.R + 0.587 * $c.G + 0.114 * $c.B) / 255.0
-            for ($i = 1; $i -lt $stops.Count; $i++) {
-                if ($v -le $stops[$i][0] -or $i -eq $stops.Count - 1) {
-                    $a = Col $stops[$i - 1][1]; $b = Col $stops[$i][1]
-                    $t = [Math]::Max(0, [Math]::Min(1, ($v - $stops[$i - 1][0]) / ($stops[$i][0] - $stops[$i - 1][0])))
-                    $bmp.SetPixel($x, $y, [System.Drawing.Color]::FromArgb($c.A,
-                        [int]($a.R + ($b.R - $a.R) * $t), [int]($a.G + ($b.G - $a.G) * $t), [int]($a.B + ($b.B - $a.B) * $t)))
-                    break
-                }
-            }
+# Every part of a model is a box unwrapped from its corner (u, v) into six faces.
+function Box($bmp, [int]$u, [int]$v, [int]$w, [int]$h, [int]$d, [string[]]$cols) {
+    Rect $bmp ($u + $d) $v $w $d $cols
+    Rect $bmp ($u + $d + $w) $v $w $d $cols
+    Rect $bmp $u ($v + $d) $d $h $cols
+    Rect $bmp ($u + $d) ($v + $d) $w $h $cols
+    Rect $bmp ($u + $d + $w) ($v + $d) $d $h $cols
+    Rect $bmp ($u + 2 * $d + $w) ($v + $d) $w $h $cols
+}
+
+function Paint($bmp, [int]$u, [int]$v, [string[]]$rows, [hashtable]$colours) {
+    for ($y = 0; $y -lt $rows.Count; $y++) {
+        for ($x = 0; $x -lt $rows[$y].Length; $x++) {
+            $c = [string]$rows[$y][$x]
+            if ($c -ne '.') { $bmp.SetPixel($u + $x, $v + $y, (Col $colours[$c])) }
         }
     }
 }
 
-# Fills a rectangle of the texture with $pattern (a scriptblock giving the colour at x, y).
-function Fill($bmp, [int]$x0, [int]$y0, [int]$w, [int]$h, [scriptblock]$pattern) {
-    for ($y = $y0; $y -lt $y0 + $h; $y++) { for ($x = $x0; $x -lt $x0 + $w; $x++) { $bmp.SetPixel($x, $y, (& $pattern $x $y)) } }
-}
+# ---------- Woolly Cow: cream-and-rose skin, dark hooves, curved pale horns, a wide soft muzzle.
+$skin = @('#EBC4B2', '#DDB09E', '#C99A88')
+$cow = New-Object System.Drawing.Bitmap 64, 32
+Box $cow 0 0 8 8 6 $skin
+Box $cow 22 0 1 3 1 @('#F2E6C8', '#E2D2A8', '#C8B488')
+Box $cow 18 4 12 18 10 $skin
+Box $cow 52 0 4 6 1 @('#F0A8A0', '#E2908A', '#CC7C78')
+Box $cow 0 16 4 12 4 $skin
+Rect $cow 0 29 16 3 @('#3C2A24', '#32221D', '#281A16')
+# Head, front (8x8 at 6,6).
+Paint $cow 6 6 @('........', '........', 'wbwaawbw', '........', '.mmmmmm.', 'mmnmmnmm', 'mmmmmmmm', '.mmmmmm.') @{ w = '#F6F2EC'; b = '#1C1412'; a = '#D8AC9A'; m = '#F0B4A8'; n = '#7A4238' }
+Save $cow 'woolly_cow'
 
-# ---------- Woolly Cow: the cow with its body (box at 18,4: 12 wide, 18 long, 10 deep) bare, pinkish skin where its
-# hide was, darker where its patches were; and its wool, a separate layer drawn puffed out over it.
-$cow = Load 'entity/cow/cow'
-for ($y = 4; $y -lt 32; $y++) {
-    for ($x = 18; $x -lt 62; $x++) {
-        if ($y -lt 14 -and ($x -lt 28 -or $x -ge 52)) { continue }   # not part of the body's top and bottom faces
-        $c = $cow.GetPixel($x, $y)
-        $dark = (0.299 * $c.R + 0.587 * $c.G + 0.114 * $c.B) -lt 110
-        $cow.SetPixel($x, $y, $(if ($dark) { Col '#C99A88' } else { Col '#EDC8B8' }))
+# Its coat: cream curls, a darker ring around each.
+$coat = New-Object System.Drawing.Bitmap 64, 32
+for ($y = 0; $y -lt 32; $y++) {
+    for ($x = 0; $x -lt 64; $x++) {
+        $cx = ($x + 2 * ([Math]::Floor($y / 4) % 2)) % 4; $cy = $y % 4
+        $c = if ($cx -eq 1 -and $cy -eq 1) { '#FFFDF4' } elseif ($cx -eq 3 -or $cy -eq 3) { '#D8CDB6' } else { '#F1E9D8' }
+        $coat.SetPixel($x, $y, (Col $c))
     }
 }
-Save $cow 'woolly_cow'
-$wool = Load 'block/white_wool'
-$coat = New-Object System.Drawing.Bitmap 64, 32
-for ($y = 0; $y -lt 32; $y++) { for ($x = 0; $x -lt 64; $x++) { $coat.SetPixel($x, $y, $wool.GetPixel($x % 16, $y % 16)) } }
 Save $coat 'woolly_cow_wool'
 
-# ---------- Feathered Pig: the pink pig on top, with soft white feathers over its back and sides (body box at 28,8:
-# 10 wide, 16 long, 8 deep; the belly and both ends stay pink); below it the wings (box at 0,32) and the comb (16,32).
-$pig = Load 'entity/pig/pig'
-$feathered = New-Object System.Drawing.Bitmap 64, 64
-$g = [System.Drawing.Graphics]::FromImage($feathered); $g.DrawImage($pig, 0, 0, 64, 32); $g.Dispose()
-# Mostly plain, with a row of feather tips every fourth row, shifted every other row.
-$feather = { param($x, $y) if (($y % 4) -eq 3 -and (($x + [Math]::Floor($y / 4) * 2) % 4) -lt 2) { Col '#E8DCCB' } else { Col '#FFF8EE' } }
-Fill $feathered 28 16 8 16 $feather    # one side
-Fill $feathered 46 16 8 16 $feather    # the other side
-Fill $feathered 54 16 10 16 $feather   # the back
-Fill $feathered 0 32 14 10 { param($x, $y) if ($y -ge 40) { Col '#D8C6B0' } else { & $feather $x $y } }
-Fill $feathered 16 32 12 7 { param($x, $y) if ($y -ge 37) { Col '#A8201C' } else { Col '#D8322C' } }
-Save $feathered 'feathered_pig'
+# ---------- Feathered Pig: a rosy head and legs, white feathers on back and sides, a red comb.
+$pink = @('#F4B0B8', '#E89CA6', '#D88894')
+$pig = New-Object System.Drawing.Bitmap 64, 64
+Box $pig 0 0 8 8 8 $pink
+Box $pig 16 16 4 3 1 @('#E07F8C', '#D07480', '#C26874')
+Box $pig 28 8 10 16 8 $pink
+Box $pig 0 16 4 6 4 $pink
+Rect $pig 0 24 16 2 @('#7A4A44', '#6A3E3A', '#5A3430')
+Paint $pig 8 8 @('........', '........', '.bw..wb.', '........', '........', '........', '........', '........') @{ b = '#1C1412'; w = '#F6F2EC' }
+Paint $pig 17 17 @('nmmn', 'mmmm', 'mmmm') @{ n = '#7C3A44'; m = '#E07F8C' }
+# Feathers: tips in staggered rows, each row one colour darker at the point.
+function Feathers($bmp, [int]$x0, [int]$y0, [int]$w, [int]$h) {
+    for ($y = 0; $y -lt $h; $y++) {
+        for ($x = 0; $x -lt $w; $x++) {
+            $tip = ($y % 3) -eq 2 -and (($x + [Math]::Floor($y / 3)) % 2) -eq 0
+            $bmp.SetPixel($x0 + $x, $y0 + $y, (Col $(if ($tip) { '#D9CBB4' } elseif (($y % 3) -eq 0) { '#FFFCF3' } else { '#F4ECDD' })))
+        }
+    }
+}
+Feathers $pig 28 16 8 16
+Feathers $pig 46 16 8 16
+Feathers $pig 54 16 10 16
+# Wings (0,32) and comb (16,32).
+Feathers $pig 0 32 14 10
+Rect $pig 0 40 14 2 @('#CDB99E', '#BFAA90', '#B09C84')
+Rect $pig 16 32 12 7 @('#D8322C', '#C42A26', '#A8201C')
+Save $pig 'feathered_pig'
 
-# ---------- Lava Horse: the black horse darkened to basalt, with ember-orange cracks (also drawn alone, to glow).
-$horse = Load 'entity/horse/horse_black'
-Gradient $horse @(@(0.0, '#120C0A'), @(0.3, '#2A201C'), @(1.0, '#5A4A42'))
+# ---------- Lava Horse: basalt plates. A crack runs along plate edges; where it runs the glow layer shines too.
+$horse = New-Object System.Drawing.Bitmap 64, 64
+$basalt = @('#2C2320', '#3A2F2A', '#1D1715')
+Box $horse 0 32 10 10 22 $basalt   # body
+Box $horse 0 35 4 12 7 $basalt     # neck
+Box $horse 0 13 6 5 7 $basalt      # head
+Box $horse 0 25 4 5 5 @('#3A2F2A', '#2C2320', '#1D1715')   # muzzle
+Box $horse 19 16 2 3 1 $basalt     # ears
+Box $horse 48 21 4 11 4 $basalt    # legs
+Rect $horse 48 33 16 3 @('#141010', '#1D1715', '#0E0A0A')  # hooves
+$fire = @('#FF8A1E', '#FFB02E', '#E0500E')
+Box $horse 56 36 2 16 2 $fire      # mane
+Box $horse 42 36 3 14 4 $fire      # tail
+# Saddle, bridle and reins, for when it wears them: dark leather with brass.
+$leather = @('#4A2C1A', '#3C2214', '#2E1A10')
+Box $horse 26 0 10 9 9 $leather
+Box $horse 1 1 6 5 6 $leather
+Box $horse 19 0 4 5 2 $leather
+Box $horse 29 5 1 2 2 @('#D8A840', '#C09030', '#A87C28')
 $glow = New-Object System.Drawing.Bitmap 64, 64
-$rand = New-Object System.Random 5
-for ($y = 0; $y -lt 64; $y++) {
-    for ($x = 0; $x -lt 64; $x++) {
-        if ($horse.GetPixel($x, $y).A -eq 0 -or $rand.NextDouble() -ge 0.07) { continue }
-        $ember = if ($rand.Next(3) -eq 0) { Col '#FFD04A' } else { Col '#FF7A1A' }
+# Plate edges: a wandering line every 5 pixels across and down, broken up by noise.
+function IsCrack([int]$x, [int]$y) {
+    $wx = $x + [Math]::Floor((Noise ([Math]::Floor($y / 3)) 7) / 34)
+    $wy = $y + [Math]::Floor((Noise 11 ([Math]::Floor($x / 3))) / 34)
+    (($wx % 6 -eq 0) -or ($wy % 6 -eq 0)) -and (Noise $x $y) -lt 62
+}
+for ($y = 13; $y -lt 64; $y++) {
+    for ($x = 0; $x -lt 56; $x++) {
+        if ($x -ge 42 -and $y -ge 36 -and $y -lt 54) { continue }   # the tail burns already
+        if ($x -ge 48 -and $y -lt 36) { if ($y -ge 33) { continue } }   # not the hooves
+        if ($horse.GetPixel($x, $y).A -eq 0 -or -not (IsCrack $x $y)) { continue }
+        $ember = Col $(if ((Noise $y $x) -lt 25) { '#FFD04A' } else { '#FF7A1A' })
         $horse.SetPixel($x, $y, $ember)
         $glow.SetPixel($x, $y, $ember)
     }
 }
+foreach ($area in @(56, 36, 8, 18), @(42, 36, 14, 18)) {   # mane and tail shine whole
+    for ($y = $area[1]; $y -lt $area[1] + $area[3]; $y++) {
+        for ($x = $area[0]; $x -lt $area[0] + $area[2]; $x++) {
+            $c = $horse.GetPixel($x, $y)
+            if ($c.A -gt 0) { $glow.SetPixel($x, $y, $c) }
+        }
+    }
+}
+# Burning eyes on both sides of the head, next to its front.
+foreach ($eye in @(5, 22), @(14, 22)) {
+    $horse.SetPixel($eye[0], $eye[1], (Col '#FFE27A'))
+    $glow.SetPixel($eye[0], $eye[1], (Col '#FFE27A'))
+}
 Save $horse 'lava_horse'
 Save $glow 'lava_horse_glow'
 
+# ---------- Wolf Fox: a wolf model in a fox's coat. Rust fur, cream throat, black socks, a white tail tip.
+$rust = @('#D9772B', '#C96A24', '#B55C1E')
+$creamy = @('#F2E6CF', '#E8DBC2', '#DCCEB2')
+$wf = New-Object System.Drawing.Bitmap 64, 32
+Box $wf 0 0 6 6 4 $rust     # head
+Box $wf 16 14 2 2 1 @('#2A201C', '#1F1815', '#16120F')   # ears
+Box $wf 18 14 6 9 6 $rust   # body
+Box $wf 21 0 8 6 7 $rust    # shoulders
+Box $wf 0 18 2 8 2 @('#2A201C', '#1F1815', '#16120F')    # legs: black socks
+Rect $wf 0 20 8 5 $rust
+Box $wf 9 18 2 8 2 $rust    # tail
+Rect $wf 9 25 8 3 $creamy   # its tip
+Rect $wf 24 20 6 9 $creamy  # belly (the body's front face)
+$faceColours = @{ o = '#D9772B'; a = '#D9772B'; c = '#F2E6CF'; w = '#F6F2EC'; b = '#16120F'; d = '#3A241C' }
+Paint $wf 4 4 @('oooooo', 'oooooo', 'wbaabw', 'oooooo', 'cooooc', 'cccccc') $faceColours   # head, front (6x6)
+Paint $wf 4 14 @('cbc', 'cdc', 'ddd') $faceColours                                         # snout, front (3x3): nose, a line under it, the mouth
+Paint $wf 4 10 @('ooo', 'ooo', 'ooo', 'ooo') $faceColours                                  # snout, top (3x4)
+Paint $wf 7 10 @('ccc', 'ccc', 'ccc', 'ccc') $faceColours                                  # snout, bottom (3x4)
+Paint $wf 0 14 @('oooo', 'cccc', 'cddd') $faceColours                                      # snout, one side (4x3): the mouth runs back from the front
+Paint $wf 7 14 @('oooo', 'cccc', 'dddc') $faceColours                                      # snout, other side (4x3)
+Save $wf 'wolf_fox'
 
-# ---------- Wolf Fox: the fox's own texture laid onto the wolf model, part by part. Each part of a model is a box,
-# unwrapped on the texture from its corner (u, v) into six faces (w wide, h high, d deep); every face of a wolf part
-# takes the matching face of the fox part, stretched or squeezed to fit.
-function Faces([int]$u, [int]$v, [int]$w, [int]$h, [int]$d) {
-    @(
-        @(($u + $d), $v, $w, $d),                # top
-        @(($u + $d + $w), $v, $w, $d),           # bottom
-        @($u, ($v + $d), $d, $h),                # one side
-        @(($u + $d), ($v + $d), $w, $h),         # front
-        @(($u + $d + $w), ($v + $d), $d, $h),    # other side
-        @(($u + 2 * $d + $w), ($v + $d), $w, $h) # back
-    )
-}
-function MapBox($src, $dst, $from, $to) {
-    $a = Faces @from; $b = Faces @to
-    for ($f = 0; $f -lt 6; $f++) {
-        $s = $a[$f]; $t = $b[$f]
-        for ($y = 0; $y -lt $t[3]; $y++) {
-            for ($x = 0; $x -lt $t[2]; $x++) {
-                $sx = $s[0] + [Math]::Floor($x * $s[2] / $t[2]); $sy = $s[1] + [Math]::Floor($y * $s[3] / $t[3])
-                $dst.SetPixel($t[0] + $x, $t[1] + $y, $src.GetPixel($sx, $sy))
-            }
+# ---------- Furnace fronts: dark coursed stone. Each machine has its own face; lit ones animate their blue fire.
+function Stone($bmp, [int]$o) {
+    for ($y = 0; $y -lt 16; $y++) {
+        for ($x = 0; $x -lt 16; $x++) {
+            $row = [Math]::Floor($y / 4)
+            $joint = ($y % 4 -eq 3) -or ((($x + 4 * ($row % 2)) % 8) -eq 7)
+            $c = if ($joint) { '#17141C' } else { @('#322C3A', '#2A2531', '#3A3443')[(Noise $x $y) % 3] }
+            $bmp.SetPixel($x, $o + $y, (Col $c))
         }
     }
 }
-$fox = Load 'entity/fox/fox'
-$wolfFox = New-Object System.Drawing.Bitmap 64, 32
-#        fox part (u, v, w, h, d)     wolf part (u, v, w, h, d)
-MapBox $fox $wolfFox @(1, 5, 8, 6, 6) @(0, 0, 6, 6, 4)      # head
-MapBox $fox $wolfFox @(8, 1, 2, 2, 1) @(16, 14, 2, 2, 1)    # ear
-MapBox $fox $wolfFox @(6, 18, 4, 2, 3) @(0, 10, 3, 3, 4)    # nose to snout
-MapBox $fox $wolfFox @(24, 15, 6, 11, 6) @(18, 14, 6, 9, 6) # body
-MapBox $fox $wolfFox @(24, 15, 6, 11, 6) @(21, 0, 8, 6, 7)  # body to the wolf's shoulders (its mane)
-MapBox $fox $wolfFox @(4, 24, 2, 6, 2) @(0, 18, 2, 8, 2)    # leg
-MapBox $fox $wolfFox @(30, 0, 4, 9, 5) @(9, 18, 2, 8, 2)    # tail
-# The face and snout are drawn rather than squeezed: the fox's face is wider, and squeezing it loses an eye.
-# In the fox's own colours: orange fur, cream muzzle, white-and-black eyes where the wolf has its own, a black nose.
-$orange = $fox.GetPixel(10, 12); $cream = $fox.GetPixel(10, 16)
-$white = Col '#F6F2EC'; $black = Col '#16120F'
-function Paint($bmp, [int]$u, [int]$v, [string[]]$rows, [hashtable]$colours) {
-    for ($y = 0; $y -lt $rows.Count; $y++) { for ($x = 0; $x -lt $rows[$y].Length; $x++) { $bmp.SetPixel($u + $x, $v + $y, $colours[[string]$rows[$y][$x]]) } }
-}
-$faceColours = @{ o = $orange; a = $orange; c = $cream; w = $white; b = $black }
-Paint $wolfFox 4 4 @('oooooo', 'oooooo', 'wbaabw', 'oooooo', 'cooooc', 'cccccc') $faceColours   # head, front (6x6)
-Paint $wolfFox 4 14 @('cbc', 'ccc', 'ccc') $faceColours                                         # snout, front (3x3)
-Paint $wolfFox 4 10 @('ooo', 'ooo', 'ooo', 'ooo') $faceColours                                  # snout, top (3x4)
-Paint $wolfFox 7 10 @('ccc', 'ccc', 'ccc', 'ccc') $faceColours                                  # snout, bottom (3x4)
-Paint $wolfFox 0 14 @('oooo', 'cccc', 'cccc') $faceColours                                      # snout, one side (4x3)
-Paint $wolfFox 7 14 @('oooo', 'cccc', 'cccc') $faceColours                                      # snout, other side (4x3)
-Save $wolfFox 'wolf_fox'
-
-# ---------- Soul Furnace, Soul Smoker and Soul Blast Furnace: the game's fronts in blackstone, their fire turned to blue
-# soul fire (the lit ones are animated, so their .mcmeta goes along). The smoker's wood keeps its colour.
-$blocks = Join-Path $root 'dvsouls\src\main\resources\assets\dvsouls\textures\block'
-New-Item -ItemType Directory -Force $blocks | Out-Null
-$fronts = @(
-    @('furnace_front', 'soul_furnace_front'), @('furnace_front_on', 'soul_furnace_front_on'),
-    @('smoker_front', 'soul_smoker_front'), @('smoker_front_on', 'soul_smoker_front_on'),
-    @('blast_furnace_front', 'soul_blast_furnace_front'), @('blast_furnace_front_on', 'soul_blast_furnace_front_on'))
-foreach ($pair in $fronts) {
-    $furnace = $pair[0].StartsWith('furnace')
-    $front = Load "block/$($pair[0])"
-    for ($y = 0; $y -lt $front.Height; $y++) {
-        for ($x = 0; $x -lt $front.Width; $x++) {
-            $c = $front.GetPixel($x, $y)
-            if ($c.A -eq 0) { continue }
-            $max = [Math]::Max($c.R, [Math]::Max($c.G, $c.B)); $min = [Math]::Min($c.R, [Math]::Min($c.G, $c.B))
-            $v = (0.299 * $c.R + 0.587 * $c.G + 0.114 * $c.B) / 255.0
-            $saturated = $max -gt 0 -and ($max - $min) / $max -gt 0.3
-            if ($furnace) {
-                # Fire is the coloured pixels, and the near-white ones in its heart (the bottom rows, below the stone ledge).
-                $fire = $saturated -or ($v -gt 0.72 -and ($y % 16) -ge 11)
-            } else {
-                # Fire is strong orange to yellow (the smoker's wood is a duller brown, so it stays), or near-white.
-                $hue = $c.GetHue()
-                $fire = ($max -gt 0 -and ($max - $min) / $max -gt 0.65 -and $hue -le 65) -or ($v -gt 0.85 -and -not $pair[0].EndsWith('front'))
-            }
-            if ($fire) {
-                # Fire: its brightness on soul fire's colours, deep teal through cyan to white, so its dark embers
-                # stay dark instead of turning a pale blue that reads as stone.
-                $stops = @(@(0.0, '#06323A'), @(0.35, '#0B6470'), @(0.55, '#14A8BC'), @(0.75, '#46E2F2'), @(0.9, '#BDFAFF'), @(1.0, '#FFFFFF'))
-                for ($i = 1; $i -lt $stops.Count; $i++) {
-                    if ($v -le $stops[$i][0] -or $i -eq $stops.Count - 1) {
-                        $a = Col $stops[$i - 1][1]; $b = Col $stops[$i][1]
-                        $t = [Math]::Max(0, [Math]::Min(1, ($v - $stops[$i - 1][0]) / ($stops[$i][0] - $stops[$i - 1][0])))
-                        $front.SetPixel($x, $y, [System.Drawing.Color]::FromArgb($c.A,
-                            [int]($a.R + ($b.R - $a.R) * $t), [int]($a.G + ($b.G - $a.G) * $t), [int]($a.B + ($b.B - $a.B) * $t)))
-                        break
-                    }
+# Fire over a dark hollow, frame $f of $n; the columns rise and fall in turn.
+function Fire($bmp, [int]$x0, [int]$y0, [int]$w, [int]$h, [int]$o, [int]$f, [int]$n, [bool]$lit) {
+    for ($y = 0; $y -lt $h; $y++) {
+        for ($x = 0; $x -lt $w; $x++) {
+            $c = '#08070C'
+            if ($lit) {
+                $top = 1 + [Math]::Round(($h - 2) * (0.5 + 0.5 * [Math]::Sin(2 * [Math]::PI * ($x / 3.0 + $f / $n))) * 0.7)
+                if ($y -ge $top) {
+                    $depth = ($y - $top) / [Math]::Max(1, $h - 1 - $top)
+                    $c = if ($depth -gt 0.75) { '#D8FDFF' } elseif ($depth -gt 0.45) { '#46E2F2' } elseif ($depth -gt 0.2) { '#14A8BC' } else { '#0B6470' }
                 }
-            } elseif ($furnace -or -not $saturated) {
-                # Stone: blackstone's dark purple-grey.
-                $front.SetPixel($x, $y, [System.Drawing.Color]::FromArgb($c.A, [int](18 + 70 * $v), [int](15 + 62 * $v), [int](22 + 78 * $v)))
-            }
+            } elseif ($y -eq $h - 1) { $c = '#1A3238' }
+            $bmp.SetPixel($x0 + $x, $o + $y0 + $y, (Col $c))
         }
     }
-    $front.Save((Join-Path $blocks "$($pair[1]).png"), [System.Drawing.Imaging.ImageFormat]::Png)
-    $meta = $jar.GetEntry("assets/minecraft/textures/block/$($pair[0]).png.mcmeta")
-    if ($meta) {
-        $reader = New-Object System.IO.StreamReader $meta.Open()
-        [System.IO.File]::WriteAllText((Join-Path $blocks "$($pair[1]).png.mcmeta"), $reader.ReadToEnd())
-        $reader.Dispose()
-    }
 }
+function Front([string]$name, [int]$frames, [scriptblock]$face, [bool]$lit) {
+    $bmp = New-Object System.Drawing.Bitmap 16, (16 * $frames)
+    for ($f = 0; $f -lt $frames; $f++) { & $face $bmp ($f * 16) $f $frames $lit }
+    $bmp.Save((Join-Path $blocks "$name.png"), [System.Drawing.Imaging.ImageFormat]::Png)
+    $bmp.Dispose()
+    $meta = Join-Path $blocks "$name.png.mcmeta"
+    if ($frames -gt 1) { [System.IO.File]::WriteAllText($meta, '{"animation": {"frametime": 3, "interpolate": true}}') }
+    elseif (Test-Path $meta) { Remove-Item $meta }
+}
+# Furnace: a pointed arch with a sill.
+$furnaceFace = {
+    param($bmp, $o, $f, $n, $lit)
+    Stone $bmp $o
+    Fire $bmp 4 7 8 6 $o $f $n $lit
+    Paint $bmp 3 ($o + 4) @('....kk....', '...kffk...', '..kf..fk..', '.kf....fk.', '.f......f.', '.f......f.', '.f......f.', '.f......f.', '.f......f.') @{ k = '#17141C'; f = '#5A5268' }
+    Paint $bmp 2 ($o + 13) @('ffffffffffff', 'kkkkkkkkkkkk') @{ k = '#17141C'; f = '#5A5268' }
+}
+# Smoker: a wide low mouth between dark timber beams, with a vent above.
+$smokerFace = {
+    param($bmp, $o, $f, $n, $lit)
+    Stone $bmp $o
+    Fire $bmp 3 8 10 4 $o $f $n $lit
+    Paint $bmp 0 ($o + 1) @('wwwwwwwwwwwwwwww', 'xxxxxxxxxxxxxxxx') @{ w = '#5A3A24'; x = '#3C2616' }
+    Paint $bmp 0 ($o + 12) @('wwwwwwwwwwwwwwww', 'xxxxxxxxxxxxxxxx') @{ w = '#5A3A24'; x = '#3C2616' }
+    Paint $bmp 4 ($o + 5) @('k.k.k.k.k', 'k.k.k.k.k') @{ k = '#08070C' }
+}
+# Blast furnace: an iron-strapped front with a barred grate.
+$blastFace = {
+    param($bmp, $o, $f, $n, $lit)
+    Stone $bmp $o
+    Fire $bmp 3 5 10 7 $o $f $n $lit
+    foreach ($bx in 5, 8, 11) { for ($y = 5; $y -lt 12; $y++) { $bmp.SetPixel($bx, $o + $y, (Col '#6A6474')) } }
+    Paint $bmp 0 ($o + 3) @('iiiiiiiiiiiiiiii', 'dddddddddddddddd') @{ i = '#6A6474'; d = '#3C3844' }
+    Paint $bmp 0 ($o + 12) @('iiiiiiiiiiiiiiii', 'dddddddddddddddd') @{ i = '#6A6474'; d = '#3C3844' }
+    foreach ($rx in 1, 14) { $bmp.SetPixel($rx, $o + 3, (Col '#A8A0B4')); $bmp.SetPixel($rx, $o + 12, (Col '#A8A0B4')) }
+}
+Front 'soul_furnace_front' 1 $furnaceFace $false
+Front 'soul_furnace_front_on' 4 $furnaceFace $true
+Front 'soul_smoker_front' 1 $smokerFace $false
+Front 'soul_smoker_front_on' 4 $smokerFace $true
+Front 'soul_blast_furnace_front' 1 $blastFace $false
+Front 'soul_blast_furnace_front_on' 4 $blastFace $true
 
-$jar.Dispose()
-Write-Host "Textures written to $out"
+Write-Host "Textures written to $out and $blocks"

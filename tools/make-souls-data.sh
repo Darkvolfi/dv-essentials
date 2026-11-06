@@ -426,7 +426,7 @@ FUSER_BODY="$(el 0 0 0 16 5 16 polished), $(el 0 5 12 16 16 16 bricks), $(el 0 1
  $(el 10 5 5.5 15 5.5 10.5 polished), $(el 1 5 5.5 6 5.5 10.5 polished),
  $(el 10 5.5 7.5 10.5 7.5 8.5 gold), $(el 14.5 5.5 7.5 15 7.5 8.5 gold), $(el 1 5.5 7.5 1.5 7.5 8.5 gold), $(el 5.5 5.5 7.5 6 7.5 8.5 gold),
  $(el 11 10 6.5 14 12 9.5 gold), $(el 2 10 6.5 5 12 9.5 gold),
- $(el 6.5 5 6.5 9.5 7 9.5 polished), $(el 6.4 6.5 6.4 9.6 7 9.6 gold), $(el 7 11 7 9 12 9 gold),
+ $(el 6.5 5 6.5 9.5 6.75 9.5 polished), $(el 6.4 6.5 6.4 9.6 7 9.6 gold), $(el 7 11 7 9 12 9 gold),
  $(el 1.5 1 -0.1 14.5 4 0 frame north), $(el 2 1.5 -0.15 14 3.5 -0.1 window north),
  {\"from\": [-0.01, -0.01, -0.01], \"to\": [16.01, 5.01, 16.01], \"faces\": {$(uv band south 0 11 16 16 east 0 11 16 16 west 0 11 16 16)}}"
 fill_soul_fuser() { printf '%s' "$(el $(( 14 - 12 * $1 / 8 )) 1.5 -0.2 14 3.5 -0.15 soul north)"; }

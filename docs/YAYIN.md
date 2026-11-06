@@ -2,6 +2,7 @@
 
 Her mod ayrı bir proje sayfası olarak yüklenir; DV Lib diğerlerinin zorunlu bağımlılığıdır (DV Food sunucuda DV Lib istemez, DV New Crafts hiç istemez).
 Ortak bilgiler: **Minecraft 1.20.1 · Forge 47+ ve NeoForge 47.1+ · Lisans MIT · Yazar Darkvolfi**
+DV New Crafts'in bakır dokuları Minecraft dokularından türetilmiştir ve MIT kapsamında değildir (`LICENSE`); sayfasına da eklenecek.
 
 | Mod | Jar | Taraf | Bağımlılık | Kategori önerisi |
 |---|---|---|---|---|
@@ -241,4 +242,4 @@ The library behind the DV mods. Install it together with any DV mod.
 - [ ] GitHub deposu açılınca `displayURL` ve `issueTrackerURL` ekle
 - [ ] Modrinth projeleri açılınca her modun `mods.toml`'una `updateJSONURL` ekle (DV menüsündeki güncelleme işareti bunu kullanır)
 - [ ] Ekran görüntüleri (her sayfa için 2–3)
-- [ ] DV Science of Souls dokularını yeniden tasarla (bakır eşyalar böyle kalıyor; bkz. `YOL-HARITASI.md` → Açık)
+- [x] DV Science of Souls dokuları özgün çizimle değişti (2026-11-05); oyun içinde bakılacak. DV New Crafts bakır dokuları kullanıcının kararıyla vanilyadan türetilmiş olarak kalıyor

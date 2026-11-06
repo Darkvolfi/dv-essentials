@@ -54,8 +54,8 @@ M5 en büyük iş: kayıt, sunucu senkronu, envanter ekranı, elytra uçuşu iç
 ## Kararlar
 - Lisans **MIT**; yayın **Modrinth + CurseForge**; git yerel, GitHub gizli depo kullanıcı açınca (2026-10-25).
 - Hepsini içeren tek "DV Essentials" paketi şimdilik yok.
-- Hiçbir vanilya dokusu dağıtılmaz: DV Food kenarı ve DV Dark çalışma anında üretir.
+- Minecraft'ın bir eşyasına bağlı bir şeyde oyunun kendi tasarımı ya da ondan türetilen doku kullanılabilir (örneğin ruh kovası kovaya benzer). Oyunda karşılığı olmayan yeni şeyler özgün çizilir. Kullanıcının kararı, 2026-11-06.
 
 ## Açık
 - Ekran görüntüleri, sürüm adı (şimdilik 0.1.0). İkonlar: 32×32 piksel sanatı (tools/make-icons.ps1). DV Lib: tüplü monitör (ekranda dik ":3" kedi yüzü) ve kitaplardan kasa; diğer modlarda köşe işareti yok. Zoom teleskop. Kullanıcının tarifi.
-- **Dokular:** DV New Crafts ve DV Science of Souls'un bazı dokuları (bakır eşyalar, melez canlılar) betiklerle oyunun kendi dokularından türetilip jar'a giriyor. Bu, "hiçbir vanilya dokusu dağıtılmaz" kararıyla çelişiyor. Kullanıcının kararı (2026-10-30): bakır eşyalar böyle kalıyor; Souls'un dokuları ileride yeniden tasarlanacak (tasarımlar henüz yok).
+- **Dokular:** DV New Crafts'ın bakır dokuları oyunun demir dokularından betikle türetiliyor (kullanıcının kararı: böyle kalıyor, uyarı gelirse değiştirilir ya da kaldırılır; 2026-11-05 özgün çizim denendi ve beğenilmedi). DV Science of Souls'ta melez canlılar ve fırın yüzleri 2026-11-05'te sıfırdan çizildi; saf ruh kovası ve Ruh Kömürü oyunun dokuları üstüne katman olarak kalıyor (kullanıcının kararı).

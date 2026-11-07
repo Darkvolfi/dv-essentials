@@ -112,3 +112,22 @@ Kullanıcının oyunda bulduğu hatalar ve istekleri. Nedenler kodda bulundu, he
   - Mevcut bir işaretin üstünde: düzenle, ışınlan, paylaş, kategoriye taşı, sil.
   - DV Team'in harita kancaları (`MapOverlayHook`) da bu menüye kendi seçeneklerini ekleyebilsin (ör. bu chunk'ı sahiplen).
 - **İstek: farenin üstündeki blok haritada işaretlensin.** Chunk ızgarası gibi, imlecin altındaki bloğun karesine ince bir çerçeve çizilir. Uzak yakınlaştırmada blok çok küçük kalınca chunk'ın çerçevesi de hafifçe gösterilebilir. Koordinatlar alttaki satırda zaten yazıyor.
+
+### DV Science of Souls (1.0.1.0)
+- **İstek: ruh kartı tarifinde kağıt yerine DV Backpack'in boş kartı (`dvbackpack:upgrade_base`).**
+  - Kartlar zaten DV Backpack'in kart yuvasına takılıyor, aynı tabandan yapılmaları tutarlı olur.
+  - DV Backpack isteğe bağlı olduğu için tarif iki yollu olacak: DV Backpack kuruluysa boş kart, değilse kağıt. Forge'un `forge:mod_loaded` koşuluyla, DV Backpack'in kendi kartlarının tarifleri gibi.
+  - Dosya: `recipes/gold_soul_charm.json` (kağıt yalnızca altın kartta var; elmas ve netherite kartlar ondan yükseltiliyor).
+- **İstek: Ruh Kömürü Bloğu.**
+  - Kömür bloğu gibi: 9 Ruh Kömürü → 1 blok, blok → 9 Ruh Kömürü.
+  - Yakıt süresi Ruh Kömürü'nün 9 katı (3200 × 9 = 28800 tik); kömür bloğu da kömürün tam 9 katı.
+  - Doku özgün çizilir ama kömür bloğuna benzer (kullanıcının kuralı: Minecraft eşyasına bağlı tasarım vanilyadan türetilebilir), ruh kömürünün koyu mavi tonlarında.
+  - Yaratıcı sekmesine, kırma etiketine (kazma) ve kendi düşüş tablosuna eklenir.
+- **İstek: Ruh Tasması her canlıya takılsın ve tek kullanımlık olsun.**
+  - Şu an: `SoulEvents.collar` tasmayı yalnızca oyuncunun evcil hayvanına (Bağ Sunağı'nda bağlanmış ya da evcilleştirilmiş) takıyor; sahibi yoksa "not_bound" diyor. Ölünce düşen parçadaki ruh (`Soul.of`) canlının kalıcı verisini, tasma işareti dahil, taşıyor. Bu yüzden diriltilen canlı tasmasıyla geri geliyor ve tasma sonsuza kadar işe yarıyor.
+  - Yeni:
+    - Tasma sahibi olmayan herhangi bir canlıya takılabilir. Boss'lar ve `DVSouls`'taki yasak liste hariç; başkasının evcil hayvanına takılamaz.
+    - Tasmayı takan oyuncu canlının kalıcı verisine "tasma sahibi" olarak yazılır. Parçayı Ruh Sunağı'na yalnızca o oyuncu koyabilir; evcil hayvanlarda bu zaten sahibi.
+    - **Tek kullanımlık:** canlı ölünce düşen parçaya kaydedilen ruhtan tasma işareti silinir. Diriltilen canlı tasmasız gelir; bir daha diriltilmek için yeni tasma gerekir.
+    - Evcil olmayan bir canlı diriltilince eskisi gibi gelir, evcil olmaz. Bağlamak için yine Bağ Sunağı gerekir.
+  - Düşman canlılara (zombi, iskelet...) da takılabilir; diriltilince yine düşman olarak gelir (kullanıcının kararı, 2026-11-08).

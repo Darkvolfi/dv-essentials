@@ -231,6 +231,11 @@ The library behind the DV mods. Install it together with any DV mod.
 
 ## Değişiklik listesi
 
+### DV Lens 1.0.0.2
+"Toggle DV Lens" tuşu Kontroller ekranında yoktu, yerine "Show where mobs can spawn" iki kez çıkıyordu; ikisi de artık ayrı ve atanabilir.
+Kırılma çubuğu tık tık değil, akıcı doluyor.
+Sayfalara yazılacak İngilizce metin: "The Toggle DV Lens key is back in the controls; the light marks key no longer shows twice. The breaking bar fills smoothly."
+
 ### DV Music 1.0.0.1
 Duraklatılan şarkı, Esc menüsü ya da dünya haritası kapanınca bir an çalıyordu; artık duraklatılmış kalıyor.
 Sayfalara yazılacak İngilizce metin: "A paused song no longer plays for a moment when the pause menu or the world map closes."

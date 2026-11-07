@@ -131,3 +131,47 @@ Kullanıcının oyunda bulduğu hatalar ve istekleri. Nedenler kodda bulundu, he
     - **Tek kullanımlık:** canlı ölünce düşen parçaya kaydedilen ruhtan tasma işareti silinir. Diriltilen canlı tasmasız gelir; bir daha diriltilmek için yeni tasma gerekir.
     - Evcil olmayan bir canlı diriltilince eskisi gibi gelir, evcil olmaz. Bağlamak için yine Bağ Sunağı gerekir.
   - Düşman canlılara (zombi, iskelet...) da takılabilir; diriltilince yine düşman olarak gelir (kullanıcının kararı, 2026-11-08).
+
+### DV New Crafts (1.1.0)
+- **İstek: zombi etinden deri.**
+  - Tarif: ortada makas, çevresinde 8 çürük et → 8 deri. Makas tezgâhta kalır ama canı azalır.
+  - Vanilya tarifleri aleti aşındıramıyor; aleti geri verip canını azaltan küçük bir tarif türü yazılacak (`ShapedRecipe`'ten türeyen, `getRemainingItems` metodunda makası hasarlı olarak geri veren bir sınıf ve onun serializer'ı). DV New Crafts'ın ilk kodlu tarifi olur.
+  - Makasın canı 0'a inerse kırılır, vanilya aletleri gibi; Unbreaking büyüsü hasarı azaltır.
+  - JEI'de normal tarif olarak görünür.
+  - Makas bir tarifte 8 can kaybeder, her deri için 1 (kullanıcının kararı, 2026-11-08). Makasın canı 238, yani yaklaşık 30 tarif ya da 240 deri.
+- **İstek: oyun içinden tarif ekleme (yalnızca yöneticiler).** Kullanıcının isteği, 2026-11-08.
+  - Ayarlardaki arayüzde bir "Tarifler" ekranı olacak. Burada yeni tarif eklenir, eklenen tarifler düzenlenir ya da silinir.
+  - Tarif türleri: şekilli (3×3 ızgara), şekilsiz, fırın, tütsüleyici, yüksek fırın, kamp ateşi, taş kesici.
+  - Eşyalar oyuncunun envanterinden ya da arama listesinden ızgaraya sürüklenir. Sonuç eşyası ve adedi seçilir.
+  - **Yalnızca yönetici:**
+    - Ekran yalnızca sunucuda yetki seviyesi 2 ve üstü (op) olan oyuncuya açılır. Tek oyunculuda hile açıksa açılır.
+    - Kayıt isteği sunucuda da yetki kontrolünden geçer. Yetkisiz bir istemci paket gönderse bile tarif eklenmez.
+  - Tarifler dünyanın içinde bir veri paketi olarak saklanır: `world/datapacks/dvnewcrafts_custom/data/dvnewcrafts_custom/recipes/*.json`. Kaydedince `/reload` gibi yeniden yüklenir ve bütün oyunculara gider. Dünya kopyalanınca tarifler de gider. Vanilya biçiminde olduğu için mod kaldırılsa bile JSON'lar okunabilir kalır.
+  - Mevcut bir tarifi kapatma (ör. DV New Crafts'ın ya da oyunun bir tarifi) ikinci aşama.
+  - Teknik:
+    - DV New Crafts şu an DV Lib'e bağlı değil ve ayar ekranı yok. Ekranı DV Lib'in arayüz parçalarıyla yapmak için DV Lib isteğe bağlı bağımlılık olur (`compileOnly` + `ModList` kontrolü); DV Lib yoksa ekran Mods listesinden açılan basit bir ekran olur.
+    - Kendi ağ kanalı: tarifi kaydet, sil, listele.
+    - JEI yeni tarifleri `/reload` sonrası kendisi görür.
+
+### DV Lens (1.0.1.0)
+- **Hata (✅ 1.0.0.1, 2026-11-08): "Show where mobs can spawn" tuşu iki kez görünüyordu, "Toggle DV Lens" hiç yoktu (Kontroller ekranında da).**
+  - Neden: Forge'un olay sistemi bir dinleyiciyi `paket.__SınıfınKısaAdı_metot_Olay` adıyla üretiyor ve bu adla önbelleğe alıyor (eventbus 6.2, `IEventListenerFactory.getUniqueName`). `LensOverlay.ModEvents.onRegisterKeys` ile `LightMarkers.ModEvents.onRegisterKeys` aynı pakette, aynı adda, aynı olayda. İkincisi birincinin dinleyicisini kullandı: ışık tuşu iki kez kaydedildi, aç/kapa tuşu hiç kaydedilmedi.
+  - Düzeltme: `LightMarkers` içindeki metodun adı `onRegisterLightKey` oldu. Bütün modlar tarandı, başka çakışma yok.
+- **İstek (✅ 1.0.0.2, 2026-11-08): kırılma çubuğu akıcı dolsun.** Eskiden çatlak aşamasını (10 adım) gösteriyordu. Artık oyunun `destroyProgress` alanını (SRG `f_105193_`) okuyup kareler arasında bu tikin payını ekliyor; alan okunamazsa eski aşamalı gösterime düşüyor.
+- **İstek: sandık içeriği ayarı daha kolay bulunsun.**
+  - Ayar aslında var: "Container contents, furnaces" (`showContents`). Kullanıcı bunun sandıklar için olduğunu anlamadı.
+  - Plan: iki ayara bölünsün. **Sandık içeriği** (sandık, varil, shulker kutusu...) ayrı, **fırın ve demleme** (fırın, demleme standı, yanma ve pişme durumu) ayrı. Adlar açık olsun.
+
+### DV Food (1.0.1.0)
+- **İstek: zararlı yemek açlık çubuğunda görünsün.**
+  - Elde tutulan yemek Açlık (Hunger) etkisi veriyorsa (çürük et, çiğ tavuk...), çubuğun yanıp sönen önizlemesi vanilyanın Açlık etkisindeki yeşil ikonlarıyla gösterilsin.
+  - Zehir (Poison) veriyorsa (balon balığı, örümcek gözü, zehirli patates) önizleme zehir görünümünde yanıp sönsün; can barındaki zehir rengi gibi.
+  - Etkinin ihtimali yüzde 100 değilse (çiğ tavuk %30) bu da ikon üstünde belli olsun, ya da yalnızca tooltip'te yüzde olarak yazsın. Hangisi olacağına uygularken bakılacak.
+  - İkonlar vanilyanın `icons.png` dosyasından alınır (DV Food'un kuralı: doku dağıtılmaz).
+- **İstek: iksirler de can çubuğunda önizlensin** (kullanıcının isteği, 2026-11-08).
+  - DV Food, elde yemek varken kazanılacak canı zaten yanıp söndürüyor. Aynısı iksirlerde de olacak (içilen, fırlatılan ve kalıcı iksirler; okla atılanlar hariç).
+  - **Anında Can (Instant Health):** dolacak kalpler yanıp söner; seviye II'de daha fazla.
+  - **Anında Hasar (Instant Damage):** gidecek kalpler kırmızı-siyah yanıp söner. Ölümsüz canlılarda ters çalıştığı için yalnızca oyuncuya göre gösterilir.
+  - **Yenilenme (Regeneration), Zehir, Solma (Wither):** süre boyunca dolacak ya da gidecek toplam can yaklaşık olarak gösterilir. Zehir son yarım kalbi almaz, bu da hesaba katılır.
+  - **Emilim (Absorption):** altın elma gibi, eklenecek sarı kalpler önizlenir. Bu, altın elmalar için de eklenir.
+  - Hangi etkilerin gösterileceği bir ayarla kapatılabilir.

@@ -156,8 +156,10 @@ public final class LightMarkers {
 
     @Mod.EventBusSubscriber(modid = DVLens.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
     public static final class ModEvents {
+        // Not "onRegisterKeys": Forge names a handler by package, class simple name, method and event, so it would
+        // clash with LensOverlay.ModEvents and register this key twice instead of both keys.
         @SubscribeEvent
-        public static void onRegisterKeys(RegisterKeyMappingsEvent event) {
+        public static void onRegisterLightKey(RegisterKeyMappingsEvent event) {
             event.register(TOGGLE_KEY);
         }
     }

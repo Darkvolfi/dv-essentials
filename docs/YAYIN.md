@@ -231,6 +231,10 @@ The library behind the DV mods. Install it together with any DV mod.
 
 ## Değişiklik listesi
 
+### DV Lib 1.0.1
+DV menüsünde DV New Crafts'ın yeni simgesi (çalışma masası) görünüyor; eskiden bakır kazma çıkıyordu.
+Sayfalara yazılacak İngilizce metin: "The DV menu shows DV New Crafts' new icon."
+
 ### 1.0.0.0 (ilk sürüm)
 İlk yayın: DV Lib, DV Zoom, DV Food, DV Lens, DV Vein, DV Slots, DV Dark, DV Map, DV Team, DV Grave, DV Music, DV Backpack, DV New Crafts, DV Science of Souls.
 

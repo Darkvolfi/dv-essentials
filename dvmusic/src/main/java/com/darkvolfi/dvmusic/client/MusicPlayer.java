@@ -141,6 +141,11 @@ public final class MusicPlayer {
         }
     }
 
+    /** Called right after the game resumed every sound (a pausing screen closed): a paused song stays paused. */
+    public static void afterResume() {
+        if (paused && playing != null) onChannel(Channel::pause);
+    }
+
     /** A random song for now, not the one just played. */
     private static Track pick() {
         List<Track> pool = pool();
@@ -187,8 +192,8 @@ public final class MusicPlayer {
         if (playing != null) {
             if (sounds.isActive(playing)) {
                 if (paused) {
-                    // The game unpauses every channel when its own pause menu closes; keep ours paused.
-                    if (mc.level == null || mc.level.getGameTime() % 10 == 0) onChannel(Channel::pause);
+                    // SoundEngineMixin pauses it again as soon as the game resumes all sounds; this catches anything else.
+                    onChannel(Channel::pause);
                     return;
                 }
                 if (mc.isPaused()) {

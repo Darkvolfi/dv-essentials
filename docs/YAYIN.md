@@ -231,6 +231,10 @@ The library behind the DV mods. Install it together with any DV mod.
 
 ## Değişiklik listesi
 
+### DV Music 1.0.0.1
+Duraklatılan şarkı, Esc menüsü ya da dünya haritası kapanınca bir an çalıyordu; artık duraklatılmış kalıyor.
+Sayfalara yazılacak İngilizce metin: "A paused song no longer plays for a moment when the pause menu or the world map closes."
+
 ### DV Lib 1.0.1
 DV menüsünde DV New Crafts'ın yeni simgesi (çalışma masası) görünüyor; eskiden bakır kazma çıkıyordu.
 Sayfalara yazılacak İngilizce metin: "The DV menu shows DV New Crafts' new icon."

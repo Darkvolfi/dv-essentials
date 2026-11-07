@@ -1,5 +1,15 @@
 plugins {
     id 'net.minecraftforge.gradle'
+    id 'org.spongepowered.mixin'
 }
 
 apply from: rootProject.file('gradle/dv-mod.gradle')
+
+mixin {
+    add sourceSets.main, 'dvmusic.refmap.json'
+    config 'dvmusic.mixins.json'
+}
+
+dependencies {
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+}

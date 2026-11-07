@@ -64,3 +64,51 @@ M5 en büyük iş: kayıt, sunucu senkronu, envanter ekranı, elytra uçuşu iç
 ## Açık
 - Ekran görüntüleri, sürüm adı (ilk yayın 1.0.0.0). İkonlar: 32×32 piksel sanatı (tools/make-icons.ps1). DV Lib: tüplü monitör (ekranda dik ":3" kedi yüzü) ve kitaplardan kasa; diğer modlarda köşe işareti yok. Zoom teleskop. Kullanıcının tarifi.
 - **Dokular:** DV New Crafts'ın bakır dokuları oyunun demir dokularından betikle türetiliyor (kullanıcının kararı: böyle kalıyor, uyarı gelirse değiştirilir ya da kaldırılır; 2026-11-05 özgün çizim denendi ve beğenilmedi). DV Science of Souls'ta melez canlılar ve fırın yüzleri 2026-11-05'te sıfırdan çizildi; saf ruh kovası ve Ruh Kömürü oyunun dokuları üstüne katman olarak kalıyor (kullanıcının kararı).
+
+## Sonraki güncellemeler (plan, 2026-11-07)
+
+Kullanıcının oyunda bulduğu hatalar ve istekleri. Nedenler kodda bulundu, henüz düzeltilmedi.
+
+### DV Lib (1.0.2)
+- **Hata: menüde bazı modlara tıklanmıyor.** `DVMenuScreen.ModTile.refresh()` kurulu bir modu yalnızca ayar kaydı (`DVConfigScreen.register`) varsa tıklanır yapıyor. DV New Crafts'ın ayarı olmadığı için tıklanmıyor.
+  - Düzeltme: ayarı olmayan kurulu mod tıklanınca kısa bir bilgi kutusu açsın: ne yaptığı, sürümü, sayfası.
+  - Ayrıca yalnızca `registerScreen` ile ekran veren bir mod da tıklanabilmeli.
+  - Başka mod da tıklanmıyorsa kullanıcı hangisi olduğunu söyleyecek.
+- **Kurulu olmayan modlar için indirme bağlantıları:** `DVMods.PAGES` boş. Modrinth ve CurseForge sayfaları onaylanınca doldurulacak. Kilitli kutu sayfayı açacak, şimdilik "yakında" yazıyor.
+
+### DV Music (1.0.1.0)
+- **Hata (✅ 1.0.0.1, 2026-11-07): duraklatılan şarkı, duraklatan bir ekran (Esc menüsü, M ile dünya haritası) kapanınca kısa süre çalıp duruyordu.**
+  - Neden: oyun, duraklatma menüsü kapanınca bütün sesleri yeniden başlatıyor. `MusicPlayer.onClientTick` ise bizim şarkıyı yalnızca her 10 tikte bir yeniden duraklatıyor (`getGameTime() % 10`); şarkı yarım saniyeye kadar çalıyor.
+  - Düzeltme: `SoundEngineMixin`, `SoundEngine.resume()` metodunun sonunda bizim şarkıyı yeniden duraklatıyor. İki komut ses iş parçacığında art arda çalıştığı için arada ses duyulmuyor. Yedek olarak her tikte de duraklatılıyor (eskiden 10 tikte bir).
+  - Esc menüsünde çalan şarkının devam etmesi bilerek böyle kalıyor (kullanıcı beğendi).
+- **Hata: çalma modu (karışık / sadece Minecraft / sadece benimkiler) çalışmıyor gibi.** İki neden var:
+  1. Mod değişince yalnızca bir **sonraki** şarkı etkileniyor, çalan şarkı devam ediyor. Düzeltme: çalan şarkı yeni moda uymuyorsa hemen değişsin.
+  2. "Sadece benimkiler" seçili ama `dvmusic` klasöründe çalınabilecek `.ogg` yoksa, sessiz kalmamak için Minecraft şarkıları çalıyor. Kullanıcının klasöründe hiç `.ogg` yok. Düzeltme: o durumda ekranda "klasörde şarkı yok" uyarısı görünsün ve klasörü açan bir düğme olsun.
+- **İstek: MP3 ve başka biçimler.** Minecraft yalnızca `.ogg` (Vorbis) çalıyor.
+  - **WAV:** kolay, Java kendisi okuyor.
+  - **MP3 ve FLAC:** çözücü (decoder) gerekiyor. **Karar (kullanıcı, 2026-11-07): hazır kütüphane jar'ın içine gömülür.** Mod bağımlılığı değil, oyuncu ayrıca bir şey kurmaz.
+    - MP3 için aday **JavaMP3** (`fr.delthas:javamp3:1.0.1`): MIT lisanslı, saf Java, başka bağımlılığı yok, MPEG-1/2/2.5 Layer I/II/III çözüyor. Asıl depo arşivlenmiş, bakımı yapılmıyor. Projenin lisansı da MIT olduğu için LGPL'li JLayer yerine bu tercih edilir.
+    - FLAC için aday **flannel** (`com.io7m.flannel`): Apache-2.0 / LGPL-2.1 çift lisanslı, Apache-2.0 seçilir. Koordinatlar ve sürüm Maven Central'da doğrulanacak.
+    - Gömme: Forge'un jarJar'ı ya da shadow ile paket adı değiştirilerek. Kütüphanenin lisans metni jar'a ve README'ye eklenir.
+    - Çözülen ses Minecraft'a nasıl verilecek, denenerek belirlenecek. Yol: `CustomMusicPack` dosyayı sunarken PCM'e çevirip kendi `AudioStream`'ini vermek.
+  - Desteklenmeyen dosya için uyarı zaten var (`TrackLibrary.unplayable`).
+- **İstek: kendi çalma listeleri.**
+  - `dvmusic/playlists/<liste adı>/` klasörüne atılan şarkılar o listeyi oluşturur.
+  - Müzik ekranında liste seçilir. Seçili liste çalarken durum klasörleri (menü, Nether...) devre dışı kalır.
+  - "Yeni liste" düğmesi klasörü açıp oluşturur.
+
+### DV Map (1.0.1.0)
+- **İstek: kendi işaret kategorilerimiz.**
+  - Şu an kategoriler sabit bir listede (`Waypoint.Category`: General, Home, Mine, Village, Farm, Portal, Danger, Explore). İşaret listesi "My Waypoints / Automatic / Structures" bölümleriyle gruplanıyor.
+  - Plan: oyuncu kendi kategorisini açabilsin: ad, renk ve isteğe bağlı simge. İşaret listesinde her kategori kendi açılır-kapanır bölümü olur.
+  - Liste başlığındaki **+** yanına "yeni kategori" eklenir. Bir işaret düzenleme ekranından ya da sağ tıkla başka kategoriye taşınabilir.
+  - Hazır kategoriler başlangıç olarak kalır; silinirse içindeki işaretler General'a geçer.
+  - Kategoriler işaretlerle aynı dosyada, dünya başına saklanır.
+- **İstek: haritada sağ tık bir seçenek menüsü açsın.** Şu an `WorldMapScreen.mouseClicked` sağ tıkta doğrudan yeni işaret ekranını açıyor. Yeni menü:
+  - Buraya işaret koy (bugünkü davranış).
+  - Buraya ışınlan: yalnızca yaratıcı modda ya da yetkiliyken, işaretlerdeki ışınlanma gibi.
+  - Konumu sohbette paylaş: "x, y, z (boyut)" mesajı. Alan oyuncuda DV Map varsa mesaja tıklayınca işaret olarak eklenir.
+  - Koordinatları panoya kopyala.
+  - Mevcut bir işaretin üstünde: düzenle, ışınlan, paylaş, kategoriye taşı, sil.
+  - DV Team'in harita kancaları (`MapOverlayHook`) da bu menüye kendi seçeneklerini ekleyebilsin (ör. bu chunk'ı sahiplen).
+- **İstek: farenin üstündeki blok haritada işaretlensin.** Chunk ızgarası gibi, imlecin altındaki bloğun karesine ince bir çerçeve çizilir. Uzak yakınlaştırmada blok çok küçük kalınca chunk'ın çerçevesi de hafifçe gösterilebilir. Koordinatlar alttaki satırda zaten yazıyor.

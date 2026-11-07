@@ -21,7 +21,11 @@ DV/
 
 - Ortak bir şey **en az iki modda** gerekince DV Lib'e taşınır (ayar ekranı, ağ paketleri, koyu tema renkleri…). Önceden tahminle doldurulmaz.
 - Jar adı: `<mod_id>-1.20.1-<sürüm>.jar`. Her modun sürümü ayrı.
-- **Sürüm:** `x.y.z.a`. `x` DV Lib'in ilk sayısı (DV Lib'e bağlı olmayan modda kendi ana sürümü), `y` güncelleme, `z` hata ayıklama ve basit güncelleme, `a` hata düzeltme. `x` değişince DV Lib bağımlılığı olan bütün modlar aynı `x` ile yeniden çıkar. Kullanıcının kararı, 2026-11-06.
+- **Sürüm:**
+  - DV Lib'e bağlı modlar `x.y.z.a`: `x` DV Lib'in ilk sayısı, `y` güncelleme, `z` hata ayıklama ve basit güncelleme, `a` hata düzeltme. `x` değişince DV Lib'e bağlı bütün modlar aynı `x` ile yeniden çıkar. Kullanıcının kararı, 2026-11-06.
+  - DV Lib'in kendisi ve DV Lib'e bağlı olmayan modlar (DV New Crafts) `x.y.z`: büyük sürüm, güncelleme, hata düzeltme. Kullanıcının kararı, 2026-11-07.
+  - İlk yayın hepsinde `1.0.0.0` olarak çıktı. DV Lib ve DV New Crafts bundan sonra `1.0.0`'dan devam eder; sonraki sürüm (`1.0.1`) yine de `1.0.0.0`'dan büyük sayılır.
+- **DV Lib'e eklenecek (fikir, 2026-11-07):** DV menüsünde kurulu olmayan DV modları da listelensin ve nereden indirileceği (Modrinth, CurseForge) gösterilsin. Sayfa adresleri onaylanınca eklenecek.
 
 ## Modlar
 

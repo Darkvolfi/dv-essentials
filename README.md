@@ -37,7 +37,7 @@ The jars are written to `<mod>/build/libs/`.
 
 ## Versions
 
-Versions are `x.y.z.a`: `x` is DV Lib's first number (DV New Crafts, which doesn't use DV Lib, has its own), `y` is an update, `z` is a small update or debugging change, and `a` is a bug fix.
+DV Lib and mods that don't use it (DV New Crafts) are versioned `x.y.z`: `x` is the major version, `y` is an update, and `z` is a bug fix or small update. Mods that need DV Lib are versioned `x.y.z.a`: `x` is DV Lib's first number, `y` is an update, `z` is a small update or debugging change, and `a` is a bug fix. The first releases were all `1.0.0.0`.
 
 ## License
 

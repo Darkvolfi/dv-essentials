@@ -112,6 +112,12 @@ Kullanıcının oyunda bulduğu hatalar ve istekleri. Nedenler kodda bulundu, he
   - Mevcut bir işaretin üstünde: düzenle, ışınlan, paylaş, kategoriye taşı, sil.
   - DV Team'in harita kancaları (`MapOverlayHook`) da bu menüye kendi seçeneklerini ekleyebilsin (ör. bu chunk'ı sahiplen).
 - **İstek: farenin üstündeki blok haritada işaretlensin.** Chunk ızgarası gibi, imlecin altındaki bloğun karesine ince bir çerçeve çizilir. Uzak yakınlaştırmada blok çok küçük kalınca chunk'ın çerçevesi de hafifçe gösterilebilir. Koordinatlar alttaki satırda zaten yazıyor.
+- **İstek: Create'in rayları ve trenleri haritada görünsün.** Başka harita modlarında olduğu gibi.
+  - Raylar kendi rengiyle, haritanın üstünde ince bir çizgi olarak çizilir. Varsayılan renk belirgin bir turuncu ya da sarı olur ve ayarlardan değiştirilebilir.
+  - Trenler simge olarak görünür ve hareket ettikçe yeri güncellenir. İmleç üstüne gelince trenin adı yazar.
+  - Create'e bağımlılık olmaz. Create kurulu değilse bu kısım hiç çalışmaz. Raylar blok kimliğiyle (`create:track`), trenler varlık türüyle tanınır; Create'in koduna dokunulmaz.
+  - Yalnızca istemcinin yüklediği chunk'lardaki raylar ve trenler görünür. Uzaktaki trenleri görmek sunucudan bilgi ister; o kısım sonraya kalır.
+  - Ayar: "Create rayları ve trenleri" aç/kapa.
 
 ### DV Science of Souls (1.0.1.0)
 - **İstek: ruh kartı tarifinde kağıt yerine DV Backpack'in boş kartı (`dvbackpack:upgrade_base`).**

@@ -70,11 +70,11 @@ M5 en büyük iş: kayıt, sunucu senkronu, envanter ekranı, elytra uçuşu iç
 Kullanıcının oyunda bulduğu hatalar ve istekleri. Nedenler kodda bulundu, henüz düzeltilmedi.
 
 ### DV Lib (1.0.2)
-- **Hata: menüde bazı modlara tıklanmıyor.** `DVMenuScreen.ModTile.refresh()` kurulu bir modu yalnızca ayar kaydı (`DVConfigScreen.register`) varsa tıklanır yapıyor. DV New Crafts'ın ayarı olmadığı için tıklanmıyor.
+- **Hata (✅ 1.0.2, 2026-11-10): menüde bazı modlara tıklanmıyor.** Artık ayarı olmayan kurulu mod bilgi kutusu (`DVModInfoPopup`) açıyor. `DVMenuScreen.ModTile.refresh()` kurulu bir modu yalnızca ayar kaydı (`DVConfigScreen.register`) varsa tıklanır yapıyor. DV New Crafts'ın ayarı olmadığı için tıklanmıyor.
   - Düzeltme: ayarı olmayan kurulu mod tıklanınca kısa bir bilgi kutusu açsın: ne yaptığı, sürümü, sayfası.
   - Ayrıca yalnızca `registerScreen` ile ekran veren bir mod da tıklanabilmeli.
   - Başka mod da tıklanmıyorsa kullanıcı hangisi olduğunu söyleyecek.
-- **Kurulu olmayan modlar için indirme bağlantıları:** `DVMods.PAGES` boş. Modrinth ve CurseForge sayfaları onaylanınca doldurulacak. Kilitli kutu sayfayı açacak, şimdilik "yakında" yazıyor.
+- **Kurulu olmayan modlar için indirme bağlantıları (✅ 1.0.2, CurseForge proje numaralarıyla):** `DVMods.PAGES` boştu. Modrinth ve CurseForge sayfaları onaylanınca doldurulacak. Kilitli kutu sayfayı açacak, şimdilik "yakında" yazıyor.
 
 ### DV Music (1.0.1.0)
 - **Hata (✅ 1.0.0.1, 2026-11-07): duraklatılan şarkı, duraklatan bir ekran (Esc menüsü, M ile dünya haritası) kapanınca kısa süre çalıp duruyordu.**
@@ -98,21 +98,21 @@ Kullanıcının oyunda bulduğu hatalar ve istekleri. Nedenler kodda bulundu, he
   - "Yeni liste" düğmesi klasörü açıp oluşturur.
 
 ### DV Map (1.0.1.0)
-- **İstek: kendi işaret kategorilerimiz.**
+- **✅ (2026-11-10) İstek: kendi işaret kategorilerimiz.**
   - Şu an kategoriler sabit bir listede (`Waypoint.Category`: General, Home, Mine, Village, Farm, Portal, Danger, Explore). İşaret listesi "My Waypoints / Automatic / Structures" bölümleriyle gruplanıyor.
   - Plan: oyuncu kendi kategorisini açabilsin: ad, renk ve isteğe bağlı simge. İşaret listesinde her kategori kendi açılır-kapanır bölümü olur.
   - Liste başlığındaki **+** yanına "yeni kategori" eklenir. Bir işaret düzenleme ekranından ya da sağ tıkla başka kategoriye taşınabilir.
   - Hazır kategoriler başlangıç olarak kalır; silinirse içindeki işaretler General'a geçer.
   - Kategoriler işaretlerle aynı dosyada, dünya başına saklanır.
-- **İstek: haritada sağ tık bir seçenek menüsü açsın.** Şu an `WorldMapScreen.mouseClicked` sağ tıkta doğrudan yeni işaret ekranını açıyor. Yeni menü:
+- **✅ (2026-11-10) İstek: haritada sağ tık bir seçenek menüsü açsın.** Şu an `WorldMapScreen.mouseClicked` sağ tıkta doğrudan yeni işaret ekranını açıyor. Yeni menü:
   - Buraya işaret koy (bugünkü davranış).
   - Buraya ışınlan: yalnızca yaratıcı modda ya da yetkiliyken, işaretlerdeki ışınlanma gibi.
   - Konumu sohbette paylaş: "x, y, z (boyut)" mesajı. Alan oyuncuda DV Map varsa mesaja tıklayınca işaret olarak eklenir.
   - Koordinatları panoya kopyala.
   - Mevcut bir işaretin üstünde: düzenle, ışınlan, paylaş, kategoriye taşı, sil.
   - DV Team'in harita kancaları (`MapOverlayHook`) da bu menüye kendi seçeneklerini ekleyebilsin (ör. bu chunk'ı sahiplen).
-- **İstek: farenin üstündeki blok haritada işaretlensin.** Chunk ızgarası gibi, imlecin altındaki bloğun karesine ince bir çerçeve çizilir. Uzak yakınlaştırmada blok çok küçük kalınca chunk'ın çerçevesi de hafifçe gösterilebilir. Koordinatlar alttaki satırda zaten yazıyor.
-- **İstek: Create'in rayları ve trenleri haritada görünsün.** Başka harita modlarında olduğu gibi.
+- **✅ (2026-11-10) İstek: farenin üstündeki blok haritada işaretlensin.** Chunk ızgarası gibi, imlecin altındaki bloğun karesine ince bir çerçeve çizilir. Uzak yakınlaştırmada blok çok küçük kalınca chunk'ın çerçevesi de hafifçe gösterilebilir. Koordinatlar alttaki satırda zaten yazıyor.
+- **✅ (2026-11-10) İstek: Create'in rayları ve trenleri haritada görünsün.** Başka harita modlarında olduğu gibi.
   - Raylar kendi rengiyle, haritanın üstünde ince bir çizgi olarak çizilir. Varsayılan renk belirgin bir turuncu ya da sarı olur ve ayarlardan değiştirilebilir.
   - Trenler simge olarak görünür ve hareket ettikçe yeri güncellenir. İmleç üstüne gelince trenin adı yazar.
   - Create'e bağımlılık olmaz. Create kurulu değilse bu kısım hiç çalışmaz. Raylar blok kimliğiyle (`create:track`), trenler varlık türüyle tanınır; Create'in koduna dokunulmaz.
@@ -120,16 +120,16 @@ Kullanıcının oyunda bulduğu hatalar ve istekleri. Nedenler kodda bulundu, he
   - Ayar: "Create rayları ve trenleri" aç/kapa.
 
 ### DV Science of Souls (1.0.1.0)
-- **İstek: ruh kartı tarifinde kağıt yerine DV Backpack'in boş kartı (`dvbackpack:upgrade_base`).**
+- **✅ (2026-11-10) İstek: ruh kartı tarifinde kağıt yerine DV Backpack'in boş kartı (`dvbackpack:upgrade_base`).**
   - Kartlar zaten DV Backpack'in kart yuvasına takılıyor, aynı tabandan yapılmaları tutarlı olur.
   - DV Backpack isteğe bağlı olduğu için tarif iki yollu olacak: DV Backpack kuruluysa boş kart, değilse kağıt. Forge'un `forge:mod_loaded` koşuluyla, DV Backpack'in kendi kartlarının tarifleri gibi.
   - Dosya: `recipes/gold_soul_charm.json` (kağıt yalnızca altın kartta var; elmas ve netherite kartlar ondan yükseltiliyor).
-- **İstek: Ruh Kömürü Bloğu.**
+- **✅ (2026-11-10) İstek: Ruh Kömürü Bloğu.**
   - Kömür bloğu gibi: 9 Ruh Kömürü → 1 blok, blok → 9 Ruh Kömürü.
   - Yakıt süresi Ruh Kömürü'nün 9 katı (3200 × 9 = 28800 tik); kömür bloğu da kömürün tam 9 katı.
   - Doku özgün çizilir ama kömür bloğuna benzer (kullanıcının kuralı: Minecraft eşyasına bağlı tasarım vanilyadan türetilebilir), ruh kömürünün koyu mavi tonlarında.
   - Yaratıcı sekmesine, kırma etiketine (kazma) ve kendi düşüş tablosuna eklenir.
-- **İstek: Ruh Tasması her canlıya takılsın ve tek kullanımlık olsun.**
+- **✅ (2026-11-10) İstek: Ruh Tasması her canlıya takılsın ve tek kullanımlık olsun.**
   - Şu an: `SoulEvents.collar` tasmayı yalnızca oyuncunun evcil hayvanına (Bağ Sunağı'nda bağlanmış ya da evcilleştirilmiş) takıyor; sahibi yoksa "not_bound" diyor. Ölünce düşen parçadaki ruh (`Soul.of`) canlının kalıcı verisini, tasma işareti dahil, taşıyor. Bu yüzden diriltilen canlı tasmasıyla geri geliyor ve tasma sonsuza kadar işe yarıyor.
   - Yeni:
     - Tasma sahibi olmayan herhangi bir canlıya takılabilir. Boss'lar ve `DVSouls`'taki yasak liste hariç; başkasının evcil hayvanına takılamaz.
@@ -164,17 +164,17 @@ Kullanıcının oyunda bulduğu hatalar ve istekleri. Nedenler kodda bulundu, he
   - Neden: Forge'un olay sistemi bir dinleyiciyi `paket.__SınıfınKısaAdı_metot_Olay` adıyla üretiyor ve bu adla önbelleğe alıyor (eventbus 6.2, `IEventListenerFactory.getUniqueName`). `LensOverlay.ModEvents.onRegisterKeys` ile `LightMarkers.ModEvents.onRegisterKeys` aynı pakette, aynı adda, aynı olayda. İkincisi birincinin dinleyicisini kullandı: ışık tuşu iki kez kaydedildi, aç/kapa tuşu hiç kaydedilmedi.
   - Düzeltme: `LightMarkers` içindeki metodun adı `onRegisterLightKey` oldu. Bütün modlar tarandı, başka çakışma yok.
 - **İstek (✅ 1.0.0.2, 2026-11-08): kırılma çubuğu akıcı dolsun.** Eskiden çatlak aşamasını (10 adım) gösteriyordu. Artık oyunun `destroyProgress` alanını (SRG `f_105193_`) okuyup kareler arasında bu tikin payını ekliyor; alan okunamazsa eski aşamalı gösterime düşüyor.
-- **İstek: sandık içeriği ayarı daha kolay bulunsun.**
+- **✅ (2026-11-10) İstek: sandık içeriği ayarı daha kolay bulunsun.**
   - Ayar aslında var: "Container contents, furnaces" (`showContents`). Kullanıcı bunun sandıklar için olduğunu anlamadı.
   - Plan: iki ayara bölünsün. **Sandık içeriği** (sandık, varil, shulker kutusu...) ayrı, **fırın ve demleme** (fırın, demleme standı, yanma ve pişme durumu) ayrı. Adlar açık olsun.
 
 ### DV Food (1.0.1.0)
-- **İstek: zararlı yemek açlık çubuğunda görünsün.**
+- **✅ (2026-11-10) İstek: zararlı yemek açlık çubuğunda görünsün.**
   - Elde tutulan yemek Açlık (Hunger) etkisi veriyorsa (çürük et, çiğ tavuk...), çubuğun yanıp sönen önizlemesi vanilyanın Açlık etkisindeki yeşil ikonlarıyla gösterilsin.
   - Zehir (Poison) veriyorsa (balon balığı, örümcek gözü, zehirli patates) önizleme zehir görünümünde yanıp sönsün; can barındaki zehir rengi gibi.
   - Etkinin ihtimali yüzde 100 değilse (çiğ tavuk %30) bu da ikon üstünde belli olsun, ya da yalnızca tooltip'te yüzde olarak yazsın. Hangisi olacağına uygularken bakılacak.
   - İkonlar vanilyanın `icons.png` dosyasından alınır (DV Food'un kuralı: doku dağıtılmaz).
-- **İstek: iksirler de can çubuğunda önizlensin** (kullanıcının isteği, 2026-11-08).
+- **✅ (2026-11-10) İstek: iksirler de can çubuğunda önizlensin** (kullanıcının isteği, 2026-11-08).
   - DV Food, elde yemek varken kazanılacak canı zaten yanıp söndürüyor. Aynısı iksirlerde de olacak (içilen, fırlatılan ve kalıcı iksirler; okla atılanlar hariç).
   - **Anında Can (Instant Health):** dolacak kalpler yanıp söner; seviye II'de daha fazla.
   - **Anında Hasar (Instant Damage):** gidecek kalpler kırmızı-siyah yanıp söner. Ölümsüz canlılarda ters çalıştığı için yalnızca oyuncuya göre gösterilir.

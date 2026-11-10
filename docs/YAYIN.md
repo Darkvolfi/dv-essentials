@@ -231,6 +231,26 @@ The library behind the DV mods. Install it together with any DV mod.
 
 ## Değişiklik listesi
 
+### DV Map 1.0.1.0
+Kendi işaret sınıfları (ad, renk, simge), haritada sağ tık menüsü (işaret koy, ışınlan, paylaş, kopyala; işaret üstünde düzenle, taşı, sil), imleç altındaki bloğa çerçeve, Create rayları ve trenleri. Eski işaret dosyası okunur ve `waypoints-1.0.0.json` olarak yedeklenir.
+Sayfalara yazılacak İngilizce metin: "Your own waypoint categories with name, colour and icon. Right-click on the map opens a menu: add a waypoint, teleport, share in chat, copy coordinates; on a waypoint also edit, move and delete. The block under the cursor is outlined. Create tracks and trains show on the world map (Create is not required). Existing waypoints are kept; the old file is backed up as waypoints-1.0.0.json."
+
+### DV Science of Souls 1.0.1.0
+Ruh Kömürü Bloğu. Altın ruh kartı DV Backpack kuruluysa boş kartla yapılır. Ruh Tasması her sahipsiz canlıya takılır (boss'lar hariç), tek kullanımlıktır ve parçayı yalnız takan kişi sunağa koyabilir.
+Sayfalara yazılacak İngilizce metin: "New Block of Soul Coal (burns nine times as long). With DV Backpack the gold soul card is made from its blank card. The Soul Collar now fits any creature without an owner, enemies too (not bosses); it works once, and only the one who put it on can lay the shard on the altar."
+
+### DV Food 1.0.1.0
+Açlık ya da zehir veren yemekte önizleme o görünümde yanıp söner. Elde tutulan iksirler ve etkili yemekler can çubuğunda önizlenir (anında can ve hasar, yenilenme, zehir, solma, emilim); yeni ayarla kapatılabilir.
+Sayfalara yazılacak İngilizce metin: "Food that gives Hunger or Poison flashes its preview in that look. Held potions and food with effects preview on the health bar: Instant Health and Damage, Regeneration, Poison, Wither and Absorption (golden apples too). A new setting turns it off."
+
+### DV Lens 1.0.1.0
+"Sandık içeriği" ve "Fırın ve demleme standı" artık ayrı ayarlar.
+Sayfalara yazılacak İngilizce metin: "Chest contents and furnaces/brewing stands are now two separate settings."
+
+### DV Lib 1.0.2
+Ayarı olmayan DV modları menüde tıklanıyor ve bilgi kutusu açıyor. Kurulu olmayan modların kutuları CurseForge sayfasını açıyor.
+Sayfalara yazılacak İngilizce metin: "DV mods without settings can be clicked in the DV menu and show a short info box. Tiles of mods you don't have open their CurseForge page."
+
 ### DV Lens 1.0.0.2
 "Toggle DV Lens" tuşu Kontroller ekranında yoktu, yerine "Show where mobs can spawn" iki kez çıkıyordu; ikisi de artık ayrı ve atanabilir.
 Kırılma çubuğu tık tık değil, akıcı doluyor.

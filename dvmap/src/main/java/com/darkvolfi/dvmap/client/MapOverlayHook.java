@@ -57,6 +57,16 @@ public interface MapOverlayHook {
         return false;
     }
 
+    /** One line of the world map's right-click menu. */
+    record MenuOption(Component name, Runnable action) {}
+
+    /**
+     * Adds lines to the right-click menu of the world map, opened on block (blockX, blockZ); {@code waypoint} is the
+     * waypoint under the cursor, or null. Called only when no hook consumed the right click in {@link #onWorldMapClick}.
+     */
+    default void addMapMenuOptions(WorldMapScreen screen, ResourceKey<Level> dimension, int blockX, int blockZ,
+                                   Waypoint waypoint, Consumer<MenuOption> add) {}
+
     /** Renders extra HUD text or indicators on the world map screen. */
     default void renderWorldMapExtra(GuiGraphics g, WorldMapScreen screen, int mouseX, int mouseY) {}
 

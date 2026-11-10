@@ -79,7 +79,12 @@
   "dvmap.screen.grid_off": "Izgara: Kapalı",
   "dvmap.screen.waypoints": "İşaretler",
   "dvmap.screen.settings": "DV Map Ayarları",
-  "dvmap.screen.hint": "Gezmek için sürükle • Yakınlaştırmak için kaydır • İşaret eklemek için sağ tıkla",
+  "dvmap.screen.hint": "Gezmek için sürükle • Yakınlaştırmak için kaydır • Seçenekler için sağ tıkla",
+  "dvmap.menu.add_here": "Buraya işaret koy",
+  "dvmap.menu.teleport_here": "Buraya ışınlan",
+  "dvmap.menu.share_here": "Konumu sohbette paylaş",
+  "dvmap.menu.copy": "Koordinatları kopyala",
+  "dvmap.menu.move": "Sınıfa taşı",
 
   "dvmap.waypoint.new_title": "Yeni İşaret Noktası",
   "dvmap.waypoint.edit_title": "İşaret Noktasını Düzenle",

@@ -1,5 +1,6 @@
 package com.darkvolfi.dvmap.client;
 
+import com.darkvolfi.dvlib.client.DVButton;
 import com.darkvolfi.dvlib.client.DVConfigScreen;
 import com.darkvolfi.dvlib.client.DVChoicePopup;
 import com.darkvolfi.dvlib.client.DVIconButton;
@@ -444,18 +445,65 @@ public class WorldMapScreen extends Screen {
             return true;
         }
         if (button == 1) {
+            openMenu(mouseX, mouseY, wx, wz, dim, findWaypointAt(mouseX, mouseY));
+            return true;
+        }
+        return false;
+    }
+
+    /** The right-click menu: actions for the waypoint under the cursor, or for the clicked block; then the hooks' lines. */
+    private void openMenu(double mouseX, double mouseY, int wx, int wz, ResourceKey<Level> dim, Waypoint wp) {
+        List<DVChoicePopup.Option<Runnable>> options = new ArrayList<>();
+        boolean canTp = WaypointManager.canTeleport(minecraft);
+        // The menu opens at the cursor: an invisible anchor there.
+        DVButton anchor = new DVButton((int) mouseX, (int) mouseY, 1, 0, Component.empty(), b -> {});
+        if (wp != null) {
+            option(options, "dvmap.waypoint.edit_short",
+                    () -> minecraft.setScreen(new WaypointEditScreen(this, wp, wp.x, wp.y, wp.z, wp.dimension)));
+            if (canTp) option(options, "dvmap.waypoint.teleport", () -> {
+                WaypointManager.teleportTo(minecraft, wp);
+                minecraft.setScreen(null);
+            });
+            option(options, "dvmap.waypoint.share", () -> {
+                WaypointShare.share(minecraft, wp);
+                minecraft.setScreen(null);
+            });
+            option(options, "dvmap.menu.move", () -> DVChoicePopup.open(anchor, WaypointEditScreen.categoryOptions(), wp.category().id, id -> {
+                wp.category = id;
+                WaypointManager.save();
+            }));
+            option(options, "dvmap.waypoint.delete", () -> WaypointManager.remove(wp));
+        } else {
+            String dimId = dim.location().toString();
             // Where you stand (or under a ceiling, like the Nether): your own height. Elsewhere: the surface,
-            // or your height for now if that chunk isn't loaded; it moves to the surface once it loads.
+            // or your height for now if that chunk isn't loaded; a waypoint moves to the surface once it loads.
             boolean here = Math.abs(wx - minecraft.player.getBlockX()) <= 1 && Math.abs(wz - minecraft.player.getBlockZ()) <= 1;
             boolean surface = !here && !minecraft.level.dimensionType().hasCeiling();
             boolean loaded = MapData.isLoaded(minecraft.level, wx, wz);
             int wy = surface && loaded ? MapData.sampleSurfaceHeight(minecraft.level, wx, wz) : minecraft.player.getBlockY();
-            WaypointEditScreen edit = new WaypointEditScreen(this, null, wx, wy, wz, dim.location().toString());
-            if (surface && !loaded) edit.autoHeight();
-            minecraft.setScreen(edit);
-            return true;
+            option(options, "dvmap.menu.add_here", () -> {
+                WaypointEditScreen edit = new WaypointEditScreen(this, null, wx, wy, wz, dimId);
+                if (surface && !loaded) edit.autoHeight();
+                minecraft.setScreen(edit);
+            });
+            if (canTp) option(options, "dvmap.menu.teleport_here", () -> {
+                WaypointManager.teleport(minecraft, dimId, wx, String.valueOf(wy), wz);
+                minecraft.setScreen(null);
+            });
+            option(options, "dvmap.menu.share_here", () -> {
+                WaypointShare.shareLocation(minecraft, wx, wy, wz, dimId);
+                minecraft.setScreen(null);
+            });
+            option(options, "dvmap.menu.copy", () -> minecraft.keyboardHandler.setClipboard(wx + " " + wy + " " + wz));
         }
-        return false;
+        for (MapOverlayHook hook : MapOverlayHook.HOOKS) {
+            hook.addMapMenuOptions(this, dim, wx, wz, wp, o -> options.add(new DVChoicePopup.Option<>(o.action(), o.name())));
+        }
+        DVChoicePopup.open(anchor, options, null, Runnable::run);
+    }
+
+    private static void option(List<DVChoicePopup.Option<Runnable>> options, String key, Runnable action) {
+        options.add(new DVChoicePopup.Option<>(action, Component.translatable(key)));
     }
 
     @Override

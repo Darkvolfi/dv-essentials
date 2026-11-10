@@ -26,7 +26,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Sharing a waypoint posts it to chat as plain text that anyone can read. Players with DV Map get a clickable
+ * Sharing a waypoint (or a bare location from the map) posts it to chat as plain text that anyone can read. Players with DV Map get a clickable
  * [+] after it, which runs a client-side command that opens the new-waypoint screen pre-filled.
  */
 @Mod.EventBusSubscriber(modid = DVMap.MOD_ID, value = Dist.CLIENT)
@@ -35,6 +35,9 @@ public final class WaypointShare {
     private static final String COMMAND = "dvmap_waypoint";
     private static final Pattern SHARED = Pattern.compile(
             Pattern.quote(TAG) + " (.{1,32}?) \\((-?\\d{1,8}), (-?\\d{1,4}), (-?\\d{1,8})\\) ([a-z0-9_.-]+:[a-z0-9_/.-]+)");
+    /** A bare location shared from the map: "x, y, z (dimension)". */
+    private static final Pattern LOCATION = Pattern.compile(
+            Pattern.quote(TAG) + " (-?\\d{1,8}), (-?\\d{1,4}), (-?\\d{1,8}) \\(([a-z0-9_.-]+:[a-z0-9_/.-]+)\\)");
 
     private WaypointShare() {}
 
@@ -43,11 +46,25 @@ public final class WaypointShare {
         mc.getConnection().sendChat(TAG + " " + wp.name + " (" + wp.x + ", " + wp.y + ", " + wp.z + ") " + wp.dimension);
     }
 
+    public static void shareLocation(Minecraft mc, int x, int y, int z, String dimension) {
+        if (mc.getConnection() == null) return;
+        mc.getConnection().sendChat(TAG + " " + x + ", " + y + ", " + z + " (" + dimension + ")");
+    }
+
     @SubscribeEvent
     public static void onChat(ClientChatReceivedEvent event) {
-        Matcher m = SHARED.matcher(event.getMessage().getString());
-        if (!m.find()) return;
-        String command = "/" + COMMAND + " " + m.group(2) + " " + m.group(3) + " " + m.group(4) + " " + m.group(5) + " " + m.group(1);
+        String text = event.getMessage().getString();
+        String command;
+        Matcher m = SHARED.matcher(text);
+        Matcher loc = LOCATION.matcher(text);
+        if (loc.find()) {
+            String name = Component.translatable("dvmap.waypoint.default_name").getString();
+            command = "/" + COMMAND + " " + loc.group(1) + " " + loc.group(2) + " " + loc.group(3) + " " + loc.group(4) + " " + name;
+        } else if (m.find()) {
+            command = "/" + COMMAND + " " + m.group(2) + " " + m.group(3) + " " + m.group(4) + " " + m.group(5) + " " + m.group(1);
+        } else {
+            return;
+        }
         Component add = Component.literal(" [+]").withStyle(s -> s.withColor(ChatFormatting.GREEN)
                 .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, command))
                 .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable("dvmap.waypoint.share.add"))));

@@ -79,7 +79,12 @@
   "dvmap.screen.grid_off": "Grid: Off",
   "dvmap.screen.waypoints": "Waypoints",
   "dvmap.screen.settings": "DV Map Settings",
-  "dvmap.screen.hint": "Drag to pan • Scroll to zoom • Right-click to add a waypoint",
+  "dvmap.screen.hint": "Drag to pan • Scroll to zoom • Right-click for options",
+  "dvmap.menu.add_here": "Add waypoint here",
+  "dvmap.menu.teleport_here": "Teleport here",
+  "dvmap.menu.share_here": "Share location in chat",
+  "dvmap.menu.copy": "Copy coordinates",
+  "dvmap.menu.move": "Move to category",
 
   "dvmap.waypoint.new_title": "New Waypoint",
   "dvmap.waypoint.edit_title": "Edit Waypoint",

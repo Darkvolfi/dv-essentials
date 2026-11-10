@@ -46,8 +46,22 @@ public final class DVMods {
     /** Every DV mod, installed or not, in menu order. Each has a logo in assets/dvlib/textures/gui/mods. */
     public static final List<String> KNOWN = List.of("dvzoom", "dvfood", "dvlens", "dvvein", "dvslots", "dvdark", "dvmap", "dvteam", "dvgrave", "dvmusic", "dvbackpack", "dvnewcrafts", "dvsouls");
 
-    /** Download pages, once the mods are published; until then the menu says "coming soon". */
-    private static final Map<String, String> PAGES = Map.of();
+    /** Download pages (CurseForge project ids, which redirect to the mod's page). Without one the menu says "coming soon". */
+    private static final String CURSEFORGE = "https://www.curseforge.com/projects/";
+    private static final Map<String, String> PAGES = Map.ofEntries(
+            Map.entry("dvzoom", CURSEFORGE + "1786955"),
+            Map.entry("dvfood", CURSEFORGE + "1786958"),
+            Map.entry("dvlens", CURSEFORGE + "1786960"),
+            Map.entry("dvvein", CURSEFORGE + "1786964"),
+            Map.entry("dvslots", CURSEFORGE + "1786931"),
+            Map.entry("dvdark", CURSEFORGE + "1787375"),
+            Map.entry("dvmap", CURSEFORGE + "1786917"),
+            Map.entry("dvteam", CURSEFORGE + "1786933"),
+            Map.entry("dvgrave", CURSEFORGE + "1786939"),
+            Map.entry("dvmusic", CURSEFORGE + "1787394"),
+            Map.entry("dvbackpack", CURSEFORGE + "1786937"),
+            Map.entry("dvnewcrafts", CURSEFORGE + "1787404"),
+            Map.entry("dvsouls", CURSEFORGE + "1786946"));
 
     private static final Map<String, Mod> MODS = new TreeMap<>();
     /** Mods whose tile opens their own screen (e.g. a music player) instead of the settings. */

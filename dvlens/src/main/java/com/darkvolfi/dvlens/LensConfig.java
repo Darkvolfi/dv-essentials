@@ -16,6 +16,7 @@ public final class LensConfig {
     public static final ForgeConfigSpec.BooleanValue SHOW_REDSTONE;
     public static final ForgeConfigSpec.BooleanValue SHOW_SPAWNER;
     public static final ForgeConfigSpec.BooleanValue SHOW_CONTENTS;
+    public static final ForgeConfigSpec.BooleanValue SHOW_FURNACES;
     public static final ForgeConfigSpec.BooleanValue SHOW_EFFECTS;
     public static final ForgeConfigSpec.BooleanValue SHOW_DETAILS;
     public static final ForgeConfigSpec.BooleanValue SHOW_BREAK_PROGRESS;
@@ -51,8 +52,10 @@ public final class LensConfig {
                 .define("showRedstone", true);
         SHOW_SPAWNER = b.comment("Show which mob a spawner spawns.")
                 .define("showSpawner", true);
-        SHOW_CONTENTS = b.comment("Show what's inside chests, furnaces, brewing stands and other containers, and how far they are (needs DV Lens on the server).")
+        SHOW_CONTENTS = b.comment("Show what's inside chests, barrels, shulker boxes and other containers (needs DV Lens on the server).")
                 .define("showContents", true);
+        SHOW_FURNACES = b.comment("Show what's in furnaces and brewing stands, how far along they are and their fuel (needs DV Lens on the server).")
+                .define("showFurnaces", true);
         SHOW_EFFECTS = b.comment("Show the potion effects on a mob (needs DV Lens on the server).")
                 .define("showEffects", true);
         SHOW_DETAILS = b.comment("Show block and entity details: note block note, unstable TNT, honey and bees in a hive, painting title, item frame item, armor stand gear, command block command.")

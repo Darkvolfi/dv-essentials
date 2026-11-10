@@ -130,7 +130,8 @@ public class DVMenuScreen extends Screen {
                 tip.append(Component.literal("\n")).append(update.copy().withStyle(s -> s.withBold(false).withColor(ChatFormatting.GREEN)));
             }
             setTooltip(Tooltip.create(tip));
-            active = installed ? mod != null && matches() : DVMods.page(modId) != null;
+            // Installed mods are always clickable: settings, their own screen, or an info box.
+            active = installed ? matches() : DVMods.page(modId) != null;
         }
 
         @Override
@@ -139,6 +140,8 @@ public class DVMenuScreen extends Screen {
                 Minecraft.getInstance().setScreen(DVMods.screen(modId).apply(DVMenuScreen.this));
             } else if (mod != null) {
                 Minecraft.getInstance().setScreen(new DVConfigScreen(DVMenuScreen.this, modId, mod.clientSpec(), mod.serverSpec(), mod.onSave(), query));
+            } else if (installed) {
+                Minecraft.getInstance().setScreen(new DVModInfoPopup(this, modId));
             } else if (DVMods.page(modId) != null) {
                 ConfirmLinkScreen.confirmLinkNow(DVMods.page(modId), DVMenuScreen.this, true);
             }

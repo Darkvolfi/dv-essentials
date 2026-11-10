@@ -126,9 +126,11 @@ record LensInfo(ItemStack icon, LivingEntity face, List<Component> lines, List<B
         BlockInfoReply server = ServerInfo.get(pos);
         if (LensConfig.SHOW_DETAILS.get()) blockDetails(state, server, lines, bars);
         List<ItemStack> items = List.of();
-        if (LensConfig.SHOW_CONTENTS.get() && server != null) {
-            items = server.items();
-            progressBars(server, lines, bars);
+        if (server != null) {
+            // The server sends fuel only for furnaces and brewing stands (-1 otherwise).
+            boolean processing = server.fuel() >= 0;
+            if (processing ? LensConfig.SHOW_FURNACES.get() : LensConfig.SHOW_CONTENTS.get()) items = server.items();
+            if (processing && LensConfig.SHOW_FURNACES.get()) progressBars(server, lines, bars);
         }
         if (LensConfig.SHOW_MACHINES.get() && server != null) machineBars(server.machine(), lines, bars);
 

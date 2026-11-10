@@ -7,6 +7,7 @@ public final class FoodConfig {
     public static final ForgeConfigSpec.BooleanValue SHOW_SATURATION;
     public static final ForgeConfigSpec.BooleanValue SHOW_PREVIEW;
     public static final ForgeConfigSpec.BooleanValue SHOW_HEALTH_PREVIEW;
+    public static final ForgeConfigSpec.BooleanValue SHOW_EFFECT_PREVIEW;
     public static final ForgeConfigSpec.BooleanValue SHOW_EXHAUSTION;
     public static final ForgeConfigSpec.BooleanValue SHOW_TOOLTIP;
     public static final ForgeConfigSpec.BooleanValue SHOW_EFFECTS;
@@ -19,6 +20,8 @@ public final class FoodConfig {
                 .define("showPreview", true);
         SHOW_HEALTH_PREVIEW = b.comment("While holding food, flash the health it would restore through regeneration.")
                 .define("showHealthPreview", true);
+        SHOW_EFFECT_PREVIEW = b.comment("While holding a potion or a food with effects, flash the hearts it would heal, remove or add (absorption).")
+                .define("showEffectPreview", true);
         SHOW_EXHAUSTION = b.comment("Show exhaustion (progress to the next hunger loss) behind the hunger bar.")
                 .define("showExhaustion", true);
         SHOW_TOOLTIP = b.comment("Show hunger and saturation icons in food tooltips.")

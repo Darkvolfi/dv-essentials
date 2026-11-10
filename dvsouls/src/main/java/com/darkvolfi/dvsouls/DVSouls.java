@@ -121,6 +121,17 @@ public class DVSouls {
         }
     });
 
+    /** Nine soul coal, like the game's coal block: it burns nine times as long. */
+    public static final RegistryObject<Block> SOUL_COAL_BLOCK = BLOCKS.register("soul_coal_block",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.COAL_BLOCK)));
+    public static final RegistryObject<Item> SOUL_COAL_BLOCK_ITEM = ITEMS.register("soul_coal_block",
+            () -> new BlockItem(SOUL_COAL_BLOCK.get(), new Item.Properties()) {
+                @Override
+                public int getBurnTime(ItemStack stack, @Nullable RecipeType<?> recipeType) {
+                    return 28800;
+                }
+            });
+
     private static ForgeFlowingFluid.Properties pureSoul() {
         return new ForgeFlowingFluid.Properties(PURE_SOUL_TYPE, PURE_SOUL, FLOWING_PURE_SOUL)
                 .bucket(PURE_SOUL_BUCKET).block(PURE_SOUL_BLOCK).slopeFindDistance(2).levelDecreasePerBlock(2).tickRate(15);
@@ -238,6 +249,7 @@ public class DVSouls {
                     output.accept(PURE_SOUL_BUCKET.get());
                     output.accept(PURE_SOUL_BOTTLE.get());
                     output.accept(SOUL_COAL.get());
+                    output.accept(SOUL_COAL_BLOCK_ITEM.get());
                     output.accept(BINDING_ALTAR.get());
                     output.accept(SOUL_ALTAR.get());
                     for (RegistryObject<SoulFurnace.Block> furnace : FURNACES.values()) output.accept(furnace.get());

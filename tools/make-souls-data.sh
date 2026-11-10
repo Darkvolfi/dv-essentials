@@ -72,7 +72,7 @@ w $D/loot_tables/blocks/soul_altar.json <<EOF
   "conditions": [{"condition": "minecraft:survives_explosion"}]}]}
 EOF
 w $R/data/minecraft/tags/blocks/mineable/pickaxe.json <<EOF
-{"replace": false, "values": ["$M:soul_altar", "$M:binding_altar", "$M:soul_furnace", "$M:soul_smoker", "$M:soul_blast_furnace", "$M:soul_fuser", "$M:soul_distiller", "$M:soul_refiner"]}
+{"replace": false, "values": ["$M:soul_altar", "$M:binding_altar", "$M:soul_furnace", "$M:soul_smoker", "$M:soul_blast_furnace", "$M:soul_fuser", "$M:soul_distiller", "$M:soul_refiner", "$M:soul_coal_block"]}
 EOF
 
 # ---------- the Soul Furnace, Soul Smoker and Soul Blast Furnace (the game's ones in blackstone, burning soul fire, with a
@@ -255,9 +255,17 @@ w $D/recipes/soul_distiller.json <<EOF2
          "C": {"item": "minecraft:cauldron"}, "B": {"item": "minecraft:polished_blackstone"}},
  "result": {"item": "$M:soul_distiller"}}
 EOF2
+# The top is DV Backpack's blank card when it is installed, paper otherwise.
 w $D/recipes/gold_soul_charm.json <<EOF2
 {"type": "minecraft:crafting_shaped", "category": "misc", "pattern": [" P ", "GAG", " G "],
+ "conditions": [{"type": "forge:not", "value": {"type": "forge:mod_loaded", "modid": "dvbackpack"}}],
  "key": {"P": {"item": "minecraft:paper"}, "G": {"item": "minecraft:gold_ingot"}, "A": {"item": "minecraft:amethyst_shard"}},
+ "result": {"item": "$M:gold_soul_charm"}}
+EOF2
+w $D/recipes/gold_soul_charm_card.json <<EOF2
+{"type": "minecraft:crafting_shaped", "category": "misc", "pattern": [" P ", "GAG", " G "],
+ "conditions": [{"type": "forge:mod_loaded", "modid": "dvbackpack"}],
+ "key": {"P": {"item": "dvbackpack:upgrade_base"}, "G": {"item": "minecraft:gold_ingot"}, "A": {"item": "minecraft:amethyst_shard"}},
  "result": {"item": "$M:gold_soul_charm"}}
 EOF2
 # The next tiers keep the charm's essences: diamonds round a gold charm, then netherite at the smithing table.
@@ -480,6 +488,31 @@ w $D/recipes/soul_coal.json <<EOF
 {"type": "minecraft:crafting_shapeless", "category": "misc",
  "ingredients": [{"item": "$M:pure_soul_bottle"}, {"tag": "minecraft:coals"}, {"tag": "minecraft:coals"}, {"tag": "minecraft:coals"}, {"tag": "minecraft:coals"}],
  "result": {"item": "$M:soul_coal", "count": 4}}
+EOF
+# The Block of Soul Coal: nine soul coal, like the game's coal block (made by tools/make-soul-coal-block-texture.ps1).
+w $A/models/block/soul_coal_block.json <<EOF
+{"parent": "minecraft:block/cube_all", "textures": {"all": "$M:block/soul_coal_block"}}
+EOF
+w $A/blockstates/soul_coal_block.json <<EOF
+{"variants": {"": {"model": "$M:block/soul_coal_block"}}}
+EOF
+w $A/models/item/soul_coal_block.json <<EOF
+{"parent": "$M:block/soul_coal_block"}
+EOF
+w $D/loot_tables/blocks/soul_coal_block.json <<EOF
+{"type": "minecraft:block", "pools": [{"rolls": 1, "bonus_rolls": 0,
+  "entries": [{"type": "minecraft:item", "name": "$M:soul_coal_block"}],
+  "conditions": [{"condition": "minecraft:survives_explosion"}]}]}
+EOF
+w $D/recipes/soul_coal_block.json <<EOF
+{"type": "minecraft:crafting_shaped", "category": "building", "pattern": ["CCC", "CCC", "CCC"],
+ "key": {"C": {"item": "$M:soul_coal"}},
+ "result": {"item": "$M:soul_coal_block"}}
+EOF
+w $D/recipes/soul_coal_from_block.json <<EOF
+{"type": "minecraft:crafting_shapeless", "category": "misc",
+ "ingredients": [{"item": "$M:soul_coal_block"}],
+ "result": {"item": "$M:soul_coal", "count": 9}}
 EOF
 
 # ---------- creatures no jar or collar can hold

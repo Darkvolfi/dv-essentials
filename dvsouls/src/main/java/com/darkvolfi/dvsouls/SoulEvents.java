@@ -89,15 +89,17 @@ public final class SoulEvents {
         return InteractionResult.SUCCESS;
     }
 
-    /** A collar goes only on a creature that is already the player's (bound at the Binding Altar, or tamed); it lets it come back after death. */
+    /**
+     * A collar goes on any creature that has no owner (an enemy too) or is the player's own, except the ones no jar can
+     * hold. It lets the creature come back once after death, and only for the one who put it on.
+     */
     private static InteractionResult collar(Player player, ItemStack collar, LivingEntity target) {
-        if (!(target instanceof Mob mob)) return deny(player, "dvsouls.collar.cannot");
+        if (!(target instanceof Mob mob) || uncapturable(mob)) return deny(player, "dvsouls.collar.cannot");
         UUID owner = Pets.anyOwner(mob);
-        if (owner == null) return deny(player, "dvsouls.collar.not_bound");
-        if (!owner.equals(player.getUUID())) return deny(player, "dvsouls.capture.not_yours");
+        if (owner != null && !owner.equals(player.getUUID())) return deny(player, "dvsouls.capture.not_yours");
         if (Pets.collared(mob)) return deny(player, "dvsouls.collar.already");
         if (player.level() instanceof ServerLevel level) {
-            Pets.putCollar(mob);
+            Pets.putCollar(mob, player);
             if (!player.getAbilities().instabuild) collar.shrink(1);
             level.sendParticles(ParticleTypes.HEART, mob.getX(), mob.getY(1), mob.getZ(), 6, 0.3, 0.3, 0.3, 0);
             player.displayClientMessage(Component.translatable("dvsouls.collar.bound", mob.getName()), true);
@@ -168,14 +170,16 @@ public final class SoulEvents {
     @SubscribeEvent
     public static void onDeath(LivingDeathEvent event) {
         LivingEntity entity = event.getEntity();
-        UUID owner = Pets.anyOwner(entity);
-        if (owner == null || !Pets.collared(entity) || !(entity.level() instanceof ServerLevel level)) return;
-        ItemStack shard = Soul.put(new ItemStack(DVSouls.COLLAR_SHARD.get()), Soul.healed(Soul.of(entity)));
+        if (!Pets.collared(entity) || !(entity.level() instanceof ServerLevel level)) return;
+        UUID owner = Pets.collarOwner(entity);
+        CompoundTag soul = Soul.of(entity);
+        Pets.spendCollar(soul, owner); // one use: whatever is brought back from this shard has no collar
+        ItemStack shard = Soul.put(new ItemStack(DVSouls.COLLAR_SHARD.get()), Soul.healed(soul));
         ItemEntity drop = new ItemEntity(level, entity.getX(), entity.getY(0.5), entity.getZ(), shard);
         drop.setUnlimitedLifetime();
         drop.setInvulnerable(true);
         level.addFreshEntity(drop);
-        Player player = level.getPlayerByUUID(owner);
+        Player player = owner == null ? null : level.getPlayerByUUID(owner);
         if (player != null) player.sendSystemMessage(Component.translatable("dvsouls.pet.died", entity.getName()));
     }
 }

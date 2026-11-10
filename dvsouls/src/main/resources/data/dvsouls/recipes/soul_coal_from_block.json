@@ -1,0 +1,3 @@
+{"type": "minecraft:crafting_shapeless", "category": "misc",
+ "ingredients": [{"item": "dvsouls:soul_coal_block"}],
+ "result": {"item": "dvsouls:soul_coal", "count": 9}}

@@ -26,6 +26,7 @@ public final class Pets {
     private static final String OWNER = "dvsouls:owner";
     private static final String MODE = "dvsouls:mode";
     private static final String COLLARED = "dvsouls:collared";
+    private static final String COLLAR_OWNER = "dvsouls:collar_owner";
 
     private Pets() {}
 
@@ -62,8 +63,33 @@ public final class Pets {
         return entity.getPersistentData().getBoolean(COLLARED);
     }
 
-    public static void putCollar(Entity entity) {
+    /** Puts the collar on, remembering who put it on: only they can lay the shard on a Soul Altar. */
+    public static void putCollar(Entity entity, Player wearer) {
         entity.getPersistentData().putBoolean(COLLARED, true);
+        entity.getPersistentData().putUUID(COLLAR_OWNER, wearer.getUUID());
+    }
+
+    /** Whose collar it wears: whoever put it on, or for an older collar the creature's own owner. */
+    public static UUID collarOwner(Entity entity) {
+        var data = entity.getPersistentData();
+        return data.hasUUID(COLLAR_OWNER) ? data.getUUID(COLLAR_OWNER) : anyOwner(entity);
+    }
+
+    /**
+     * A collar is spent when its creature dies: the soul kept for the shard no longer wears it, so a creature brought
+     * back comes without one. The one it belonged to is kept beside the soul, for the altar.
+     */
+    public static void spendCollar(CompoundTag soul, UUID collarOwner) {
+        CompoundTag forge = soul.getCompound("Data").getCompound("ForgeData");
+        forge.remove(COLLARED);
+        forge.remove(COLLAR_OWNER);
+        if (collarOwner != null) soul.putUUID(COLLAR_OWNER, collarOwner);
+    }
+
+    /** Who may lay a shard's soul on the altar: the one whose collar it wore, else (older shards) its owner. */
+    public static UUID shardOwner(CompoundTag soul) {
+        if (soul == null) return null;
+        return soul.hasUUID(COLLAR_OWNER) ? soul.getUUID(COLLAR_OWNER) : owner(soul);
     }
 
     /** Both are this player's: the player, or a pet or tamed creature of theirs. */

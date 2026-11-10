@@ -95,6 +95,8 @@ public final class VeinMiner {
             for (BlockPos pos : vein.subList(1, vein.size())) { // first entry is the block being broken now
                 if (!canContinue(player, player.getMainHandItem())) break;
                 if (isBlacklisted(player, level.getBlockState(pos))) continue; // shapes sweep through other blocks too
+                // Spawn protection and the world border apply to every block of the vein, not only the first.
+                if (!level.mayInteract(player, pos) || !level.getWorldBorder().isWithinBounds(pos)) continue;
                 if (player.gameMode.destroyBlock(pos) && !player.isCreative()) {
                     player.causeFoodExhaustion(VeinConfig.EXHAUSTION_PER_BLOCK.get().floatValue());
                 }
@@ -120,13 +122,22 @@ public final class VeinMiner {
         return player.getFoodData().getFoodLevel() > 0;
     }
 
+    private static boolean giving;
+
     /** Drops and XP from the vein go straight into the inventory (what doesn't fit drops at the player's feet). */
     @SubscribeEvent
     public static void onEntityJoin(EntityJoinLevelEvent event) {
-        if (collector == null || event.getLevel() != collectLevel) return;
+        if (collector == null || giving || event.getLevel() != collectLevel) return;
         if (!collectBox.contains(event.getEntity().position())) return;
         if (event.getEntity() instanceof ItemEntity item) {
-            ItemHandlerHelper.giveItemToPlayer(collector, item.getItem().copy());
+            // With a full inventory this drops the rest at the player's feet, which fires this event again: the
+            // flag lets that drop through instead of trying to give it once more, for ever.
+            giving = true;
+            try {
+                ItemHandlerHelper.giveItemToPlayer(collector, item.getItem().copy());
+            } finally {
+                giving = false;
+            }
             event.setCanceled(true);
         } else if (event.getEntity() instanceof ExperienceOrb orb) {
             collector.giveExperiencePoints(orb.getValue());

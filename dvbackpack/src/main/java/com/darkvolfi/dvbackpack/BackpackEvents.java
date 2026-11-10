@@ -106,7 +106,9 @@ public final class BackpackEvents {
             entity.discard();
             event.setCanceled(true);
         } else {
-            entity.setItem(rest); // the rest goes into the inventory the usual way
+            // The game goes on with this very stack object (it took it before the event), so shrink it in place:
+            // replacing the entity's stack would leave the full old one to be picked up as well.
+            stack.setCount(rest.getCount());
         }
     }
 

@@ -13,6 +13,8 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.ExperienceOrb;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -84,6 +86,8 @@ public final class GraveEvents {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         Pending pending = PENDING.get(player.getUUID());
         if (pending == null) return;
+        // With keepInventory the player keeps their levels; a grave holding them as well would hand them out twice.
+        if (player.level().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY)) return;
         switch (GraveConfig.XP.get()) {
             case ALL -> pending.xp = totalPoints(player);
             case VANILLA -> pending.xp = event.getDroppedExperience();
@@ -111,7 +115,12 @@ public final class GraveEvents {
 
         ServerLevel level = player.serverLevel();
         BlockPos pos = findSpot(level, BlockPos.containing(pending.deathPos));
-        if (pos == null) return; // nowhere to put it: let everything drop as usual
+        if (pos == null) {
+            // Nowhere to put it: everything drops as usual, and so does the experience taken for the grave.
+            if (pending.xp > 0) ExperienceOrb.award(level, pending.deathPos, pending.xp);
+            pending.xp = 0;
+            return;
+        }
         event.getDrops().clear();
         level.setBlockAndUpdate(pos, DVGrave.GRAVE.get().defaultBlockState()
                 .setValue(GraveBlock.FACING, player.getDirection().getOpposite()));

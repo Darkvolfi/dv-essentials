@@ -20,6 +20,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -130,6 +131,7 @@ public class WorldMapScreen extends Screen {
         buttons.add(toggle(MapIcons.HIDE, "dvmap.bar.hide_me", MapConfig.HIDE_ME, needServer, null));
         // Hidden on the map means the name is hidden too: shown as on and locked.
         buttons.add(toggle(MapIcons.TAG, "dvmap.bar.hide_name", MapConfig.HIDE_MY_NAME, needServer, MapConfig.HIDE_ME));
+        if (CreateTrains.installed()) buttons.add(toggle(MapIcons.TRAIN, "dvmap.bar.create_trains", MapConfig.SHOW_CREATE_TRAINS, null, null));
         DVIconButton export = new DVIconButton(0, 0, TOGGLE_SIZE, MapIcons.IMAGE, Component.translatable("dvmap.bar.export"),
                 () -> MapExport.export(minecraft));
         export.setTooltip(Tooltip.create(Component.translatable("dvmap.bar.export").withStyle(ChatFormatting.BOLD)
@@ -292,6 +294,7 @@ public class WorldMapScreen extends Screen {
         for (MapOverlayHook hook : MapOverlayHook.HOOKS) {
             hook.renderChunkOverlay(g, dim, minCx, minCz, maxCx, maxCz, cx, cy, viewX, viewZ, zoom, false);
         }
+        CreateTrains.renderTracks(g, this, minecraft.level, minCx, minCz, maxCx, maxCz, zoom);
 
         // 4. Hovered block frame; its chunk faintly, a little stronger when blocks get too small to see
         if (mouseY >= top && mouseY < bottom) {
@@ -344,6 +347,8 @@ public class WorldMapScreen extends Screen {
             }
         }
         MapMarkers.drawAll(g, markers, points, 8,Mth.lerp(partialTick, minecraft.player.yo, minecraft.player.getY()));
+        Entity train = CreateTrains.renderTrains(g, this, minecraft.level, partialTick, mouseX, mouseY);
+        if (hovered != null) train = null;
         for (int i = 0; i < markers.size(); i++) {
             MapMarkers.Marker m = markers.get(i);
             if (m.kind() == MapMarkers.Kind.PLAYER && m.name() != null && m != hovered) {
@@ -356,7 +361,7 @@ public class WorldMapScreen extends Screen {
                 Math.round(worldToScreenY(minecraft.player.getZ())), minecraft.player.getViewYRot(partialTick) + 180.0f);
 
         // 8. Coordinates of the hovered square, next to it
-        if (mouseY >= top && mouseY < bottom && hovered == null) {
+        if (mouseY >= top && mouseY < bottom && hovered == null && train == null) {
             int wx = Mth.floor(screenToWorldX(mouseX));
             int wz = Mth.floor(screenToWorldZ(mouseY));
             String wy = MapData.isLoaded(minecraft.level, wx, wz)
@@ -369,13 +374,13 @@ public class WorldMapScreen extends Screen {
             g.drawString(font, coords, lx, ly, 0xFFE6E6F0);
         }
 
-        // 9. Name of the hovered creature or player, above everything
-        if (hovered != null) {
-            Component name = MapMarkers.nameOf(hovered);
+        // 9. Name of the hovered creature, player or train, above everything
+        if (hovered != null || train != null) {
+            Component name = hovered != null ? MapMarkers.nameOf(hovered) : train.getDisplayName();
             if (name != null) {
                 int w = font.width(name);
-                int nx = hoveredPoint[0] - w / 2;
-                int ny = hoveredPoint[1] - 18;
+                int nx = (hovered != null ? hoveredPoint[0] : Math.round(worldToScreenX(train.getX()))) - w / 2;
+                int ny = (hovered != null ? hoveredPoint[1] : Math.round(worldToScreenY(train.getZ()))) - 18;
                 g.fill(nx - 3, ny - 2, nx + w + 3, ny + 10, 0xCC15121C);
                 g.drawString(font, name, nx, ny, 0xFFFFFFFF);
             }

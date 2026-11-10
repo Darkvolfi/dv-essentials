@@ -25,6 +25,7 @@ import net.minecraftforge.event.entity.living.LivingChangeTargetEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -167,7 +168,9 @@ public final class SoulEvents {
     }
 
     /** A collared pet that dies leaves a shard of its collar, which keeps its soul (healed) and never despawns; the Soul Altar brings it back. */
-    @SubscribeEvent
+    // Last in line: if another mod cancels the death (a totem-like rescue), the creature lives on with its collar and no
+    // shard must drop, or every such "death" would make another one.
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onDeath(LivingDeathEvent event) {
         LivingEntity entity = event.getEntity();
         if (!Pets.collared(entity) || !(entity.level() instanceof ServerLevel level)) return;
@@ -175,7 +178,14 @@ public final class SoulEvents {
         CompoundTag soul = Soul.of(entity);
         Pets.spendCollar(soul, owner); // one use: whatever is brought back from this shard has no collar
         ItemStack shard = Soul.put(new ItemStack(DVSouls.COLLAR_SHARD.get()), Soul.healed(soul));
-        ItemEntity drop = new ItemEntity(level, entity.getX(), entity.getY(0.5), entity.getZ(), shard);
+        // A creature that fell out of the world leaves its shard hanging at the bottom of it instead of falling on.
+        boolean inVoid = entity.getY() < level.getMinBuildHeight();
+        double y = inVoid ? level.getMinBuildHeight() + 1 : entity.getY(0.5);
+        ItemEntity drop = new ItemEntity(level, entity.getX(), y, entity.getZ(), shard);
+        if (inVoid) {
+            drop.setNoGravity(true);
+            drop.setDeltaMovement(0, 0, 0);
+        }
         drop.setUnlimitedLifetime();
         drop.setInvulnerable(true);
         level.addFreshEntity(drop);

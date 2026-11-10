@@ -2,6 +2,7 @@
   "dvfood.config.showSaturation": "Doygunluk kenarı",
   "dvfood.config.showPreview": "Yemek önizlemesi",
   "dvfood.config.showHealthPreview": "Can önizlemesi",
+  "dvfood.config.showEffectPreview": "İksir ve etki önizlemesi",
   "dvfood.config.showExhaustion": "Yorgunluk şeridi",
   "dvfood.config.showTooltip": "Yemek tooltip'i",
   "dvfood.config.showEffects": "Yemek etkileri tooltip'te"

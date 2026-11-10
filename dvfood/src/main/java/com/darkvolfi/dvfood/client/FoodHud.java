@@ -3,6 +3,9 @@ package com.darkvolfi.dvfood.client;
 import com.darkvolfi.dvfood.DVFood;
 import com.darkvolfi.dvfood.FoodConfig;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.datafixers.util.Pair;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -91,9 +94,14 @@ public final class FoodHud {
 
         if (held != null) {
             int newFood = Math.min(20, foodLevel + held.getNutrition());
-            g.setColor(1f, 1f, 1f, pulse());
+            // Harmful food: the vanilla Hunger-effect icons (u=88/97), tinted green when it also poisons.
+            boolean hunger = hasFoodEffect(held, MobEffects.HUNGER);
+            boolean poison = hasFoodEffect(held, MobEffects.POISON);
+            int previewU = hunger ? 88 : iconU + 36;
+            if (poison) g.setColor(0.55f, 0.8f, 0.25f, pulse());
+            else g.setColor(1f, 1f, 1f, pulse());
             for (int i = 0; i < 10; i++) {
-                int u = iconFor(i, foodLevel, newFood, iconU + 36, iconU + 45);
+                int u = iconFor(i, foodLevel, newFood, previewU, previewU + 9);
                 if (u >= 0) g.blit(ICONS, left - i * 8 - 9, top, u, 27, 9, 9);
             }
             g.setColor(1f, 1f, 1f, 1f);
@@ -118,32 +126,63 @@ public final class FoodHud {
     }
 
     private static void renderHealthPreview(GuiGraphics g, LocalPlayer player, int left) {
-        if (!FoodConfig.SHOW_HEALTH_PREVIEW.get()) return;
+        boolean foodOn = FoodConfig.SHOW_HEALTH_PREVIEW.get();
+        boolean effectsOn = FoodConfig.SHOW_EFFECT_PREVIEW.get();
+        if (!foodOn && !effectsOn) return;
         FoodProperties held = heldFood(player);
-        if (held == null) return;
 
         float maxHealth = (float) player.getAttributeValue(Attributes.MAX_HEALTH);
-        float gain = HealthEstimate.healthFromEating(player.getFoodData(), held, player.getHealth(), maxHealth);
+        float foodGain = foodOn && held != null
+                ? HealthEstimate.healthFromEating(player.getFoodData(), held, player.getHealth(), maxHealth) : 0;
+        EffectPreview fx = effectsOn ? EffectPreview.of(player, held, player.getHealth(), maxHealth) : null;
         int health = Mth.ceil(player.getHealth());
-        int newHealth = Math.min(Mth.ceil(player.getHealth() + gain), (int) maxHealth);
-        if (newHealth <= health) return;
+        int newHealth = Math.min(Mth.ceil(player.getHealth() + foodGain) + (fx == null ? 0 : fx.gain), (int) maxHealth);
+        int loss = fx == null ? 0 : fx.loss;
+        int absorb = fx == null ? 0 : fx.absorption;
+        if (newHealth <= health && loss == 0 && absorb == 0) return;
 
         // Same row maths as Gui.renderHearts.
-        int maxHearts = Math.max((int) maxHealth, health);
-        int rows = Mth.ceil((maxHearts + Mth.ceil(player.getAbsorptionAmount())) / 2.0f / 10.0f);
+        int maxHp = Math.max((int) maxHealth, health);
+        int currentAbsorb = Mth.ceil(player.getAbsorptionAmount());
+        int rows = Mth.ceil((maxHp + currentAbsorb + absorb) / 2.0f / 10.0f);
         int rowHeight = Math.max(10 - (rows - 2), 3);
         int v = player.level().getLevelData().isHardcore() ? 45 : 0;
         int heartIndex = player.hasEffect(MobEffects.POISON) ? 4 : player.hasEffect(MobEffects.WITHER) ? 6 : 2;
         int fullU = 16 + heartIndex * 2 * 9;
+        float pulse = pulse();
 
-        g.setColor(1f, 1f, 1f, pulse());
-        for (int i = 0; i < Mth.ceil(maxHearts / 2.0f); i++) {
-            int u = iconFor(i, health, newHealth, fullU, fullU + 9);
-            if (u < 0) continue;
-            int x = left + (i % 10) * 8;
-            int y = heartsTop - (i / 10) * rowHeight;
-            g.blit(ICONS, x, y, u, v, 9, 9);
+        if (newHealth > health) {
+            g.setColor(1f, 1f, 1f, pulse);
+            for (int i = 0; i < Mth.ceil(maxHp / 2.0f); i++) {
+                int u = iconFor(i, health, newHealth, fullU, fullU + 9);
+                if (u >= 0) g.blit(ICONS, left + (i % 10) * 8, heartsTop - (i / 10) * rowHeight, u, v, 9, 9);
+            }
         }
+        if (loss > 0) {
+            // Dark red overlay on the part of the hearts that would go away.
+            int after = Math.max(health - loss, 0);
+            g.setColor(0.25f, 0.0f, 0.0f, pulse);
+            for (int i = 0; i < Mth.ceil(Math.min(health, maxHp) / 2.0f); i++) {
+                int low = i * 2 + 1, high = i * 2 + 2;
+                boolean lowLost = low > after && low <= health;
+                boolean highLost = high > after && high <= health;
+                int x = left + (i % 10) * 8;
+                int y = heartsTop - (i / 10) * rowHeight;
+                if (lowLost && highLost) g.blit(ICONS, x, y, fullU, v, 9, 9);
+                else if (lowLost) g.blit(ICONS, x, y, fullU + 9, v, 9, 9);
+                else if (highLost) g.blit(ICONS, x + 5, y, fullU + 5, v, 4, 9);
+            }
+        }
+        if (absorb > 0) {
+            // Yellow hearts continue after the current absorption (u=160 full, 169 half), as vanilla draws them.
+            int from = maxHp + currentAbsorb;
+            g.setColor(1f, 1f, 1f, pulse);
+            for (int i = from / 2; i < Mth.ceil((from + absorb) / 2.0f); i++) {
+                int u = iconFor(i, from, from + absorb, 160, 169);
+                if (u >= 0) g.blit(ICONS, left + (i % 10) * 8, heartsTop - (i / 10) * rowHeight, u, v, 9, 9);
+            }
+        }
+        g.setColor(1f, 1f, 1f, 1f);
     }
 
     /**
@@ -181,6 +220,13 @@ public final class FoodHud {
             if (props != null && player.canEat(props.canAlwaysEat())) return props;
         }
         return null;
+    }
+
+    private static boolean hasFoodEffect(FoodProperties props, MobEffect effect) {
+        for (Pair<MobEffectInstance, Float> pair : props.getEffects()) {
+            if (pair.getFirst().getEffect() == effect && pair.getSecond() > 0) return true;
+        }
+        return false;
     }
 
     static float saturationGain(FoodProperties props) {

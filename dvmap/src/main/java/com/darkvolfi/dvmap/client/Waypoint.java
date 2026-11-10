@@ -63,14 +63,6 @@ public final class Waypoint {
         }
     }
 
-    public enum Category {
-        GENERAL, HOME, MINE, VILLAGE, FARM, PORTAL, DANGER, EXPLORE;
-
-        public String translationKey() {
-            return "dvmap.category." + name().toLowerCase(Locale.ROOT);
-        }
-    }
-
     public String name;
     public int x;
     public int y;
@@ -81,7 +73,11 @@ public final class Waypoint {
     public boolean deathPoint;
     /** Null in files saved before shapes existed. */
     public Shape shape;
-    public Category category;
+    /**
+     * Id of a {@link WaypointCategory}. Files from 1.0.0 hold the old enum names ("HOME"), which load as the
+     * lower-case built-in ids; null means General.
+     */
+    public String category;
     /** Placed from the map on a chunk that wasn't loaded: y is a guess, set to the surface once it loads. */
     public boolean autoY;
 
@@ -92,14 +88,16 @@ public final class Waypoint {
         return shape != null ? shape : Shape.STAR;
     }
 
-    public Category category() {
-        return category != null ? category : Category.GENERAL;
+    /** The waypoint's category; General when it has none or its category was deleted. */
+    public WaypointCategory category() {
+        return WaypointManager.category(category);
     }
 
     /** Name with its category in front, e.g. "[Home] Base"; just the name for General. */
     public Component label() {
-        if (category() == Category.GENERAL) return Component.literal(name);
-        return Component.literal("[").append(Component.translatable(category().translationKey())).append("] " + name);
+        WaypointCategory c = category();
+        if (c.isGeneral()) return Component.literal(name);
+        return Component.literal("[").append(c.displayName()).append("] " + name);
     }
 
     public Waypoint(String name, int x, int y, int z, String dimension, int color, boolean enabled, boolean deathPoint) {

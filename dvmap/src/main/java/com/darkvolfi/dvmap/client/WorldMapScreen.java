@@ -1,5 +1,6 @@
 package com.darkvolfi.dvmap.client;
 
+import com.darkvolfi.dvlib.client.DVButton;
 import com.darkvolfi.dvlib.client.DVConfigScreen;
 import com.darkvolfi.dvlib.client.DVChoicePopup;
 import com.darkvolfi.dvlib.client.DVIconButton;
@@ -19,6 +20,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -129,6 +131,7 @@ public class WorldMapScreen extends Screen {
         buttons.add(toggle(MapIcons.HIDE, "dvmap.bar.hide_me", MapConfig.HIDE_ME, needServer, null));
         // Hidden on the map means the name is hidden too: shown as on and locked.
         buttons.add(toggle(MapIcons.TAG, "dvmap.bar.hide_name", MapConfig.HIDE_MY_NAME, needServer, MapConfig.HIDE_ME));
+        if (CreateTrains.installed()) buttons.add(toggle(MapIcons.TRAIN, "dvmap.bar.create_trains", MapConfig.SHOW_CREATE_TRAINS, null, null));
         DVIconButton export = new DVIconButton(0, 0, TOGGLE_SIZE, MapIcons.IMAGE, Component.translatable("dvmap.bar.export"),
                 () -> MapExport.export(minecraft));
         export.setTooltip(Tooltip.create(Component.translatable("dvmap.bar.export").withStyle(ChatFormatting.BOLD)
@@ -291,15 +294,22 @@ public class WorldMapScreen extends Screen {
         for (MapOverlayHook hook : MapOverlayHook.HOOKS) {
             hook.renderChunkOverlay(g, dim, minCx, minCz, maxCx, maxCz, cx, cy, viewX, viewZ, zoom, false);
         }
+        CreateTrains.renderTracks(g, this, minecraft.level, minCx, minCz, maxCx, maxCz, zoom);
 
-        // 4. Hovered chunk subtle highlight
+        // 4. Hovered block frame; its chunk faintly, a little stronger when blocks get too small to see
         if (mouseY >= top && mouseY < bottom) {
-            int hcx = Mth.floor(screenToWorldX(mouseX)) >> 4;
-            int hcz = Mth.floor(screenToWorldZ(mouseY)) >> 4;
-            int sx = Math.round(worldToScreenX(hcx << 4));
-            int sy = Math.round(worldToScreenY(hcz << 4));
+            int hbx = Mth.floor(screenToWorldX(mouseX));
+            int hbz = Mth.floor(screenToWorldZ(mouseY));
+            int sx = Math.round(worldToScreenX((hbx >> 4) << 4));
+            int sy = Math.round(worldToScreenY((hbz >> 4) << 4));
             int sw = Math.max(2, Math.round(16 * zoom));
-            g.renderOutline(sx, sy, sw, sw, 0x88FFFFFF);
+            g.renderOutline(sx, sy, sw, sw, zoom >= 2.0f ? 0x33FFFFFF : 0x66FFFFFF);
+            if (zoom >= 1.0f) {
+                int bx = Math.round(worldToScreenX(hbx));
+                int by = Math.round(worldToScreenY(hbz));
+                int bw = Math.max(2, Math.round(worldToScreenX(hbx + 1)) - bx);
+                g.renderOutline(bx, by, bw, bw, 0xDDFFFFFF);
+            }
         }
 
         // 5. Structures, then waypoints on top
@@ -337,6 +347,8 @@ public class WorldMapScreen extends Screen {
             }
         }
         MapMarkers.drawAll(g, markers, points, 8,Mth.lerp(partialTick, minecraft.player.yo, minecraft.player.getY()));
+        Entity train = CreateTrains.renderTrains(g, this, minecraft.level, partialTick, mouseX, mouseY);
+        if (hovered != null) train = null;
         for (int i = 0; i < markers.size(); i++) {
             MapMarkers.Marker m = markers.get(i);
             if (m.kind() == MapMarkers.Kind.PLAYER && m.name() != null && m != hovered) {
@@ -349,7 +361,7 @@ public class WorldMapScreen extends Screen {
                 Math.round(worldToScreenY(minecraft.player.getZ())), minecraft.player.getViewYRot(partialTick) + 180.0f);
 
         // 8. Coordinates of the hovered square, next to it
-        if (mouseY >= top && mouseY < bottom && hovered == null) {
+        if (mouseY >= top && mouseY < bottom && hovered == null && train == null) {
             int wx = Mth.floor(screenToWorldX(mouseX));
             int wz = Mth.floor(screenToWorldZ(mouseY));
             String wy = MapData.isLoaded(minecraft.level, wx, wz)
@@ -362,13 +374,13 @@ public class WorldMapScreen extends Screen {
             g.drawString(font, coords, lx, ly, 0xFFE6E6F0);
         }
 
-        // 9. Name of the hovered creature or player, above everything
-        if (hovered != null) {
-            Component name = MapMarkers.nameOf(hovered);
+        // 9. Name of the hovered creature, player or train, above everything
+        if (hovered != null || train != null) {
+            Component name = hovered != null ? MapMarkers.nameOf(hovered) : train.getDisplayName();
             if (name != null) {
                 int w = font.width(name);
-                int nx = hoveredPoint[0] - w / 2;
-                int ny = hoveredPoint[1] - 18;
+                int nx = (hovered != null ? hoveredPoint[0] : Math.round(worldToScreenX(train.getX()))) - w / 2;
+                int ny = (hovered != null ? hoveredPoint[1] : Math.round(worldToScreenY(train.getZ()))) - 18;
                 g.fill(nx - 3, ny - 2, nx + w + 3, ny + 10, 0xCC15121C);
                 g.drawString(font, name, nx, ny, 0xFFFFFFFF);
             }
@@ -444,18 +456,65 @@ public class WorldMapScreen extends Screen {
             return true;
         }
         if (button == 1) {
+            openMenu(mouseX, mouseY, wx, wz, dim, findWaypointAt(mouseX, mouseY));
+            return true;
+        }
+        return false;
+    }
+
+    /** The right-click menu: actions for the waypoint under the cursor, or for the clicked block; then the hooks' lines. */
+    private void openMenu(double mouseX, double mouseY, int wx, int wz, ResourceKey<Level> dim, Waypoint wp) {
+        List<DVChoicePopup.Option<Runnable>> options = new ArrayList<>();
+        boolean canTp = WaypointManager.canTeleport(minecraft);
+        // The menu opens at the cursor: an invisible anchor there.
+        DVButton anchor = new DVButton((int) mouseX, (int) mouseY, 1, 0, Component.empty(), b -> {});
+        if (wp != null) {
+            option(options, "dvmap.waypoint.edit_short",
+                    () -> minecraft.setScreen(new WaypointEditScreen(this, wp, wp.x, wp.y, wp.z, wp.dimension)));
+            if (canTp) option(options, "dvmap.waypoint.teleport", () -> {
+                WaypointManager.teleportTo(minecraft, wp);
+                minecraft.setScreen(null);
+            });
+            option(options, "dvmap.waypoint.share", () -> {
+                WaypointShare.share(minecraft, wp);
+                minecraft.setScreen(null);
+            });
+            option(options, "dvmap.menu.move", () -> DVChoicePopup.open(anchor, WaypointEditScreen.categoryOptions(), wp.category().id, id -> {
+                wp.category = id;
+                WaypointManager.save();
+            }));
+            option(options, "dvmap.waypoint.delete", () -> WaypointManager.remove(wp));
+        } else {
+            String dimId = dim.location().toString();
             // Where you stand (or under a ceiling, like the Nether): your own height. Elsewhere: the surface,
-            // or your height for now if that chunk isn't loaded; it moves to the surface once it loads.
+            // or your height for now if that chunk isn't loaded; a waypoint moves to the surface once it loads.
             boolean here = Math.abs(wx - minecraft.player.getBlockX()) <= 1 && Math.abs(wz - minecraft.player.getBlockZ()) <= 1;
             boolean surface = !here && !minecraft.level.dimensionType().hasCeiling();
             boolean loaded = MapData.isLoaded(minecraft.level, wx, wz);
             int wy = surface && loaded ? MapData.sampleSurfaceHeight(minecraft.level, wx, wz) : minecraft.player.getBlockY();
-            WaypointEditScreen edit = new WaypointEditScreen(this, null, wx, wy, wz, dim.location().toString());
-            if (surface && !loaded) edit.autoHeight();
-            minecraft.setScreen(edit);
-            return true;
+            option(options, "dvmap.menu.add_here", () -> {
+                WaypointEditScreen edit = new WaypointEditScreen(this, null, wx, wy, wz, dimId);
+                if (surface && !loaded) edit.autoHeight();
+                minecraft.setScreen(edit);
+            });
+            if (canTp) option(options, "dvmap.menu.teleport_here", () -> {
+                WaypointManager.teleport(minecraft, dimId, wx, String.valueOf(wy), wz);
+                minecraft.setScreen(null);
+            });
+            option(options, "dvmap.menu.share_here", () -> {
+                WaypointShare.shareLocation(minecraft, wx, wy, wz, dimId);
+                minecraft.setScreen(null);
+            });
+            option(options, "dvmap.menu.copy", () -> minecraft.keyboardHandler.setClipboard(wx + " " + wy + " " + wz));
         }
-        return false;
+        for (MapOverlayHook hook : MapOverlayHook.HOOKS) {
+            hook.addMapMenuOptions(this, dim, wx, wz, wp, o -> options.add(new DVChoicePopup.Option<>(o.action(), o.name())));
+        }
+        DVChoicePopup.open(anchor, options, null, Runnable::run);
+    }
+
+    private static void option(List<DVChoicePopup.Option<Runnable>> options, String key, Runnable action) {
+        options.add(new DVChoicePopup.Option<>(action, Component.translatable(key)));
     }
 
     @Override

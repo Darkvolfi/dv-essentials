@@ -80,6 +80,7 @@ public final class MapClient {
         }
 
         MapData.tickScan(mc);
+        CreateTrains.tick(mc);
         RemotePlayers.tick();
 
         if (++autosaveTicks >= 200) {

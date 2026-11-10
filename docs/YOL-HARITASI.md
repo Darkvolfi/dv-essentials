@@ -84,18 +84,19 @@ Kullanıcının oyunda bulduğu hatalar ve istekleri. Nedenler kodda bulundu, he
 - **Hata: çalma modu (karışık / sadece Minecraft / sadece benimkiler) çalışmıyor gibi.** İki neden var:
   1. Mod değişince yalnızca bir **sonraki** şarkı etkileniyor, çalan şarkı devam ediyor. Düzeltme: çalan şarkı yeni moda uymuyorsa hemen değişsin.
   2. "Sadece benimkiler" seçili ama `dvmusic` klasöründe çalınabilecek `.ogg` yoksa, sessiz kalmamak için Minecraft şarkıları çalıyor. Kullanıcının klasöründe hiç `.ogg` yok. Düzeltme: o durumda ekranda "klasörde şarkı yok" uyarısı görünsün ve klasörü açan bir düğme olsun.
-- **İstek: MP3 ve başka biçimler.** Minecraft yalnızca `.ogg` (Vorbis) çalıyor.
-  - **WAV:** kolay, Java kendisi okuyor.
-  - **MP3 ve FLAC:** çözücü (decoder) gerekiyor. **Karar (kullanıcı, 2026-11-07): hazır kütüphane jar'ın içine gömülür.** Mod bağımlılığı değil, oyuncu ayrıca bir şey kurmaz.
-    - MP3 için aday **JavaMP3** (`fr.delthas:javamp3:1.0.1`): MIT lisanslı, saf Java, başka bağımlılığı yok, MPEG-1/2/2.5 Layer I/II/III çözüyor. Asıl depo arşivlenmiş, bakımı yapılmıyor. Projenin lisansı da MIT olduğu için LGPL'li JLayer yerine bu tercih edilir.
-    - FLAC için aday **flannel** (`com.io7m.flannel`): Apache-2.0 / LGPL-2.1 çift lisanslı, Apache-2.0 seçilir. Koordinatlar ve sürüm Maven Central'da doğrulanacak.
-    - Gömme: Forge'un jarJar'ı ya da shadow ile paket adı değiştirilerek. Kütüphanenin lisans metni jar'a ve README'ye eklenir.
-    - Çözülen ses Minecraft'a nasıl verilecek, denenerek belirlenecek. Yol: `CustomMusicPack` dosyayı sunarken PCM'e çevirip kendi `AudioStream`'ini vermek.
-  - Desteklenmeyen dosya için uyarı zaten var (`TrackLibrary.unplayable`).
-- **İstek: kendi çalma listeleri.**
-  - `dvmusic/playlists/<liste adı>/` klasörüne atılan şarkılar o listeyi oluşturur.
-  - Müzik ekranında liste seçilir. Seçili liste çalarken durum klasörleri (menü, Nether...) devre dışı kalır.
-  - "Yeni liste" düğmesi klasörü açıp oluşturur.
+- **✅ (2026-11-10, derlendi, oyunda denenmedi) MP3, WAV, M4A, MP4 ve AAC.**
+  - Çözücüler jar'ın içinde, paket adı `com.darkvolfi.dvmusic.lib.*` olarak değiştirilmiş (shadow `relocate`, `audioLibsJar` görevi; sınıflar `processResources` ile moda girer). Mod bağımlılığı yok.
+    - MP3: **JavaMP3** 1.0.1 (MIT). ID3v2 etiketi (kapak resmi) çözücüden önce atlanıyor.
+    - M4A/MP4/AAC: **JAAD** 0.8.8 (`com.gitlab.9lukas5:jaad`, kamu malı). POM'u bozuk (sürüm "0"), Gradle'da `metadataSources { artifact() }` ile okunuyor. `de.sfuhrm:jaad:0.8.7` bazı mp4'leri açamadı; JCodec'in AAC çözücüsü sessizlik veriyordu.
+    - WAV/AIFF/AU: Java'nın kendi okuyucusu.
+    - **FLAC yok:** tek Java kütüphanesi jFLAC LGPL (projenin lisansı MIT). Gerekirse kendi çözücümüz yazılır. FLAC, WMA, Opus "çalınamaz" sayılır.
+  - `TrackInstance.getStream` (Forge) kendi dosyalarımızı doğrudan klasörden açar; Ogg değilse `DecodedStream` PCM verir. Eski `CustomMusicPack` kaynak paketi kaldırıldı. Açılamayan dosya sessiz akış verir, çalar bir sonrakine geçer.
+  - Süre dosya başlığından (`AudioDecoders.seconds`): MP3 çerçeve başlıkları, MP4 film süresi, AAC çerçeve sayısı.
+  - Ölçüm (oyun dışı test): 7 dk'lık MP4 başlıktan 0.7 sn'de, tamamı 8 sn'de çözüldü (gerçek zamanın ~50 katı).
+- **✅ (2026-11-10) Müzik klasörü sade: içinde sadece şarkılar.** Alt klasör açılmıyor, eskiden açılan boş durum klasörleri siliniyor (içinde şarkı varsa yerinde kalır, o yerde çalmaya devam eder). Ekranda yazılı "Müzik klasörü" düğmesi. Dosyalar müzik penceresine sürüklenip bırakılabiliyor (klasöre kopyalanır, açık kategoriye eklenir).
+- **✅ (2026-11-10) Kategoriler oyun içinden (kullanıcının kararı: çalma listesi + yer).** Klasörle değil: `config/dvmusic-categories.json`.
+  - Kategori aç, Minecraft'ın ya da senin şarkılarını kutucukla seç. Kategoriye "nerede çalsın" (Menü, Dünya, Yaratıcı, Su altı, Nether, End) verilebilir: şarkılar oralarda da çalar, senin şarkıların sadece oralarda çalar.
+  - "Şarkılar" menüsünden bir kategori seçilirse sadece o kategori çalar (her yerde).
 
 ### DV Map (1.0.1.0)
 - **✅ (2026-11-10) İstek: kendi işaret kategorilerimiz.**
@@ -118,6 +119,20 @@ Kullanıcının oyunda bulduğu hatalar ve istekleri. Nedenler kodda bulundu, he
   - Create'e bağımlılık olmaz. Create kurulu değilse bu kısım hiç çalışmaz. Raylar blok kimliğiyle (`create:track`), trenler varlık türüyle tanınır; Create'in koduna dokunulmaz.
   - Yalnızca istemcinin yüklediği chunk'lardaki raylar ve trenler görünür. Uzaktaki trenleri görmek sunucudan bilgi ister; o kısım sonraya kalır.
   - Ayar: "Create rayları ve trenleri" aç/kapa.
+  - Oyunda denendikten sonra (2026-11-10, kullanıcı): raylar koyu kenarlı kalın çizgi, trenler kapladıkları alan kadar koyu kutu (uzaklaşınca büyük tren simgesi). Kullanıcının örnek gösterdiği harita modundaki gibi.
+  - Bilinen sınır: Create'in virajlı rayı iki uçtaki blok arasında tek parça; aradaki yerlerde blok yok, haritada virajda boşluk kalabilir. Kapatmak için virajın eğrisini okumak gerekir (Create'in blok verisinden, sınıflarına dokunmadan); denenecek.
+- **✅ (2026-11-10, ilk hali) İstek: ray hattına ve trene tıklayıp ad ve renk vermek** (kullanıcının isteği, 2026-11-10). Sağ tık menüsünde "Bu ray hattına ad ver" ve "Bu trene ad ver"; kayıt `RailLabels` ile `dvmap/<dünya>/rails.json`. Tren kimliği Create'in kayıt verisindeki `TrainId`, okunamazsa vagonun kendi kimliği.
+  - Dünya haritasında bir raya ya da trene tıklayınca küçük bir menü: ad ver, renk seç.
+  - Ray hattı = birbirine bağlı ray blokları. Ad ve renk hattın tamamına uygulanır; hat haritada o renkte çizilir, adı imleç üstünde yazar.
+  - Tren adı ve rengi trenin üstünde ve imleç üstünde görünür. Create'in kendi tren adı varsa varsayılan o olur.
+  - Önce yalnız bu oyuncunun haritasında, dünya başına saklanır. Sunucuda herkesle paylaşmak DV Team'in klan demiryolları ile gelir.
+  - Açık soru: bir hattı tanımak için hattın bir bloğu saklanır; hat değişince (ray eklenip sökülünce) ad doğru hatta kalmalı.
+
+### DV Team (sonraki)
+- **İstek: klan demiryolları** (kullanıcının isteği, 2026-11-10).
+  - Bir klan, ray hatlarını ve trenlerini kendi adıyla sahiplenir. Klan üyelerinin haritasında hat klan rengiyle ve adıyla görünür; diğer oyuncular da kimin hattı olduğunu görür.
+  - Ad ve renk sunucuda saklanır, klan üyeleri arasında paylaşılır. Yalnız yetkili klan üyeleri değiştirebilir.
+  - Ayrıntılar (başka klanın hattını kullanma, istasyon izinleri, savaşta durum) uygulamadan önce kullanıcıyla konuşulacak.
 
 ### DV Science of Souls (1.0.1.0)
 - **✅ (2026-11-10) İstek: ruh kartı tarifinde kağıt yerine DV Backpack'in boş kartı (`dvbackpack:upgrade_base`).**

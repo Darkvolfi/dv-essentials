@@ -231,13 +231,35 @@ The library behind the DV mods. Install it together with any DV mod.
 
 ## Değişiklik listesi
 
+Yükleme sırası ve hazır jar'lar: masaüstünde `DV Yayin/Guncellemeler` (betik: `AGENTS/calisma/yayin-guncelleme.sh`). 2026-11-10 dalgası: Lib 1.0.2, Backpack 1.0.0.1, Vein 1.0.0.1, Grave 1.0.0.1, Map 1.0.1.0, Team 1.0.0.1, Souls 1.0.1.0, Food 1.0.1.0, Lens 1.0.1.0, Music 1.0.1.0. DV Lens 1.0.0.1–1.0.0.2 ve DV Music 1.0.0.1 sitelere yüklenmedi; içerikleri 1.0.1.0'da.
+
+### DV Backpack 1.0.0.1
+Hata düzeltmesi: Toplama kartı, yerdeki yığının yalnızca bir kısmı çantaya sığınca o kısmı envantere de veriyordu (eşya kopyalanıyordu).
+Sayfalara yazılacak İngilizce metin: "Fixed an item duplication: with a Pickup card, when only part of a stack fitted into the backpack, that part also went into the inventory."
+
+### DV Vein 1.0.0.1
+Hata düzeltmesi: envanter doluyken damar kırmak sunucuyu çökertebiliyordu. Spawn koruması ve dünya sınırı artık damarın her bloğu için geçerli.
+Sayfalara yazılacak İngilizce metin: "Fixed a crash when vein mining with a full inventory. Spawn protection and the world border now apply to every block of a vein, not only the first."
+
+### DV Grave 1.0.0.1
+Hata düzeltmesi: keepInventory açıkken mezar oyuncunun koruduğu XP'yi ikinci kez veriyordu. Mezar için yer bulunamazsa XP artık kaybolmuyor, yere düşüyor.
+Sayfalara yazılacak İngilizce metin: "Fixed experience being duplicated when keepInventory is on. When no place for a grave is found, the experience now drops instead of being lost."
+
+### DV Team 1.0.0.1
+Haritadaki klan ve sahiplenme düğmeleri DV Map 1.0.1.0'ın büyüyen araç çubuğuna uydu.
+Sayfalara yazılacak İngilizce metin: "The clan and claim buttons on the world map match DV Map 1.0.1.0's larger toolbar."
+
+### DV Music 1.0.1.0
+MP3, WAV, M4A, MP4 ve AAC çalar (çözücüler jar'ın içinde, ek mod gerekmez). Dosyalar müzik penceresine sürüklenip bırakılabilir; müzik klasörü sade, alt klasör yok. Oyun içinden kategoriler: şarkıları seç, istersen nerede çalacağını ver (menü, dünya, yaratıcı, su altı, Nether, End). Duraklatılan şarkı ekran kapanınca artık bir an çalmıyor.
+Sayfalara yazılacak İngilizce metin: "Plays MP3, WAV, M4A, MP4 and AAC files as well as OGG (the decoders are inside the mod, nothing else to install). Drop files onto the music window to add them; the music folder is now one plain folder. Make categories in game: pick songs for them and, if you like, where they play (menu, world, creative, underwater, Nether, End). A paused song no longer plays for a moment when the pause menu or the world map closes."
+
 ### DV Map 1.0.1.0
-Kendi işaret sınıfları (ad, renk, simge), haritada sağ tık menüsü (işaret koy, ışınlan, paylaş, kopyala; işaret üstünde düzenle, taşı, sil), imleç altındaki bloğa çerçeve, Create rayları ve trenleri. Eski işaret dosyası okunur ve `waypoints-1.0.0.json` olarak yedeklenir.
-Sayfalara yazılacak İngilizce metin: "Your own waypoint categories with name, colour and icon. Right-click on the map opens a menu: add a waypoint, teleport, share in chat, copy coordinates; on a waypoint also edit, move and delete. The block under the cursor is outlined. Create tracks and trains show on the world map (Create is not required). Existing waypoints are kept; the old file is backed up as waypoints-1.0.0.json."
+Kendi işaret sınıfları (ad, renk, simge), haritada sağ tık menüsü (işaret koy, ışınlan, paylaş, kopyala; işaret üstünde düzenle, taşı, sil), imleç altındaki bloğa çerçeve, Create rayları ve trenleri (hatta ve trene ad ve renk verilebilir). Yeni harita görünümü: zeminden alınan yükseklik, iniş çizgileri, gece karanlığı ve ışıklar, derinlikle koyulaşan su, yenilenen mağara görünümü. Görüş mesafesi kadar haritalama (ayarlanabilir), gerçekten yuvarlak mini harita, 240 piksele kadar boyut, 6 kademe yakınlaştırma, büyüyen araç düğmeleri. Düzeltmeler: işaret ışını başka modların çizimi yüzünden yerin önüne geçmiyor, ağaç altında mağara görünümüne geçmiyor, karolar arasında çizgi kalmıyor. Eski işaret dosyası okunur ve `waypoints-1.0.0.json` olarak yedeklenir.
+Sayfalara yazılacak İngilizce metin: "Your own waypoint categories with name, colour and icon. Right-click on the map opens a menu: add a waypoint, teleport, share in chat, copy coordinates; on a waypoint also edit, move and delete. The block under the cursor is outlined. Create tracks and trains show on the world map (Create is not required), and you can give a rail line or a train a name and a colour. New look: clear height shading with contour lines, dark nights with lit places glowing, water that darkens with depth, short grass no longer speckles the ground, and a reworked cave view (black rock, flooded caves and lava visible). The map now covers your whole render distance (adjustable). The minimap can be truly round, grows up to 240 px and zooms in six steps; the map screen's buttons are larger. Fixes: waypoint beams no longer show through the ground next to other mods' overlays, standing under a tall tree no longer switches to the cave view, no dark lines between map tiles. Existing waypoints are kept; the old file is backed up as waypoints-1.0.0.json."
 
 ### DV Science of Souls 1.0.1.0
-Ruh Kömürü Bloğu. Altın ruh kartı DV Backpack kuruluysa boş kartla yapılır. Ruh Tasması her sahipsiz canlıya takılır (boss'lar hariç), tek kullanımlıktır ve parçayı yalnız takan kişi sunağa koyabilir.
-Sayfalara yazılacak İngilizce metin: "New Block of Soul Coal (burns nine times as long). With DV Backpack the gold soul card is made from its blank card. The Soul Collar now fits any creature without an owner, enemies too (not bosses); it works once, and only the one who put it on can lay the shard on the altar."
+Ruh Kömürü Bloğu. Altın ruh kartı DV Backpack kuruluysa boş kartla yapılır. Ruh Tasması her sahipsiz canlıya takılır (boss'lar hariç), tek kullanımlıktır ve parçayı yalnız takan kişi sunağa koyabilir. Düzeltmeler: ölümü başka bir mod iptal ederse parça düşmüyor; boşlukta ölen canlının parçası kaybolmuyor.
+Sayfalara yazılacak İngilizce metin: "New Block of Soul Coal (burns nine times as long). With DV Backpack the gold soul card is made from its blank card. The Soul Collar now fits any creature without an owner, enemies too (not bosses); it works once, and only the one who put it on can lay the shard on the altar. Fixes: no shard drops when another mod cancels the death; the shard of a creature that died in the void is no longer lost."
 
 ### DV Food 1.0.1.0
 Açlık ya da zehir veren yemekte önizleme o görünümde yanıp söner. Elde tutulan iksirler ve etkili yemekler can çubuğunda önizlenir (anında can ve hasar, yenilenme, zehir, solma, emilim); yeni ayarla kapatılabilir.

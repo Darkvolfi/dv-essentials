@@ -293,14 +293,20 @@ public class WorldMapScreen extends Screen {
             hook.renderChunkOverlay(g, dim, minCx, minCz, maxCx, maxCz, cx, cy, viewX, viewZ, zoom, false);
         }
 
-        // 4. Hovered chunk subtle highlight
+        // 4. Hovered block frame; its chunk faintly, a little stronger when blocks get too small to see
         if (mouseY >= top && mouseY < bottom) {
-            int hcx = Mth.floor(screenToWorldX(mouseX)) >> 4;
-            int hcz = Mth.floor(screenToWorldZ(mouseY)) >> 4;
-            int sx = Math.round(worldToScreenX(hcx << 4));
-            int sy = Math.round(worldToScreenY(hcz << 4));
+            int hbx = Mth.floor(screenToWorldX(mouseX));
+            int hbz = Mth.floor(screenToWorldZ(mouseY));
+            int sx = Math.round(worldToScreenX((hbx >> 4) << 4));
+            int sy = Math.round(worldToScreenY((hbz >> 4) << 4));
             int sw = Math.max(2, Math.round(16 * zoom));
-            g.renderOutline(sx, sy, sw, sw, 0x88FFFFFF);
+            g.renderOutline(sx, sy, sw, sw, zoom >= 2.0f ? 0x33FFFFFF : 0x66FFFFFF);
+            if (zoom >= 1.0f) {
+                int bx = Math.round(worldToScreenX(hbx));
+                int by = Math.round(worldToScreenY(hbz));
+                int bw = Math.max(2, Math.round(worldToScreenX(hbx + 1)) - bx);
+                g.renderOutline(bx, by, bw, bw, 0xDDFFFFFF);
+            }
         }
 
         // 5. Structures, then waypoints on top

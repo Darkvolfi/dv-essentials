@@ -1,3 +1,4 @@
 {"type": "minecraft:crafting_shaped", "category": "misc", "pattern": [" P ", "GAG", " G "],
+ "conditions": [{"type": "forge:not", "value": {"type": "forge:mod_loaded", "modid": "dvbackpack"}}],
  "key": {"P": {"item": "minecraft:paper"}, "G": {"item": "minecraft:gold_ingot"}, "A": {"item": "minecraft:amethyst_shard"}},
  "result": {"item": "dvsouls:gold_soul_charm"}}

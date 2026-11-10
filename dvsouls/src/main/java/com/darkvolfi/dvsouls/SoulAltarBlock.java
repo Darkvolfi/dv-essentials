@@ -135,7 +135,7 @@ public class SoulAltarBlock extends BaseEntityBlock {
     @Nullable
     protected Component refuse(ItemStack held, Player player) {
         if (!held.is(DVSouls.COLLAR_SHARD.get())) return Component.translatable("dvsouls.altar.empty");
-        UUID owner = Pets.owner(Soul.get(held));
+        UUID owner = Pets.shardOwner(Soul.get(held));
         return owner == null || owner.equals(player.getUUID()) ? null : Component.translatable("dvsouls.capture.not_yours");
     }
 

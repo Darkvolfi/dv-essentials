@@ -11,6 +11,7 @@ import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.util.GsonHelper;
 import org.slf4j.Logger;
 
+import com.darkvolfi.dvmusic.client.audio.AudioDecoders;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
@@ -28,11 +29,12 @@ import java.util.stream.Stream;
 
 /**
  * Every song DV Music knows: Minecraft's from the music entries of sounds.json (all resource packs),
- * and the player's .ogg files from the dvmusic folder in the game directory.
+ * and the player's files (ogg, mp3, wav, m4a, mp4...) from the dvmusic folder in the game directory.
  */
 public final class TrackLibrary {
     private static final Logger LOG = LogUtils.getLogger();
-    private static final String[] OTHER_AUDIO = {".mp3", ".wav", ".flac", ".m4a", ".aac", ".wma"};
+    /** Audio files DV Music can't play yet: counted, so the screen can say why they are missing. */
+    private static final Set<String> OTHER_AUDIO = Set.of("flac", "wma", "opus", "webm", "mkv", "ape", "alac", "mka");
 
     /**
      * File name → {official title, composer}, as the Minecraft Wiki lists them (1.20.3 renamed the old files to
@@ -70,8 +72,6 @@ public final class TrackLibrary {
 
     private static List<Track> vanilla = List.of();
     private static List<Track> custom = List.of();
-    /** Custom sound id ("custom/...") → its file, served by {@link CustomMusicPack}. */
-    private static final Map<String, Path> FILES = new HashMap<>();
     /** Audio files in the folder that Minecraft can't play (not .ogg). */
     private static int unplayable;
 
@@ -91,12 +91,6 @@ public final class TrackLibrary {
 
     public static Path folder() {
         return Minecraft.getInstance().gameDirectory.toPath().resolve(DVMusic.MOD_ID);
-    }
-
-    static Path file(String id) {
-        synchronized (FILES) {
-            return FILES.get(id);
-        }
     }
 
     /** Re-reads both lists; called after resources load and from the screen's refresh button. */
@@ -141,7 +135,7 @@ public final class TrackLibrary {
             String[] known = KNOWN.get(file);
             String title = known != null ? known[0] : title(file);
             String artist = known != null ? known[1] : "";
-            tracks.add(new Track(sound, title, artist, false, Set.copyOf(e.getValue()), volumes.get(e.getKey())));
+            tracks.add(new Track(sound, title, artist, null, sound.toString(), Set.copyOf(e.getValue()), volumes.get(e.getKey())));
         }
         tracks.sort(Comparator.comparing(Track::title));
         return List.copyOf(tracks);
@@ -150,44 +144,78 @@ public final class TrackLibrary {
     private static List<Track> readCustom() {
         Path root = folder();
         List<Track> tracks = new ArrayList<>();
-        Map<String, Path> files = new HashMap<>();
         int other = 0;
         try {
             Files.createDirectories(root);
-            for (Situation s : Situation.values()) Files.createDirectories(root.resolve(s.folder()));
+            removeEmptyOldFolders(root);
+            // Depth 2: songs put in the old per-place folders (dvmusic/nether/...) still play there.
             try (Stream<Path> paths = Files.walk(root, 2)) {
                 for (Path path : (Iterable<Path>) paths::iterator) {
                     if (!Files.isRegularFile(path)) continue;
                     String name = path.getFileName().toString();
-                    String lower = name.toLowerCase(Locale.ROOT);
-                    if (!lower.endsWith(".ogg")) {
-                        for (String ext : OTHER_AUDIO) if (lower.endsWith(ext)) other++;
+                    String ext = AudioDecoders.extension(path);
+                    if (!AudioDecoders.PLAYABLE.contains(ext)) {
+                        if (OTHER_AUDIO.contains(ext)) other++;
                         continue;
                     }
                     Path parent = root.relativize(path).getParent();
                     Situation situation = parent == null ? null : Situation.ofFolder(parent.toString());
                     String relative = root.relativize(path).toString().replace('\\', '/');
-                    String id = "custom/" + slug(name.substring(0, name.length() - 4)) + "_" + Integer.toHexString(relative.hashCode());
-                    files.put(id, path);
+                    String base = name.substring(0, name.length() - ext.length() - 1);
+                    String id = "custom/" + slug(base) + "_" + Integer.toHexString(relative.hashCode());
                     Set<Situation> where = situation == null ? Set.of() : Set.of(situation);
-                    // "Artist - Title.ogg" gives both; otherwise the whole name is the title.
-                    String base = name.substring(0, name.length() - 4);
+                    // "Artist - Title.mp3" gives both; otherwise the whole name is the title.
                     int dash = base.indexOf(" - ");
                     String title = dash > 0 ? base.substring(dash + 3).trim() : base;
                     String artist = dash > 0 ? base.substring(0, dash).trim() : "";
-                    tracks.add(new Track(new ResourceLocation(DVMusic.MOD_ID, id), title, artist, true, where, 1f));
+                    tracks.add(new Track(new ResourceLocation(DVMusic.MOD_ID, id), title, artist, path, "file:" + relative, where, 1f));
                 }
             }
         } catch (IOException e) {
             LOG.warn("[DV Music] Could not read the music folder {}: {}", root, e.toString());
         }
-        synchronized (FILES) {
-            FILES.clear();
-            FILES.putAll(files);
-        }
         unplayable = other;
         tracks.sort(Comparator.comparing(t -> t.title().toLowerCase(Locale.ROOT)));
         return List.copyOf(tracks);
+    }
+
+    /** Older versions made a folder per place; empty ones are removed so the music folder holds only songs. */
+    private static void removeEmptyOldFolders(Path root) {
+        for (Situation s : Situation.values()) {
+            Path dir = root.resolve(s.folder());
+            try (Stream<Path> inside = Files.isDirectory(dir) ? Files.list(dir) : Stream.of(dir)) {
+                if (Files.isDirectory(dir) && inside.findAny().isEmpty()) Files.delete(dir);
+            } catch (IOException ignored) {
+                // Left as it is.
+            }
+        }
+    }
+
+    /** What dropping files on the music screen did. {@code added} are the new songs' keys. */
+    public record Import(List<String> added, int skipped) {}
+
+    /** Copies the playable files among {@code files} into the music folder (never over an existing file), then reloads. */
+    public static Import importFiles(List<Path> files) {
+        Path root = folder();
+        List<String> added = new ArrayList<>();
+        int skipped = 0;
+        for (Path file : files) {
+            Path target = root.resolve(file.getFileName().toString());
+            if (!Files.isRegularFile(file) || !AudioDecoders.PLAYABLE.contains(AudioDecoders.extension(file))) {
+                skipped++;
+                continue;
+            }
+            try {
+                Files.createDirectories(root);
+                if (!Files.exists(target)) Files.copy(file, target);
+                added.add("file:" + file.getFileName());
+            } catch (IOException e) {
+                LOG.warn("[DV Music] Could not copy {}: {}", file, e.toString());
+                skipped++;
+            }
+        }
+        if (!added.isEmpty()) custom = readCustom();
+        return new Import(added, skipped);
     }
 
     /** A file name made safe for a resource path: lower case ASCII, digits, '_' (Locale.ROOT, so "I" stays "i"). */

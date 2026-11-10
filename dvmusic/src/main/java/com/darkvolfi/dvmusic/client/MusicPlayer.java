@@ -68,23 +68,29 @@ public final class MusicPlayer {
 
     /** Length of the current song in seconds, or -1 while unknown. */
     public static int lengthSeconds() {
-        return current == null ? -1 : OggLength.seconds(current);
+        return current == null ? -1 : TrackLength.seconds(current);
     }
 
     public static Situation situation() {
         return Situation.of(Minecraft.getInstance().getSituationalMusic());
     }
 
-    /** Songs that may play now, for the mode and the situation. */
+    /** Songs that may play now: the active category's, or those for the mode and the situation. */
     public static List<Track> pool() {
         Situation situation = situation();
         List<Track> pool = new ArrayList<>();
+        Categories.Category active = Categories.active();
+        if (active != null) {
+            for (Track t : TrackLibrary.custom()) if (active.contains(t)) pool.add(t);
+            for (Track t : TrackLibrary.vanilla()) if (active.contains(t)) pool.add(t);
+            if (!pool.isEmpty()) return pool;
+        }
         MusicConfig.Mode mode = MusicConfig.MODE.get();
         if (mode != MusicConfig.Mode.MINECRAFT) {
-            for (Track t : TrackLibrary.custom()) if (t.playsIn(situation)) pool.add(t);
+            for (Track t : TrackLibrary.custom()) if (Categories.playsIn(t, situation)) pool.add(t);
         }
         if (mode != MusicConfig.Mode.MINE || pool.isEmpty()) {
-            for (Track t : TrackLibrary.vanilla()) if (t.playsIn(situation)) pool.add(t);
+            for (Track t : TrackLibrary.vanilla()) if (Categories.playsIn(t, situation)) pool.add(t);
         }
         return pool;
     }
@@ -208,7 +214,7 @@ public final class MusicPlayer {
                 }
                 playedTicks++;
                 Music music = mc.getSituationalMusic();
-                if (music.replaceCurrentMusic() && !current.playsIn(Situation.of(music)) && !playingByChoice()) next();
+                if (music.replaceCurrentMusic() && !fits(current, Situation.of(music)) && !playingByChoice()) next();
                 return;
             }
             playing = null;
@@ -227,6 +233,12 @@ public final class MusicPlayer {
         Track next = pick();
         if (next != null) play(next);
         else gapTicks = 200;
+    }
+
+    /** Whether a song belongs to what plays in {@code situation} (an active category plays everywhere). */
+    private static boolean fits(Track track, Situation situation) {
+        Categories.Category active = Categories.active();
+        return active != null && active.contains(track) || Categories.playsIn(track, situation);
     }
 
     /** A song the player picked from the list keeps playing when the situation changes. */

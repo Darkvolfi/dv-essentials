@@ -1,5 +1,6 @@
 package com.darkvolfi.dvmusic.client;
 
+import com.darkvolfi.dvmusic.client.audio.AudioDecoders;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
@@ -7,19 +8,18 @@ import net.minecraft.resources.ResourceLocation;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A song's length in seconds, read from the Ogg Vorbis file in the background: the sample rate from the
- * identification header and the sample count (granule position) of the last page.
+ * A song's length in seconds, read in the background: for Ogg Vorbis the sample rate from the identification
+ * header and the sample count (granule position) of the last page; other files from their own headers.
  */
-final class OggLength {
+final class TrackLength {
     /** -1 while reading or when the file can't be read. */
     private static final Map<ResourceLocation, Integer> SECONDS = new ConcurrentHashMap<>();
 
-    private OggLength() {}
+    private TrackLength() {}
 
     static int seconds(Track track) {
         Integer known = SECONDS.get(track.sound());
@@ -30,6 +30,7 @@ final class OggLength {
     }
 
     private static int read(Track track) {
+        if (track.custom() && !AudioDecoders.extension(track.file()).equals("ogg")) return AudioDecoders.seconds(track.file());
         try (InputStream in = open(track)) {
             if (in == null) return -1;
             byte[] data = in.readAllBytes();
@@ -55,8 +56,7 @@ final class OggLength {
 
     private static InputStream open(Track track) throws IOException {
         if (track.custom()) {
-            Path file = TrackLibrary.file(track.sound().getPath());
-            return file == null ? null : Files.newInputStream(file);
+            return Files.newInputStream(track.file());
         }
         ResourceLocation path = new ResourceLocation(track.sound().getNamespace(), "sounds/" + track.sound().getPath() + ".ogg");
         var resource = Minecraft.getInstance().getResourceManager().getResource(path);

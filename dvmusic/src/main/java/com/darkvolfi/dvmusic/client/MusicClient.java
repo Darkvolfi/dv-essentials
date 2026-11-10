@@ -5,22 +5,17 @@ import com.darkvolfi.dvmusic.DVMusic;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
-import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.repository.Pack;
-import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.settings.KeyConflictContext;
-import net.minecraftforge.event.AddPackFindersEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 
-/** Keys, the music folder as a resource pack, and reading the song lists when resources load. */
+/** Keys, and reading the song lists when resources load. */
 @Mod.EventBusSubscriber(modid = DVMusic.MOD_ID, value = Dist.CLIENT)
 public final class MusicClient {
     public static final KeyMapping OPEN_KEY = new KeyMapping("key.dvmusic.open",
@@ -50,17 +45,6 @@ public final class MusicClient {
             event.register(OPEN_KEY);
             event.register(NEXT_KEY);
             event.register(PAUSE_KEY);
-        }
-
-        /** The dvmusic folder as an always-on resource pack, so its .ogg files can play as sounds. */
-        @SubscribeEvent
-        public static void onAddPackFinders(AddPackFindersEvent event) {
-            if (event.getPackType() != PackType.CLIENT_RESOURCES) return;
-            event.addRepositorySource(consumer -> {
-                Pack pack = Pack.readMetaAndCreate(CustomMusicPack.ID, Component.translatable("dvmusic.pack"), true,
-                        id -> new CustomMusicPack(), PackType.CLIENT_RESOURCES, Pack.Position.TOP, PackSource.BUILT_IN);
-                if (pack != null) consumer.accept(pack);
-            });
         }
 
         @SubscribeEvent

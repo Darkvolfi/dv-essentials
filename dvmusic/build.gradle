@@ -1,6 +1,9 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 plugins {
     id 'net.minecraftforge.gradle'
     id 'org.spongepowered.mixin'
+    id 'com.github.johnrengelman.shadow' version '8.1.1' apply false
 }
 
 apply from: rootProject.file('gradle/dv-mod.gradle')
@@ -10,6 +13,52 @@ mixin {
     config 'dvmusic.mixins.json'
 }
 
+// Decoders for the music formats Minecraft can't read itself (mp3, aac/m4a/mp4). They are moved into
+// DV Music's own package and shipped inside its jar, so they can't clash with another mod's copy and nobody
+// has to install anything else.
+configurations {
+    audioLibs { transitive = false }
+}
+
+repositories {
+    // JAAD 0.8.8's POM says version "0"; read the jar alone. (0.8.7 from another fork can't open some mp4 files.)
+    exclusiveContent {
+        forRepository {
+            maven {
+                url = 'https://repo1.maven.org/maven2'
+                metadataSources { artifact() }
+            }
+        }
+        filter { includeModule('com.gitlab.9lukas5', 'jaad') }
+    }
+}
+
 dependencies {
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+    audioLibs 'fr.delthas:javamp3:1.0.1'        // MIT
+    audioLibs 'com.gitlab.9lukas5:jaad:0.8.8'  // public domain (JAAD: AAC and the MP4 container)
+}
+
+def audioLibsJar = tasks.register('audioLibsJar', ShadowJar) {
+    archiveFileName = 'dvmusic-audio-libs.jar'
+    destinationDirectory = layout.buildDirectory.dir('audiolibs')
+    configurations = [project.configurations.audioLibs]
+    relocate 'fr.delthas.javamp3', 'com.darkvolfi.dvmusic.lib.mp3'
+    relocate 'net.sourceforge.jaad', 'com.darkvolfi.dvmusic.lib.jaad'
+    exclude 'META-INF/**', 'module-info.class'
+    exclude 'net/sourceforge/jaad/spi/**' // Java Sound plug-in, not used
+}
+
+dependencies {
+    compileOnly files(audioLibsJar)
+}
+
+// The relocated classes travel with the mod's resources: into the jar, and into development runs.
+tasks.named('processResources', ProcessResources).configure {
+    from(audioLibsJar.flatMap { it.archiveFile }.map { zipTree(it) })
+}
+
+// MixinGradle hooks every jar task; the library jar has no mixins and must not wait for this mod's compile.
+afterEvaluate {
+    tasks.named('audioLibsJar') { t -> t.setDependsOn(t.dependsOn.findAll { !it.toString().contains('addMixins') }) }
 }

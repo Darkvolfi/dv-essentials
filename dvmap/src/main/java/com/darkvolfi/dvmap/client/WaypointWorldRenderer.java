@@ -22,6 +22,7 @@ import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
+import org.lwjgl.opengl.GL11;
 import org.joml.Vector4f;
 
 import java.util.List;
@@ -49,6 +50,10 @@ public final class WaypointWorldRenderer {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableCull();
+        // Set explicitly: other mods' overlays drawn before us (Create's super glue box) can leave depth testing off,
+        // and the beam would then show through the ground.
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthFunc(GL11.GL_LEQUAL);
         RenderSystem.depthMask(false);
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
 

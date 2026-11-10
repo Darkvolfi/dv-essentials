@@ -27,6 +27,7 @@ public final class MapConfig {
     public static final ForgeConfigSpec.EnumValue<Shape> MINIMAP_SHAPE;
     public static final ForgeConfigSpec.IntValue MINIMAP_SIZE;
     public static final ForgeConfigSpec.IntValue MINIMAP_ZOOM;
+    public static final ForgeConfigSpec.IntValue MAP_RADIUS;
     public static final ForgeConfigSpec.BooleanValue ROTATE_WITH_PLAYER;
     public static final ForgeConfigSpec.EnumValue<LayerMode> LAYER_MODE;
     public static final ForgeConfigSpec.BooleanValue HEIGHT_SHADING;
@@ -58,16 +59,18 @@ public final class MapConfig {
                 .define("minimapEnabled", true);
         MINIMAP_CORNER = b.comment("Which screen corner the minimap sits in.")
                 .defineEnum("minimapCorner", Corner.TOP_RIGHT);
-        MINIMAP_SHAPE = b.comment("Minimap border shape (Square or Circle).")
+        MINIMAP_SHAPE = b.comment("Minimap shape: square or round.")
                 .defineEnum("minimapShape", Shape.SQUARE);
-        MINIMAP_SIZE = b.comment("Minimap radius/half-size in GUI pixels (40 to 140).")
-                .defineInRange("minimapSize", 68, 40, 140);
-        MINIMAP_ZOOM = b.comment("Minimap zoom level (1 = wide, 4 = close).")
-                .defineInRange("minimapZoom", 2, 1, 4);
+        MINIMAP_SIZE = b.comment("Minimap size in GUI pixels (40 to 240).")
+                .defineInRange("minimapSize", 96, 40, 240);
+        MINIMAP_ZOOM = b.comment("Minimap zoom level (1 = wide, 6 = very close).")
+                .defineInRange("minimapZoom", 2, 1, 6);
         ROTATE_WITH_PLAYER = b.comment("Rotate the minimap with the player's camera yaw instead of keeping North up.")
                 .define("rotateWithPlayer", false);
         LAYER_MODE = b.comment("Map layer mode: AUTO switches to cave view when under a roof.")
                 .defineEnum("layerMode", LayerMode.AUTO);
+        MAP_RADIUS = b.comment("How far around you the map is drawn, in chunks. 0 follows your render distance, so everything you can see gets mapped.")
+                .defineInRange("mapRadius", 0, 0, 32);
         HEIGHT_SHADING = b.comment("Shade terrain slopes and water depth.")
                 .define("heightShading", true);
         BIOME_BLENDING = b.comment("Tint grass, foliage and water with biome colours.")

@@ -43,12 +43,13 @@ public final class TeamMapIntegration implements MapOverlayHook {
 
     @Override
     public void onWorldMapInit(WorldMapScreen screen, Consumer<AbstractWidget> addWidget) {
-        // Left of DV Map's settings gear (18 px, 6 from the edge).
-        int x = screen.width - 24 - 21;
-        addWidget.accept(new DVIconButton(x, 5, 18, SHIELD, Component.translatable("dvteam.map.team_button"),
+        // Left of DV Map's settings gear (one button, 6 from the edge), in the same size and spacing.
+        int size = WorldMapScreen.TOOL_SIZE;
+        int x = screen.width - 6 - size - 3 - size;
+        addWidget.accept(new DVIconButton(x, 5, size, SHIELD, Component.translatable("dvteam.map.team_button"),
                 () -> Minecraft.getInstance().setScreen(new ClanScreen(screen))));
         DVIconButton[] claim = new DVIconButton[1];
-        claim[0] = new DVIconButton(x - 21, 5, 18, CLAIM, claimModeLabel(), () -> {
+        claim[0] = new DVIconButton(x - size - 3, 5, size, CLAIM, claimModeLabel(), () -> {
             claimMode = !claimMode;
             claim[0].selected(claimMode).setTooltip(Tooltip.create(claimModeLabel()));
         }).selected(claimMode);

@@ -5,11 +5,16 @@ import com.darkvolfi.dvlib.client.DVUi;
 import com.darkvolfi.dvmap.DVMap;
 import com.darkvolfi.dvmap.MapConfig;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -22,6 +27,9 @@ import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+
+import org.joml.Matrix4f;
+import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -94,6 +102,8 @@ public final class MinimapOverlay {
             case 1 -> 0.5f;
             case 3 -> 2.0f;
             case 4 -> 3.0f;
+            case 5 -> 4.0f;
+            case 6 -> 6.0f;
             default -> 1.0f;
         };
 
@@ -101,8 +111,9 @@ public final class MinimapOverlay {
         int borderCol = DVTheme.shade(0xFF3A3548);
         int bgCol = 0xEE12101A;
         if (circle) {
-            drawOctagonFill(g, cx, cy, halfSize + 2, borderCol);
-            drawOctagonFill(g, cx, cy, halfSize, bgCol);
+            drawDisc(g, cx, cy, halfSize + 3, 0xFF1A1624);
+            drawDisc(g, cx, cy, halfSize + 2, borderCol);
+            drawDisc(g, cx, cy, halfSize, bgCol);
         } else {
             g.fill(left - 2, top - 2, left + size + 2, top + size + 2, borderCol);
             g.fill(left, top, left + size, top + size, bgCol);
@@ -122,6 +133,8 @@ public final class MinimapOverlay {
         int maxRz = maxWz >> MapData.REGION_SHIFT;
 
         g.enableScissor(left, top, left + size, top + size);
+        // Round map: the corners of the square are closed off in the depth buffer, so nothing is drawn there.
+        if (circle) maskCorners(g, cx, cy, halfSize, true);
         PoseStack pose = g.pose();
         pose.pushPose();
         if (rotate) {
@@ -143,6 +156,10 @@ public final class MinimapOverlay {
                 int sy = Math.round(cy + (float) (tileWorldZ - pz) * scale);
                 int drawSize = Math.round(MapData.REGION_SIZE * scale);
                 g.blit(tile.location, sx, sy, drawSize, drawSize, 0, 0, MapData.REGION_SIZE, MapData.REGION_SIZE, MapData.REGION_SIZE, MapData.REGION_SIZE);
+                if (!cave) {
+                    MapData.drawGlow(g, tile, light, sx, sy, drawSize);
+                    RenderSystem.setShaderColor(light, light, light, 1.0f);
+                }
             }
         }
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -175,6 +192,7 @@ public final class MinimapOverlay {
         // 4. Structures and entity radar: upright icons at rotated positions
         renderStructures(mc, g, cx, cy, halfSize - 4, px, pz, yaw, rotate, scale, circle);
         renderEntityRadar(mc, g, partialTick, cx, cy, halfSize, px, pz, yaw, rotate, scale, circle);
+        if (circle) maskCorners(g, cx, cy, halfSize, false);
         g.disableScissor();
 
         // 5. Waypoints on minimap (clipped to minimap rim)
@@ -190,11 +208,19 @@ public final class MinimapOverlay {
 
         // 8. Info lines below the minimap
         Font font = mc.font;
+        // One left-aligned column, centred under the map as a whole but kept on screen, so icons line up.
         int textY = top + size + 4;
+        int blockW = 0;
+        for (InfoLine line : infoLines) blockW = Math.max(blockW, infoWidth(font, line));
+        int textX = Mth.clamp(cx - blockW / 2, margin, screenWidth - blockW - margin);
         for (InfoLine line : infoLines) {
-            drawInfoLine(g, font, line, cx, textY);
+            drawInfoLine(g, font, line, textX, textY);
             textY += 10;
         }
+    }
+
+    private static int infoWidth(Font font, InfoLine line) {
+        return line.icon()[0].length() * INFO_ICON_PX + INFO_ICON_GAP + font.width(line.text());
     }
 
     private static void renderEntityRadar(Minecraft mc, GuiGraphics g, float partialTick, int cx, int cy, int halfSize,
@@ -319,20 +345,57 @@ public final class MinimapOverlay {
         return lines;
     }
 
-    private static void drawInfoLine(GuiGraphics g, Font font, InfoLine line, int cx, int y) {
+    private static void drawInfoLine(GuiGraphics g, Font font, InfoLine line, int x, int y) {
         int iconW = line.icon()[0].length() * INFO_ICON_PX;
-        int total = iconW + INFO_ICON_GAP + font.width(line.text());
-        int x = cx - total / 2;
         DVUi.icon(g, line.icon(), x + iconW / 2, y + 4, INFO_ICON_PX, line.iconColor());
         g.drawString(font, line.text(), x + iconW + INFO_ICON_GAP, y, 0xE6E6F0);
     }
 
-    private static void drawOctagonFill(GuiGraphics g, int cx, int cy, int r, int color) {
-        int cut = r * 3 / 10;
-        for (int dy = -r; dy <= r; dy++) {
-            int ady = Math.abs(dy);
-            int halfW = ady > (r - cut) ? (r - (ady - (r - cut))) : r;
+    /** Half the width of a disc of radius {@code r} on the pixel row {@code dy} from its middle. */
+    private static int discHalfWidth(int r, int dy) {
+        double mid = dy + 0.5;
+        return (int) Math.round(Math.sqrt(Math.max(0, r * r - mid * mid)));
+    }
+
+    private static void drawDisc(GuiGraphics g, int cx, int cy, int r, int color) {
+        for (int dy = -r; dy < r; dy++) {
+            int halfW = discHalfWidth(r, dy);
             g.fill(cx - halfW, cy + dy, cx + halfW, cy + dy + 1, color);
         }
+    }
+
+    /**
+     * Closes ({@code on}) or opens again the part of the minimap's square outside its disc. It writes only depth: in
+     * front of everything while the map is drawn, so the map's pixels there fail the depth test, and far behind
+     * afterwards, so the rest of the HUD draws there as usual.
+     */
+    private static void maskCorners(GuiGraphics g, int cx, int cy, int r, boolean on) {
+        g.flush();
+        Matrix4f matrix = g.pose().last().pose();
+        float z = on ? 900.0f : -900.0f;
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthFunc(GL11.GL_ALWAYS);
+        RenderSystem.depthMask(true);
+        RenderSystem.colorMask(false, false, false, false);
+        BufferBuilder buf = Tesselator.getInstance().getBuilder();
+        buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        for (int dy = -r; dy < r; dy++) {
+            int halfW = discHalfWidth(r, dy);
+            int y0 = cy + dy, y1 = y0 + 1;
+            maskQuad(buf, matrix, cx - r, y0, cx - halfW, y1, z);
+            maskQuad(buf, matrix, cx + halfW, y0, cx + r, y1, z);
+        }
+        Tesselator.getInstance().end();
+        RenderSystem.colorMask(true, true, true, true);
+        RenderSystem.depthFunc(GL11.GL_LEQUAL);
+    }
+
+    private static void maskQuad(BufferBuilder buf, Matrix4f matrix, int x0, int y0, int x1, int y1, float z) {
+        if (x1 <= x0) return;
+        buf.vertex(matrix, x0, y0, z).color(0, 0, 0, 255).endVertex();
+        buf.vertex(matrix, x0, y1, z).color(0, 0, 0, 255).endVertex();
+        buf.vertex(matrix, x1, y1, z).color(0, 0, 0, 255).endVertex();
+        buf.vertex(matrix, x1, y0, z).color(0, 0, 0, 255).endVertex();
     }
 }

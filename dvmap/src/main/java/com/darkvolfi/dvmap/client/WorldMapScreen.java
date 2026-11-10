@@ -30,10 +30,11 @@ import java.util.List;
 import java.util.Locale;
 
 public class WorldMapScreen extends Screen {
-    public static final int TOP_BAR_HEIGHT = 28;
+    public static final int TOP_BAR_HEIGHT = 32;
     private static final int STATUS_HEIGHT = 18;
-    private static final int TOOL_SIZE = 18;
-    private static final int TOGGLE_SIZE = 16;
+    /** Side of a toolbar button; at 22 the icons draw at twice the size they had at 18. Hooks adding buttons use it too. */
+    public static final int TOOL_SIZE = 22;
+    private static final int TOGGLE_SIZE = 20;
 
     private int bottomBarHeight = STATUS_HEIGHT + TOGGLE_SIZE + 6;
     /** Bottom-bar toggles and how to relabel them after any click (one may depend on another). */
@@ -44,6 +45,8 @@ public class WorldMapScreen extends Screen {
     private float zoom = 2.0f;
     private boolean initializedCenter;
     private boolean panning;
+    /** The Create carriage under the mouse in the last frame, for the right-click menu. */
+    private Entity hoveredTrain;
     private int lastDragChunkX = Integer.MIN_VALUE;
     private int lastDragChunkZ = Integer.MIN_VALUE;
 
@@ -267,8 +270,15 @@ public class WorldMapScreen extends Screen {
                 if (tile == null) continue;
                 int sx = Math.round(worldToScreenX(rx * MapData.REGION_SIZE));
                 int sy = Math.round(worldToScreenY(rz * MapData.REGION_SIZE));
-                int drawSize = Math.round(MapData.REGION_SIZE * zoom);
-                g.blit(tile.location, sx, sy, drawSize, drawSize, 0, 0, MapData.REGION_SIZE, MapData.REGION_SIZE, MapData.REGION_SIZE, MapData.REGION_SIZE);
+                // Each tile runs up to where the next one starts: a rounded size would leave a one pixel gap between
+                // tiles at some zooms, which shows as dark lines across the map.
+                int drawW = Math.round(worldToScreenX((rx + 1) * MapData.REGION_SIZE)) - sx;
+                int drawH = Math.round(worldToScreenY((rz + 1) * MapData.REGION_SIZE)) - sy;
+                g.blit(tile.location, sx, sy, drawW, drawH, 0, 0, MapData.REGION_SIZE, MapData.REGION_SIZE, MapData.REGION_SIZE, MapData.REGION_SIZE);
+                if (!cave) {
+                    MapData.drawGlow(g, tile, light, sx, sy, drawW, drawH);
+                    RenderSystem.setShaderColor(light, light, light, 1.0f);
+                }
             }
         }
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -349,6 +359,7 @@ public class WorldMapScreen extends Screen {
         MapMarkers.drawAll(g, markers, points, 8,Mth.lerp(partialTick, minecraft.player.yo, minecraft.player.getY()));
         Entity train = CreateTrains.renderTrains(g, this, minecraft.level, partialTick, mouseX, mouseY);
         if (hovered != null) train = null;
+        hoveredTrain = train;
         for (int i = 0; i < markers.size(); i++) {
             MapMarkers.Marker m = markers.get(i);
             if (m.kind() == MapMarkers.Kind.PLAYER && m.name() != null && m != hovered) {
@@ -366,7 +377,9 @@ public class WorldMapScreen extends Screen {
             int wz = Mth.floor(screenToWorldZ(mouseY));
             String wy = MapData.isLoaded(minecraft.level, wx, wz)
                     ? String.valueOf(MapData.sampleSurfaceHeight(minecraft.level, wx, wz)) : "?";
-            String coords = wx + ", " + wy + ", " + wz;
+            int[] track = CreateTrains.trackNear(wx, wz);
+            RailLabels.Line line = track == null ? null : CreateTrains.lineAt(track[0], track[1]);
+            String coords = (line != null ? line.name + "   " : "") + wx + ", " + wy + ", " + wz;
             int w = font.width(coords);
             int lx = Math.min(mouseX + 10, width - w - 4);
             int ly = Math.max(mouseY - 14, top + 2);
@@ -376,7 +389,7 @@ public class WorldMapScreen extends Screen {
 
         // 9. Name of the hovered creature, player or train, above everything
         if (hovered != null || train != null) {
-            Component name = hovered != null ? MapMarkers.nameOf(hovered) : train.getDisplayName();
+            Component name = hovered != null ? MapMarkers.nameOf(hovered) : CreateTrains.trainName(train);
             if (name != null) {
                 int w = font.width(name);
                 int nx = (hovered != null ? hoveredPoint[0] : Math.round(worldToScreenX(train.getX()))) - w / 2;
@@ -468,6 +481,7 @@ public class WorldMapScreen extends Screen {
         boolean canTp = WaypointManager.canTeleport(minecraft);
         // The menu opens at the cursor: an invisible anchor there.
         DVButton anchor = new DVButton((int) mouseX, (int) mouseY, 1, 0, Component.empty(), b -> {});
+        addRailOptions(options, wx, wz, dim);
         if (wp != null) {
             option(options, "dvmap.waypoint.edit_short",
                     () -> minecraft.setScreen(new WaypointEditScreen(this, wp, wp.x, wp.y, wp.z, wp.dimension)));
@@ -511,6 +525,39 @@ public class WorldMapScreen extends Screen {
             hook.addMapMenuOptions(this, dim, wx, wz, wp, o -> options.add(new DVChoicePopup.Option<>(o.action(), o.name())));
         }
         DVChoicePopup.open(anchor, options, null, Runnable::run);
+    }
+
+    /** "Name this train" over a Create carriage, else "Name this line" over a track. */
+    private void addRailOptions(List<DVChoicePopup.Option<Runnable>> options, int wx, int wz, ResourceKey<Level> dim) {
+        Entity train = hoveredTrain;
+        if (train != null) {
+            String id = CreateTrains.trainId(train);
+            RailLabels.Train label = RailLabels.train(id);
+            option(options, "dvmap.rail.name_train", () -> minecraft.setScreen(new RailEditScreen(this,
+                    Component.translatable("dvmap.rail.train_title"),
+                    label != null ? label.name : train.getDisplayName().getString(),
+                    label != null ? label.color : 0x4A4852,
+                    (name, color) -> RailLabels.putTrain(id, name, color),
+                    label != null ? () -> RailLabels.removeTrain(id) : null)));
+            return;
+        }
+        int[] track = CreateTrains.trackNear(wx, wz);
+        if (track == null) return;
+        RailLabels.Line line = CreateTrains.lineAt(track[0], track[1]);
+        option(options, "dvmap.rail.name_line", () -> minecraft.setScreen(new RailEditScreen(this,
+                Component.translatable("dvmap.rail.line_title"),
+                line != null ? line.name : "",
+                line != null ? line.color : CreateTrains.trackColor(),
+                (name, color) -> {
+                    if (line != null) {
+                        line.name = name;
+                        line.color = color;
+                        RailLabels.save();
+                    } else {
+                        RailLabels.addLine(new RailLabels.Line(dim.location().toString(), track[0], track[1], name, color));
+                    }
+                },
+                line != null ? () -> RailLabels.removeLine(line) : null)));
     }
 
     private static void option(List<DVChoicePopup.Option<Runnable>> options, String key, Runnable action) {

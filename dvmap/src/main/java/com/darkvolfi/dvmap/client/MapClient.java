@@ -136,5 +136,6 @@ public final class MapClient {
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
         MapData.saveAndClearAll();
         RemotePlayers.reset();
+        CreateTrains.reset();
     }
 }

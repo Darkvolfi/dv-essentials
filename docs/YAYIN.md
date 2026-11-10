@@ -266,8 +266,8 @@ Açlık ya da zehir veren yemekte önizleme o görünümde yanıp söner. Elde t
 Sayfalara yazılacak İngilizce metin: "Food that gives Hunger or Poison flashes its preview in that look. Held potions and food with effects preview on the health bar: Instant Health and Damage, Regeneration, Poison, Wither and Absorption (golden apples too). A new setting turns it off."
 
 ### DV Lens 1.0.1.0
-"Sandık içeriği" ve "Fırın ve demleme standı" artık ayrı ayarlar.
-Sayfalara yazılacak İngilizce metin: "Chest contents and furnaces/brewing stands are now two separate settings."
+"Sandık içeriği" ve "Fırın ve demleme standı" artık ayrı ayarlar. Sitelere yüklenmeyen 1.0.0.1 ve 1.0.0.2 de içinde: "Toggle DV Lens" tuşu Kontroller ekranına geri geldi, kırılma çubuğu akıcı doluyor.
+Sayfalara yazılacak İngilizce metin: "Chest contents and furnaces/brewing stands are now two separate settings. The Toggle DV Lens key is back in the controls (the light marks key showed twice instead). The breaking bar fills smoothly."
 
 ### DV Lib 1.0.2
 Ayarı olmayan DV modları menüde tıklanıyor ve bilgi kutusu açıyor. Kurulu olmayan modların kutuları CurseForge sayfasını açıyor.

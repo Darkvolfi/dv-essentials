@@ -1,7 +1,6 @@
 package com.darkvolfi.dvmap.client;
 
 import com.darkvolfi.dvlib.client.DVButton;
-import com.darkvolfi.dvlib.client.DVChoicePopup;
 import com.darkvolfi.dvlib.client.DVIconButton;
 import com.darkvolfi.dvlib.client.DVUi;
 import net.minecraft.ChatFormatting;
@@ -20,15 +19,17 @@ import net.minecraft.world.level.Level;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * Waypoints and places in a DV panel: a tab per dimension at the top, then sections (own waypoints, automatic
- * points, structures, and one per map hook such as DV Team's settlements) that fold up with the triangle on
- * their heading.
+ * Waypoints and places in a DV panel: a tab per dimension at the top, then sections (one per waypoint category,
+ * automatic points, structures, and one per map hook such as DV Team's settlements) that fold up with the triangle
+ * on their heading.
  */
 public class WaypointListScreen extends Screen {
     private static final int ROW_HEIGHT = 20;
@@ -44,16 +45,18 @@ public class WaypointListScreen extends Screen {
 
     /** Folded sections, kept while the game runs. */
     private static final Set<String> FOLDED = new HashSet<>();
-    /** Null shows every category. */
-    private static Waypoint.Category filter;
 
     private enum Kind { HEADER, WAYPOINT, PLACE, STRUCTURE }
 
-    /** One line of the list: a section heading or one of its entries. */
-    private record Row(Kind kind, String section, Component title, int count,
+    /** One line of the list: a section heading (with its category, for a waypoint category) or one of its entries. */
+    private record Row(Kind kind, String section, Component title, int count, WaypointCategory category,
                        Waypoint waypoint, MapOverlayHook.Place place, StructureMarkers.Entry structure) {
-        static Row header(String section, Component title, int count) {
-            return new Row(Kind.HEADER, section, title, count, null, null, null);
+        static Row header(String section, Component title, int count, WaypointCategory category) {
+            return new Row(Kind.HEADER, section, title, count, category, null, null, null);
+        }
+
+        static Row entry(Kind kind, String section, Waypoint waypoint, MapOverlayHook.Place place, StructureMarkers.Entry structure) {
+            return new Row(kind, section, null, 0, null, waypoint, place, structure);
         }
     }
 
@@ -109,28 +112,32 @@ public class WaypointListScreen extends Screen {
 
     private void buildRows() {
         rows.clear();
-        List<Row> own = new ArrayList<>();
+        Map<String, List<Row>> own = new LinkedHashMap<>();
+        for (WaypointCategory c : WaypointManager.categories()) own.put(c.id, new ArrayList<>());
         List<Row> auto = new ArrayList<>();
         for (Waypoint wp : WaypointManager.all()) {
             if (!dimension.equals(wp.dimension)) continue;
             if (wp.deathPoint) {
-                auto.add(new Row(Kind.WAYPOINT, "auto", null, 0, wp, null, null));
-            } else if (filter == null || wp.category() == filter) {
-                own.add(new Row(Kind.WAYPOINT, "own", null, 0, wp, null, null));
+                auto.add(Row.entry(Kind.WAYPOINT, "auto", wp, null, null));
+            } else {
+                String id = wp.category().id;
+                own.get(id).add(Row.entry(Kind.WAYPOINT, "cat:" + id, wp, null, null));
             }
         }
         if (minecraft.level != null && dimension.equals(Level.OVERWORLD.location().toString())) {
             BlockPos spawn = minecraft.level.getSharedSpawnPos();
-            auto.add(new Row(Kind.PLACE, "auto", null, 0, null, new MapOverlayHook.Place(
+            auto.add(Row.entry(Kind.PLACE, "auto", null, new MapOverlayHook.Place(
                     Component.translatable("dvmap.waypoint.spawn"), SPAWN, 0x7CE08A, spawn.getX(), spawn.getY(), spawn.getZ()), null));
         }
         List<Row> structures = new ArrayList<>();
         for (StructureMarkers.Entry e : StructureMarkers.forDimension(dimension)) {
-            structures.add(new Row(Kind.STRUCTURE, "structures", null, 0, null, null, e));
+            structures.add(Row.entry(Kind.STRUCTURE, "structures", null, null, e));
         }
-        section("own", Component.translatable("dvmap.waypoint.section.own"), own);
-        section("auto", Component.translatable("dvmap.waypoint.section.auto"), auto);
-        section("structures", Component.translatable("dvmap.waypoint.section.structures"), structures);
+        for (WaypointCategory c : WaypointManager.categories()) {
+            section("cat:" + c.id, c.displayName(), own.get(c.id), c);
+        }
+        section("auto", Component.translatable("dvmap.waypoint.section.auto"), auto, null);
+        section("structures", Component.translatable("dvmap.waypoint.section.structures"), structures, null);
 
         ResourceKey<Level> key = ResourceKey.create(Registries.DIMENSION, new ResourceLocation(dimension));
         for (int i = 0; i < MapOverlayHook.HOOKS.size(); i++) {
@@ -139,13 +146,13 @@ public class WaypointListScreen extends Screen {
             if (title == null) continue;
             String id = "hook" + i;
             List<Row> places = new ArrayList<>();
-            for (MapOverlayHook.Place p : hook.places(key)) places.add(new Row(Kind.PLACE, id, null, 0, null, p, null));
-            section(id, title, places);
+            for (MapOverlayHook.Place p : hook.places(key)) places.add(Row.entry(Kind.PLACE, id, null, p, null));
+            section(id, title, places, null);
         }
     }
 
-    private void section(String id, Component title, List<Row> entries) {
-        rows.add(Row.header(id, title, entries.size()));
+    private void section(String id, Component title, List<Row> entries, WaypointCategory category) {
+        rows.add(Row.header(id, title, entries.size(), category));
         if (!FOLDED.contains(id)) rows.addAll(entries);
     }
 
@@ -165,18 +172,8 @@ public class WaypointListScreen extends Screen {
                         minecraft.level.dimension().location().toString()));
             }
         }));
-        addRenderableWidget(new DVButton(r - 42 - 90, top + 5, 88, 16, filterLabel(), b -> {
-            List<DVChoicePopup.Option<Waypoint.Category>> options = new ArrayList<>();
-            options.add(new DVChoicePopup.Option<>(null, Component.translatable("dvmap.category.all")));
-            for (Waypoint.Category c : Waypoint.Category.values()) {
-                options.add(new DVChoicePopup.Option<>(c, Component.translatable(c.translationKey())));
-            }
-            DVChoicePopup.open(b, options, filter, c -> {
-                filter = c;
-                scrollOffset = 0;
-                init();
-            });
-        }).menu());
+        addRenderableWidget(new DVButton(r - 42 - 90, top + 5, 88, 16, Component.translatable("dvmap.category.new"),
+                b -> minecraft.setScreen(new CategoryEditScreen(this, null))));
 
         // One tab per dimension, sharing the panel's width.
         List<String> dims = dimensions();
@@ -199,8 +196,15 @@ public class WaypointListScreen extends Screen {
 
         for (int i = 0; i < maxRows() && (i + scrollOffset) < rows.size(); i++) {
             Row row = rows.get(i + scrollOffset);
-            if (row.kind() == Kind.HEADER) continue;
             int y = rowsTop() + i * ROW_HEIGHT + (ROW_HEIGHT - ICON) / 2;
+            if (row.kind() == Kind.HEADER) {
+                WaypointCategory c = row.category();
+                if (c != null) {
+                    addRenderableWidget(new DVIconButton(r - PAD - 14 - ICON, y, ICON, MapIcons.EDIT, Component.translatable("dvmap.category.edit_title"),
+                            () -> minecraft.setScreen(new CategoryEditScreen(this, c))));
+                }
+                continue;
+            }
             int x = r - PAD - ICON;
             Waypoint wp = row.waypoint();
 
@@ -240,10 +244,6 @@ public class WaypointListScreen extends Screen {
         } else {
             WaypointManager.teleport(minecraft, dimension, row.structure().x, "~", row.structure().z);
         }
-    }
-
-    private static Component filterLabel() {
-        return filter == null ? Component.translatable("dvmap.category.all") : Component.translatable(filter.translationKey());
     }
 
     @Override
@@ -297,6 +297,10 @@ public class WaypointListScreen extends Screen {
                 if (hover) g.fill(l + 4, y, l + w - 4, y + ROW_HEIGHT, 0x22FFFFFF);
                 Component heading = row.title().copy().withStyle(ChatFormatting.BOLD);
                 int x = l + PAD;
+                if (row.category() != null) {
+                    row.category().drawIcon(g, x + 4, y + 10, 1);
+                    x += 12;
+                }
                 g.drawString(font, heading, x, y + 6, 0xFFE6E6F0);
                 x += font.width(heading) + 4;
                 g.drawString(font, "(" + row.count() + ")", x, y + 6, 0xFF6A6478);

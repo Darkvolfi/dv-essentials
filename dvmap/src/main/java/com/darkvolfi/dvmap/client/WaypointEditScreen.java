@@ -28,7 +28,7 @@ public class WaypointEditScreen extends Screen {
     private int color;
     private boolean enabledValue;
     private Waypoint.Shape shapeValue;
-    private Waypoint.Category categoryValue;
+    private String categoryValue;
     private final int initialY;
     private boolean autoY;
 
@@ -52,10 +52,10 @@ public class WaypointEditScreen extends Screen {
             this.color = existing.color & 0xFFFFFF;
             // A death point becomes a normal waypoint once edited, so offer the regular default shape.
             this.shapeValue = existing.deathPoint ? Waypoint.Shape.STAR : existing.shape();
-            this.categoryValue = existing.category();
+            this.categoryValue = existing.category().id;
         } else {
             this.shapeValue = Waypoint.Shape.STAR;
-            this.categoryValue = Waypoint.Category.GENERAL;
+            this.categoryValue = WaypointCategory.GENERAL;
             this.nameValue = Component.translatable("dvmap.waypoint.default_name").getString();
             this.xValue = defaultX;
             this.yValue = defaultY;
@@ -117,14 +117,17 @@ public class WaypointEditScreen extends Screen {
             DVChoicePopup.openGrid(b, options, shapeValue, options.size(), s -> shapeValue = s);
         }).menu());
 
-        addRenderableWidget(new DVButton(cx + 4, top + 78, 96, 16, Component.translatable(categoryValue.translationKey()), b -> {
-            List<DVChoicePopup.Option<Waypoint.Category>> options = new ArrayList<>();
-            for (Waypoint.Category c : Waypoint.Category.values()) {
-                options.add(new DVChoicePopup.Option<>(c, Component.translatable(c.translationKey())));
-            }
-            DVChoicePopup.open(b, options, categoryValue, c -> {
-                categoryValue = c;
-                b.setMessage(Component.translatable(c.translationKey()));
+        addRenderableWidget(new DVButton(cx + 4, top + 78, 96, 16, WaypointManager.category(categoryValue).displayName(), b -> {
+            DVChoicePopup.open(b, categoryOptions(), categoryValue, id -> {
+                WaypointCategory c = WaypointManager.category(id);
+                categoryValue = c.id;
+                b.setMessage(c.displayName());
+                // A new waypoint takes its category's look; an existing one keeps the colour it was given.
+                if (existing == null && !c.isGeneral()) {
+                    color = c.color;
+                    if (c.icon != null) shapeValue = c.icon;
+                    rebuildWidgets();
+                }
             });
         }).menu()).setTooltip(Tooltip.create(Component.translatable("dvmap.waypoint.category")));
 
@@ -168,6 +171,15 @@ public class WaypointEditScreen extends Screen {
 
         setInitialFocus(nameBox);
         validateInputs();
+    }
+
+    /** Every category as a menu option (its id), with its icon. */
+    static List<DVChoicePopup.Option<String>> categoryOptions() {
+        List<DVChoicePopup.Option<String>> options = new ArrayList<>();
+        for (WaypointCategory c : WaypointManager.categories()) {
+            options.add(new DVChoicePopup.Option<>(c.id, c.displayName(), (g, x, y) -> c.drawIcon(g, x, y, 1)));
+        }
+        return options;
     }
 
     private void validateInputs() {

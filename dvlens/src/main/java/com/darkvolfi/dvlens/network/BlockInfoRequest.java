@@ -18,6 +18,8 @@ import net.minecraftforge.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.function.Supplier;
 
 /** Client → server: "tell me about the block I'm looking at". */
@@ -38,7 +40,7 @@ public record BlockInfoRequest(BlockPos pos) {
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ServerPlayer player = ctx.get().getSender();
         ctx.get().setPacketHandled(true);
-        if (player == null || !player.level().isLoaded(pos)) return;
+        if (player == null || overLimit(player) || !player.level().isLoaded(pos)) return;
         if (pos.distToCenterSqr(player.position()) > EntityInfoRequest.MAX_DISTANCE * EntityInfoRequest.MAX_DISTANCE) return;
         BlockEntity be = player.level().getBlockEntity(pos);
         if (be == null) return;
@@ -68,6 +70,24 @@ public record BlockInfoRequest(BlockPos pos) {
         }
         LensNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
                 new BlockInfoReply(pos, items, bees, command, progress, progressMax, fuel, fuelMax, MachineInfo.read(be)));
+    }
+
+    /**
+     * The lens asks at most once per client tick (when the target changes, else every 10 ticks); a little slack
+     * covers packets bunching up after lag. A modified client sending more only gets dropped requests.
+     */
+    private static final int MAX_PER_SECOND = 30;
+    /** Per player: {tick the current second started, requests in it}. Weak, so logged-out players drop out. */
+    private static final Map<ServerPlayer, int[]> RECENT = new WeakHashMap<>();
+
+    private static boolean overLimit(ServerPlayer player) {
+        int now = player.server.getTickCount();
+        int[] recent = RECENT.computeIfAbsent(player, p -> new int[] {now, 0});
+        if (now - recent[0] >= 20) {
+            recent[0] = now;
+            recent[1] = 0;
+        }
+        return ++recent[1] > MAX_PER_SECOND;
     }
 
     /** Non-empty stacks of any item-holding block (vanilla or modded), same items merged. */

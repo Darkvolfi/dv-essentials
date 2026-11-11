@@ -38,7 +38,8 @@ import java.util.UUID;
 /**
  * Death, in the order the game runs it: the death event (where every stack still is), the experience drop,
  * then the drops event, which every mod has filled by the lowest priority. The grave takes those drops, and
- * any item entity that still appears at the death spot in the same tick (mods that spawn their drops themselves).
+ * any of the player's own stacks that still appear at the death spot in the same tick (mods that spawn their
+ * drops themselves).
  */
 @Mod.EventBusSubscriber(modid = DVGrave.MOD_ID)
 public final class GraveEvents {
@@ -134,6 +135,12 @@ public final class GraveEvents {
 
     /** Pairs a dropped stack with the slot it was in at death; unknown ones (added by mods) just go to the inventory. */
     private static GraveItem origin(ItemStack stack, List<GraveItem> unmatched) {
+        GraveItem where = match(stack, unmatched);
+        return where != null ? where : GraveItem.other(stack);
+    }
+
+    /** The slot this exact stack was in at death, if no drop has claimed it yet; null otherwise. */
+    private static GraveItem match(ItemStack stack, List<GraveItem> unmatched) {
         for (Iterator<GraveItem> it = unmatched.iterator(); it.hasNext(); ) {
             GraveItem where = it.next();
             if (ItemStack.matches(where.stack(), stack)) {
@@ -141,20 +148,27 @@ public final class GraveEvents {
                 return where.withStack(stack);
             }
         }
-        return GraveItem.other(stack);
+        return null;
     }
 
+    /**
+     * A late drop is taken only if it is a stack the player was carrying at death that no drop accounted for,
+     * so items thrown by others or dropped by mobs and blocks nearby in the same tick stay on the ground.
+     */
     @SubscribeEvent
     public static void onItemJoin(EntityJoinLevelEvent event) {
         if (PENDING.isEmpty() || !(event.getEntity() instanceof ItemEntity item) || !(event.getLevel() instanceof ServerLevel level)) return;
-        for (Pending pending : PENDING.values()) {
+        for (Map.Entry<UUID, Pending> entry : PENDING.entrySet()) {
+            Pending pending = entry.getValue();
             if (pending.grave == null || pending.tick != level.getGameTime() || pending.dimension != level.dimension()) continue;
             if (item.position().distanceTo(pending.deathPos) > LATE_DROP_RANGE) continue;
-            if (level.getBlockEntity(pending.grave) instanceof GraveBlockEntity grave) {
-                grave.add(origin(item.getItem().copy(), pending.unmatched));
-                event.setCanceled(true);
-                return;
-            }
+            if (item.getOwner() != null && !item.getOwner().getUUID().equals(entry.getKey())) continue; // thrown by someone else
+            if (!(level.getBlockEntity(pending.grave) instanceof GraveBlockEntity grave)) continue;
+            GraveItem where = match(item.getItem().copy(), pending.unmatched);
+            if (where == null) continue;
+            grave.add(where);
+            event.setCanceled(true);
+            return;
         }
     }
 

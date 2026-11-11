@@ -12,6 +12,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -103,6 +104,20 @@ public final class VeinMiner {
             }
         } finally {
             miningLevel = null;
+        }
+    }
+
+    /**
+     * Asks claim mods (DV Team, FTB Chunks...) whether the player may break this block, by posting the same
+     * break event a real break would. The mining guard keeps {@link #onBreak} from starting a vein from it.
+     */
+    static boolean mayBreak(Player player, Level level, BlockPos pos, BlockState state) {
+        Level previous = miningLevel;
+        miningLevel = level;
+        try {
+            return !MinecraftForge.EVENT_BUS.post(new BlockEvent.BreakEvent(level, pos, state, player));
+        } finally {
+            miningLevel = previous;
         }
     }
 

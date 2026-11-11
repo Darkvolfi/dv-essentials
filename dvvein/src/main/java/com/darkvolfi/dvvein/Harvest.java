@@ -73,7 +73,8 @@ public final class Harvest {
             BlockState state = level.getBlockState(pos);
             if (!isRipe(state) || VeinMiner.isBlacklisted(player, state) || !level.mayInteract(player, pos)) continue;
             BlockState seedling = seedling(state);
-            if (seedling == null) continue;
+            // Only the clicked crop went through the claim check; a field can reach into someone else's land.
+            if (seedling == null || !VeinMiner.mayBreak(player, level, pos, state)) continue;
             harvest(level, player, pos, state, seedling, true);
             player.causeFoodExhaustion(EXHAUSTION + VeinConfig.EXHAUSTION_PER_BLOCK.get().floatValue());
         }

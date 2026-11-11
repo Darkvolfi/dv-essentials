@@ -46,5 +46,12 @@
   "dvnewcrafts.recipes.error.result": "Sonuç yuvası boş.",
   "dvnewcrafts.recipes.error.input": "Giriş yuvalarına en az bir eşya koy.",
   "dvnewcrafts.recipes.error.full": "Tarif sınırına ulaşıldı.",
-  "dvnewcrafts.recipes.error.file": "Dosya yazılamadı ya da silinemedi; sunucu günlüğüne bak."
+  "dvnewcrafts.recipes.error.file": "Dosya yazılamadı ya da silinemedi; sunucu günlüğüne bak.",
+  "dvnewcrafts.recipes.error.none": "Bu eşyayı yapan oyun ya da mod tarifi yok (ya da zaten kapalı).",
+  "dvnewcrafts.recipes.disable": "Kapat",
+  "dvnewcrafts.recipes.disable.tip": "Sonuç yuvasındaki eşyayı yapan, oyunun ve diğer modların bütün tariflerini kapatır. Senin tariflerin kalır. Listeden seçip Aç düğmesiyle geri gelirler.",
+  "dvnewcrafts.recipes.disabled": "Kapatılan tarif: %s",
+  "dvnewcrafts.recipes.enable": "Aç",
+  "dvnewcrafts.recipes.enabled": "Yeniden açıldı: %s",
+  "dvnewcrafts.recipes.off": "Kapalı: %s"
 }

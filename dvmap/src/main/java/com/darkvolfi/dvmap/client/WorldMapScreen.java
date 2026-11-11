@@ -217,6 +217,10 @@ public class WorldMapScreen extends Screen {
         return mapCenterY() + (float) ((wz - viewZ) * zoom);
     }
 
+    private CreateTrains.View trainView() {
+        return new CreateTrains.View(mapCenterX(), mapCenterY(), viewX, viewZ, zoom, 0, 0, width, height);
+    }
+
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         g.fill(0, 0, width, height, 0xFF100E16);
@@ -304,7 +308,7 @@ public class WorldMapScreen extends Screen {
         for (MapOverlayHook hook : MapOverlayHook.HOOKS) {
             hook.renderChunkOverlay(g, dim, minCx, minCz, maxCx, maxCz, cx, cy, viewX, viewZ, zoom, false);
         }
-        CreateTrains.renderTracks(g, this, minecraft.level, minCx, minCz, maxCx, maxCz, zoom);
+        CreateTrains.renderTracks(g, trainView(), minecraft.level, minCx, minCz, maxCx, maxCz, zoom);
 
         // 4. Hovered block frame; its chunk faintly, a little stronger when blocks get too small to see
         if (mouseY >= top && mouseY < bottom) {
@@ -357,7 +361,7 @@ public class WorldMapScreen extends Screen {
             }
         }
         MapMarkers.drawAll(g, markers, points, 8,Mth.lerp(partialTick, minecraft.player.yo, minecraft.player.getY()));
-        Entity train = CreateTrains.renderTrains(g, this, minecraft.level, partialTick, mouseX, mouseY);
+        Entity train = CreateTrains.renderTrains(g, trainView(), minecraft.level, partialTick, mouseX, mouseY);
         if (hovered != null) train = null;
         hoveredTrain = train;
         for (int i = 0; i < markers.size(); i++) {

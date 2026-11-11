@@ -49,6 +49,10 @@ public final class NewCraftsNetwork {
                 .encoder(Delete::encode).decoder(Delete::decode).consumerMainThread(Delete::handle).add();
         CHANNEL.messageBuilder(RecipeList.class, id++, NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(RecipeList::encode).decoder(RecipeList::decode).consumerMainThread(RecipeList::handle).add();
+        CHANNEL.messageBuilder(Disable.class, id++, NetworkDirection.PLAY_TO_SERVER)
+                .encoder((p, buf) -> {}).decoder(buf -> new Disable()).consumerMainThread(Disable::handle).add();
+        CHANNEL.messageBuilder(Enable.class, id++, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(Enable::encode).decoder(Enable::decode).consumerMainThread(Enable::handle).add();
     }
 
     /** The sender if they may edit recipes, otherwise null. */
@@ -64,7 +68,7 @@ public final class NewCraftsNetwork {
 
     private static void sendList(ServerPlayer player, String message, String name) {
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
-                new RecipeList(CustomRecipes.list(player.server), message, name));
+                new RecipeList(CustomRecipes.list(player.server), CustomRecipes.listDisabled(player.server), message, name));
     }
 
     /** Opens the editor, then sends the recipe list (packets arrive in order, so the screen is there by then). */
@@ -147,21 +151,67 @@ public final class NewCraftsNetwork {
         }
     }
 
-    /** The pack's recipes after a change, with a message key (and its argument) for the editor to show. */
-    public record RecipeList(List<CustomRecipe> recipes, String message, String name) {
+    /** Switches off every recipe (of the game or a mod) that makes the item in the editor's result slot. */
+    public record Disable() {
+        void handle(Supplier<NetworkEvent.Context> ctx) {
+            ServerPlayer player = operator(ctx);
+            RecipeEditorMenu menu = editor(player);
+            if (menu == null) return;
+            ItemStack result = menu.ghost(CustomRecipe.RESULT);
+            if (result.isEmpty()) {
+                sendList(player, CustomRecipes.ERROR_RESULT, "");
+                return;
+            }
+            int[] count = {0};
+            String message = CustomRecipes.disable(player.server, result.getItem(), count);
+            sendList(player, message, String.valueOf(count[0]));
+        }
+    }
+
+    /** Brings back a recipe switched off with {@link Disable}. */
+    public record Enable(String id) {
+        void encode(FriendlyByteBuf buf) {
+            buf.writeUtf(id, MAX_ID);
+        }
+
+        static Enable decode(FriendlyByteBuf buf) {
+            return new Enable(buf.readUtf(MAX_ID));
+        }
+
+        void handle(Supplier<NetworkEvent.Context> ctx) {
+            ServerPlayer player = operator(ctx);
+            if (editor(player) == null) return;
+            sendList(player, CustomRecipes.enable(player.server, id), id);
+        }
+    }
+
+    private static final int MAX_ID = 256;
+
+    /**
+     * The pack's recipes and switched-off recipe ids after a change, with a message key (and its argument) for the
+     * editor to show.
+     */
+    public record RecipeList(List<CustomRecipe> recipes, List<String> disabled, String message, String name) {
         void encode(FriendlyByteBuf buf) {
             CustomRecipe.writeList(buf, recipes);
+            buf.writeVarInt(disabled.size());
+            for (String id : disabled) buf.writeUtf(id, MAX_ID);
             buf.writeUtf(message, 128);
-            buf.writeUtf(name, CustomRecipe.MAX_NAME);
+            buf.writeUtf(name, MAX_ID);
         }
 
         static RecipeList decode(FriendlyByteBuf buf) {
-            return new RecipeList(CustomRecipe.readList(buf), buf.readUtf(128), buf.readUtf(CustomRecipe.MAX_NAME));
+            List<CustomRecipe> recipes = CustomRecipe.readList(buf);
+            int n = buf.readVarInt();
+            if (n < 0 || n > CustomRecipe.MAX_RECIPES) throw new io.netty.handler.codec.DecoderException("Too many ids: " + n);
+            List<String> disabled = new java.util.ArrayList<>(n);
+            for (int i = 0; i < n; i++) disabled.add(buf.readUtf(MAX_ID));
+            return new RecipeList(recipes, disabled, buf.readUtf(128), buf.readUtf(MAX_ID));
         }
 
         void handle(Supplier<NetworkEvent.Context> ctx) {
             DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () ->
-                    com.darkvolfi.dvnewcrafts.client.RecipeEditorScreen.onList(recipes, message, name));
+                    com.darkvolfi.dvnewcrafts.client.RecipeEditorScreen.onList(recipes, disabled, message, name));
         }
     }
 }

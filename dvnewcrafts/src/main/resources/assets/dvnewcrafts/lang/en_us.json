@@ -46,5 +46,12 @@
   "dvnewcrafts.recipes.error.result": "The result slot is empty.",
   "dvnewcrafts.recipes.error.input": "Put at least one item in the input slots.",
   "dvnewcrafts.recipes.error.full": "The recipe limit has been reached.",
-  "dvnewcrafts.recipes.error.file": "Couldn't write or delete the file; see the server log."
+  "dvnewcrafts.recipes.error.file": "Couldn't write or delete the file; see the server log.",
+  "dvnewcrafts.recipes.error.none": "No recipe of the game or a mod makes this item (or they are already switched off).",
+  "dvnewcrafts.recipes.disable": "Switch off",
+  "dvnewcrafts.recipes.disable.tip": "Switches off every recipe of the game and of other mods that makes the item in the result slot. Your own recipes stay. They come back by picking them in the list and pressing Enable.",
+  "dvnewcrafts.recipes.disabled": "Recipes switched off: %s",
+  "dvnewcrafts.recipes.enable": "Enable",
+  "dvnewcrafts.recipes.enabled": "Switched back on: %s",
+  "dvnewcrafts.recipes.off": "Switched off: %s"
 }

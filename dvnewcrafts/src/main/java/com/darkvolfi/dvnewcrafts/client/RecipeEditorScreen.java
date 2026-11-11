@@ -41,6 +41,8 @@ public class RecipeEditorScreen extends AbstractContainerScreen<RecipeEditorMenu
     private int scroll;
     /** Name of the saved recipe being edited; empty for a new one. */
     private String selected = "";
+    /** Id of the switched-off recipe picked in the list; the delete button then switches it back on. */
+    private String selectedOff = "";
     /** Delete needs a second click. */
     private boolean deleteArmed;
     /** Name the player was warned about: saving it again replaces the recipe of that name. */
@@ -76,6 +78,10 @@ public class RecipeEditorScreen extends AbstractContainerScreen<RecipeEditorMenu
         countBox.setTooltip(Tooltip.create(Component.translatable("dvnewcrafts.recipes.count")));
         addRenderableWidget(Button.builder(Component.translatable("dvnewcrafts.recipes.save"), b -> save())
                 .bounds(x + 94, y + 78, 74, 16).build());
+        addRenderableWidget(Button.builder(Component.translatable("dvnewcrafts.recipes.disable"),
+                        b -> NewCraftsNetwork.CHANNEL.sendToServer(new NewCraftsNetwork.Disable()))
+                .tooltip(Tooltip.create(Component.translatable("dvnewcrafts.recipes.disable.tip")))
+                .bounds(x + 94, y + 37, 74, 16).build());
 
         nameBox = addRenderableWidget(new EditBox(font, x + 8, y + 99, 160, 14, Component.translatable("dvnewcrafts.recipes.name")));
         nameBox.setMaxLength(CustomRecipe.MAX_NAME);
@@ -118,11 +124,25 @@ public class RecipeEditorScreen extends AbstractContainerScreen<RecipeEditorMenu
     }
 
     private void refreshButtons() {
-        deleteButton.active = !selected.isEmpty();
-        deleteButton.setMessage(Component.translatable(deleteArmed ? "dvnewcrafts.recipes.delete.confirm" : "dvnewcrafts.recipes.delete"));
+        deleteButton.active = !selected.isEmpty() || !selectedOff.isEmpty();
+        deleteButton.setMessage(Component.translatable(!selectedOff.isEmpty() ? "dvnewcrafts.recipes.enable"
+                : deleteArmed ? "dvnewcrafts.recipes.delete.confirm" : "dvnewcrafts.recipes.delete"));
+    }
+
+    private int rowCount() {
+        return menu.recipes.size() + menu.disabled.size();
+    }
+
+    private void selectOff(String id) {
+        selected = "";
+        selectedOff = id;
+        deleteArmed = false;
+        status = Component.translatable("dvnewcrafts.recipes.off", id);
+        refreshButtons();
     }
 
     private void select(CustomRecipe recipe) {
+        selectedOff = "";
         selected = recipe.name();
         deleteArmed = false;
         nameBox.setValue(recipe.name());
@@ -138,6 +158,7 @@ public class RecipeEditorScreen extends AbstractContainerScreen<RecipeEditorMenu
 
     private void newRecipe() {
         selected = "";
+        selectedOff = "";
         deleteArmed = false;
         nameBox.setValue("");
         status = Component.empty();
@@ -167,6 +188,10 @@ public class RecipeEditorScreen extends AbstractContainerScreen<RecipeEditorMenu
     }
 
     private void delete() {
+        if (!selectedOff.isEmpty()) {
+            NewCraftsNetwork.CHANNEL.sendToServer(new NewCraftsNetwork.Enable(selectedOff));
+            return;
+        }
         if (selected.isEmpty()) return;
         if (!deleteArmed) {
             deleteArmed = true;
@@ -194,14 +219,16 @@ public class RecipeEditorScreen extends AbstractContainerScreen<RecipeEditorMenu
     }
 
     /** The server's answer to a save or delete. */
-    public static void onList(List<CustomRecipe> recipes, String message, String name) {
+    public static void onList(List<CustomRecipe> recipes, List<String> disabled, String message, String name) {
         if (!(Minecraft.getInstance().screen instanceof RecipeEditorScreen screen)) return;
         screen.menu.recipes = recipes;
-        screen.status = Component.translatable(message, name);
+        screen.menu.disabled = disabled;
+        screen.status = message.isEmpty() ? Component.empty() : Component.translatable(message, name);
         boolean saved = CustomRecipes.SAVED.equals(message);
         if (saved) screen.selected = name;
         if (recipes.stream().noneMatch(r -> r.name().equals(screen.selected))) screen.selected = "";
-        screen.scroll = Math.max(0, Math.min(screen.scroll, recipes.size() - ROWS));
+        if (!disabled.contains(screen.selectedOff)) screen.selectedOff = "";
+        screen.scroll = Math.max(0, Math.min(screen.scroll, screen.rowCount() - ROWS));
         screen.refreshButtons();
     }
 
@@ -213,6 +240,7 @@ public class RecipeEditorScreen extends AbstractContainerScreen<RecipeEditorMenu
         int row = listRow(mouseX, mouseY);
         if (row >= 0 && button == 0) {
             if (row < menu.recipes.size()) select(menu.recipes.get(row));
+            else if (row < rowCount()) selectOff(menu.disabled.get(row - menu.recipes.size()));
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
@@ -229,7 +257,7 @@ public class RecipeEditorScreen extends AbstractContainerScreen<RecipeEditorMenu
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         if (mouseX - leftPos < RIGHT) {
-            scroll = Math.max(0, Math.min(scroll - (int) Math.signum(delta), menu.recipes.size() - ROWS));
+            scroll = Math.max(0, Math.min(scroll - (int) Math.signum(delta), rowCount() - ROWS));
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, delta);
@@ -301,19 +329,23 @@ public class RecipeEditorScreen extends AbstractContainerScreen<RecipeEditorMenu
         }
 
         List<CustomRecipe> recipes = menu.recipes;
-        if (recipes.isEmpty()) {
+        if (rowCount() == 0) {
             g.drawWordWrap(font, Component.translatable("dvnewcrafts.recipes.empty"), LIST_X + 3, LIST_Y + 3, LIST_W - 6, 0xFFE0E0E0);
         }
         int hovered = listRow(mouseX, mouseY);
-        for (int i = scroll; i < Math.min(recipes.size(), scroll + ROWS); i++) {
-            CustomRecipe recipe = recipes.get(i);
+        for (int i = scroll; i < Math.min(rowCount(), scroll + ROWS); i++) {
+            // Saved recipes first, then the switched-off ones, crossed out.
+            boolean off = i >= recipes.size();
+            String name = off ? menu.disabled.get(i - recipes.size()) : recipes.get(i).name();
             int y = LIST_Y + (i - scroll) * ROW;
-            boolean isSelected = recipe.name().equals(selected);
+            boolean isSelected = name.equals(off ? selectedOff : selected);
             if (isSelected || i == hovered) {
                 g.fill(LIST_X, y, LIST_X + LIST_W, y + ROW, isSelected ? 0xFF373737 : 0xFF6F6F6F);
             }
-            String text = font.plainSubstrByWidth(recipe.name(), LIST_W - 6);
-            g.drawString(font, text, LIST_X + 3, y + 2, recipe.valid() ? 0xFFFFFF : 0xFF8080, false);
+            String text = font.plainSubstrByWidth(name, LIST_W - 6);
+            int color = off ? 0xB0B0B0 : recipes.get(i).valid() ? 0xFFFFFF : 0xFF8080;
+            g.drawString(font, Component.literal(text).withStyle(off ? ChatFormatting.STRIKETHROUGH : ChatFormatting.RESET),
+                    LIST_X + 3, y + 2, color, false);
         }
 
         // Below the window, where there is room for long messages.

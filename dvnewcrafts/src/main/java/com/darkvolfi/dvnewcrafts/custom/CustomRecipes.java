@@ -53,6 +53,9 @@ public final class CustomRecipes {
     public static final String ERROR_INPUT = "dvnewcrafts.recipes.error.input";
     public static final String ERROR_FULL = "dvnewcrafts.recipes.error.full";
     public static final String ERROR_FILE = "dvnewcrafts.recipes.error.file";
+    public static final String ERROR_NONE = "dvnewcrafts.recipes.error.none";
+    public static final String DISABLED = "dvnewcrafts.recipes.disabled";
+    public static final String ENABLED = "dvnewcrafts.recipes.enabled";
 
     private CustomRecipes() {}
 
@@ -150,6 +153,117 @@ public final class CustomRecipes {
         return DELETED;
     }
 
+    // --- Switching off recipes of the game and other mods ---
+
+    /**
+     * A recipe is switched off by a file at its own id in our pack: the pack is on top, so the file replaces the
+     * recipe, and its condition that never holds makes the game skip it. Deleting the file brings the recipe back.
+     */
+    private static final String OFF_MARK = "dvnewcrafts_disabled";
+    private static final String OFF_PREFIX = "data";
+
+    /** The switch-off file for a recipe id, or null if the id is ours or could point outside the pack. */
+    private static Path offFile(MinecraftServer server, ResourceLocation id) {
+        if (id == null || id.getNamespace().equals(PACK) || id.getPath().contains("..")) return null;
+        Path data = packDir(server).resolve(OFF_PREFIX);
+        Path file = data.resolve(id.getNamespace()).resolve("recipes").resolve(id.getPath() + ".json").normalize();
+        return file.startsWith(data) ? file : null;
+    }
+
+    /** Ids of the recipes switched off in this world. */
+    public static List<String> listDisabled(MinecraftServer server) {
+        List<String> ids = new ArrayList<>();
+        Path data = packDir(server).resolve(OFF_PREFIX);
+        if (!Files.isDirectory(data)) return ids;
+        try (Stream<Path> namespaces = Files.list(data)) {
+            for (Path ns : (Iterable<Path>) namespaces::iterator) {
+                String namespace = ns.getFileName().toString();
+                Path recipes = ns.resolve("recipes");
+                if (namespace.equals(PACK) || !Files.isDirectory(recipes)) continue;
+                try (Stream<Path> files = Files.walk(recipes, 8)) {
+                    files.filter(p -> p.toString().endsWith(".json") && isOffFile(p)).forEach(p -> {
+                        String path = recipes.relativize(p).toString().replace('\\', '/');
+                        ids.add(namespace + ":" + path.substring(0, path.length() - 5));
+                    });
+                }
+            }
+        } catch (IOException e) {
+            LOGGER.warn("Couldn't list switched-off recipes in {}", data, e);
+        }
+        ids.sort(null);
+        return ids.size() > CustomRecipe.MAX_RECIPES ? ids.subList(0, CustomRecipe.MAX_RECIPES) : ids;
+    }
+
+    private static boolean isOffFile(Path file) {
+        try {
+            return Files.size(file) <= MAX_FILE_SIZE
+                    && JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8)).getAsJsonObject().has(OFF_MARK);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Switches off every loaded recipe that makes {@code item}, except the ones made in the editor. Returns the
+     * message key; {@code count} gets how many were switched off.
+     */
+    public static String disable(MinecraftServer server, Item item, int[] count) {
+        List<ResourceLocation> ids = new ArrayList<>();
+        for (net.minecraft.world.item.crafting.Recipe<?> recipe : server.getRecipeManager().getRecipes()) {
+            ItemStack result;
+            try {
+                result = recipe.getResultItem(server.registryAccess());
+            } catch (RuntimeException e) {
+                continue; // a mod's special recipe without a fixed result
+            }
+            if (result != null && result.is(item) && !recipe.getId().getNamespace().equals(PACK)) ids.add(recipe.getId());
+        }
+        if (ids.isEmpty()) return ERROR_NONE;
+        if (listDisabled(server).size() + ids.size() > CustomRecipe.MAX_RECIPES) return ERROR_FULL;
+        JsonObject never = new JsonObject();
+        never.addProperty("type", "forge:false");
+        JsonArray conditions = new JsonArray();
+        conditions.add(never);
+        JsonObject json = new JsonObject();
+        json.add("conditions", conditions);
+        json.addProperty(OFF_MARK, true);
+        try {
+            writePackMeta(server);
+            for (ResourceLocation id : ids) {
+                Path file = offFile(server, id);
+                if (file == null) continue;
+                Files.createDirectories(file.getParent());
+                Files.writeString(file, GSON.toJson(json), StandardCharsets.UTF_8);
+                count[0]++;
+            }
+        } catch (IOException e) {
+            LOGGER.warn("Couldn't write switch-off files for {}", item, e);
+            return ERROR_FILE;
+        }
+        reload(server);
+        return DISABLED;
+    }
+
+    /** Brings a switched-off recipe back. Only deletes files this editor wrote. */
+    public static String enable(MinecraftServer server, String id) {
+        Path file = offFile(server, ResourceLocation.tryParse(id));
+        if (file == null || !Files.isRegularFile(file) || !isOffFile(file)) return ERROR_NAME;
+        try {
+            Files.delete(file);
+        } catch (IOException e) {
+            LOGGER.warn("Couldn't delete switch-off file {}", file, e);
+            return ERROR_FILE;
+        }
+        reload(server);
+        return ENABLED;
+    }
+
+    private static void writePackMeta(MinecraftServer server) throws IOException {
+        Path meta = packDir(server).resolve("pack.mcmeta");
+        Files.createDirectories(meta.getParent());
+        if (!Files.exists(meta)) Files.writeString(meta, GSON.toJson(packMeta()), StandardCharsets.UTF_8);
+    }
+
     /**
      * What /reload does, plus enabling our pack: a pack folder that is new since the world loaded is only found
      * after the repository rescans, and isn't selected until we add it. Reloading sends the recipes to every player.
@@ -158,7 +272,9 @@ public final class CustomRecipes {
         PackRepository repository = server.getPackRepository();
         repository.reload();
         List<String> selected = new ArrayList<>(repository.getSelectedIds());
-        if (!selected.contains(PACK_ID) && repository.isAvailable(PACK_ID)) selected.add(PACK_ID);
+        // Last means on top: our files must win over the recipes they switch off.
+        selected.remove(PACK_ID);
+        if (repository.isAvailable(PACK_ID)) selected.add(PACK_ID);
         server.reloadResources(selected).exceptionally(e -> {
             LOGGER.warn("Couldn't reload data packs after editing custom recipes", e);
             return null;

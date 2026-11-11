@@ -187,6 +187,12 @@ public final class MinimapOverlay {
                     cx, cy, px, pz, scale, true);
         }
 
+        // 3b. Create tracks and trains, turned with the map (the rotated square reaches ~1.42 half sizes out)
+        float reach = halfSize * 1.42f;
+        CreateTrains.View view = new CreateTrains.View(cx, cy, px, pz, scale, cx - reach, cy - reach, cx + reach, cy + reach);
+        CreateTrains.renderTracks(g, view, mc.level, minWx >> 4, minWz >> 4, maxWx >> 4, maxWz >> 4, scale);
+        CreateTrains.renderTrains(g, view, mc.level, partialTick, Integer.MIN_VALUE / 2, Integer.MIN_VALUE / 2);
+
         pose.popPose();
 
         // 4. Structures and entity radar: upright icons at rotated positions

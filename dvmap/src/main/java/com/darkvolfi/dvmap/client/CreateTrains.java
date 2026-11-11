@@ -336,6 +336,20 @@ final class CreateTrains {
         return 0xFF000000 | (rgb < 0 ? 0xFFAA33 : rgb);
     }
 
+    /**
+     * Where the map is drawn: world point (ox, oz) at screen point (cx, cy), {@code scale} pixels per block, and the
+     * screen area worth drawing in. The world map and the minimap each pass their own.
+     */
+    record View(float cx, float cy, double ox, double oz, float scale, float minX, float minY, float maxX, float maxY) {
+        float x(double wx) {
+            return cx + (float) ((wx - ox) * scale);
+        }
+
+        float y(double wz) {
+            return cy + (float) ((wz - oz) * scale);
+        }
+    }
+
     /** Neighbours a track block is joined to on the map: east, south and both diagonals below (each pair drawn once). */
     private static final int[][] LINKS = {{1, 0}, {0, 1}, {1, 1}, {-1, 1}};
 
@@ -343,7 +357,7 @@ final class CreateTrains {
      * Tracks as a thick line on their own layer: neighbouring track blocks are joined, first with a dark outline, then
      * in the track colour on top, so the line stands out from the terrain at every zoom.
      */
-    static void renderTracks(GuiGraphics g, WorldMapScreen screen, ClientLevel level, int minCx, int minCz, int maxCx, int maxCz, float zoom) {
+    static void renderTracks(GuiGraphics g, View screen, ClientLevel level, int minCx, int minCz, int maxCx, int maxCz, float zoom) {
         if (!active() || TRACKS.isEmpty() && CURVES.isEmpty()) return;
         rebuildLines();
         int width = Math.max(2, Math.round(zoom * 0.4f));
@@ -354,16 +368,16 @@ final class CreateTrains {
     }
 
     /** Each curve as a smooth line through its points, in the same width and colours as the straight track. */
-    private static void renderCurves(GuiGraphics g, WorldMapScreen screen, int width, int defaultColor, boolean byLine) {
+    private static void renderCurves(GuiGraphics g, View screen, int width, int defaultColor, boolean byLine) {
         for (Curve c : allCurves()) {
             RailLabels.Line line = byLine ? LINE_OF.get(cell(c.bx1(), c.bz1())) : null;
             int color = line != null ? 0xFF000000 | line.color : defaultColor;
             double[] p = c.points();
-            float px = screen.worldToScreenX(p[0]), py = screen.worldToScreenY(p[1]);
+            float px = screen.x(p[0]), py = screen.y(p[1]);
             for (int i = 2; i < p.length; i += 2) {
-                float x = screen.worldToScreenX(p[i]), y = screen.worldToScreenY(p[i + 1]);
-                boolean visible = Math.max(px, x) >= -16 && Math.max(py, y) >= -16
-                        && Math.min(px, x) <= screen.width + 16 && Math.min(py, y) <= screen.height + 16;
+                float x = screen.x(p[i]), y = screen.y(p[i + 1]);
+                boolean visible = Math.max(px, x) >= screen.minX() - 16 && Math.max(py, y) >= screen.minY() - 16
+                        && Math.min(px, x) <= screen.maxX() + 16 && Math.min(py, y) <= screen.maxY() + 16;
                 if (visible) {
                     // Squares at most a pixel apart, like the joints of straight track.
                     int steps = Math.max(1, (int) Math.ceil(Math.max(Math.abs(x - px), Math.abs(y - py))));
@@ -379,7 +393,7 @@ final class CreateTrains {
     }
 
     /** With {@code byLine}, blocks of a named line are drawn in that line's colour instead of {@code color}. */
-    private static void renderTrackPass(GuiGraphics g, WorldMapScreen screen, ClientLevel level,
+    private static void renderTrackPass(GuiGraphics g, View screen, ClientLevel level,
                                         int minCx, int minCz, int maxCx, int maxCz, int width, int defaultColor, boolean byLine) {
         for (Map.Entry<Long, long[]> e : TRACKS.entrySet()) {
             int cx = ChunkPos.getX(e.getKey());
@@ -392,17 +406,17 @@ final class CreateTrains {
                 int bz = (cz << 4) + (i >> 4);
                 RailLabels.Line line = byLine ? LINE_OF.get(cell(bx, bz)) : null;
                 int color = line != null ? 0xFF000000 | line.color : defaultColor;
-                float sx = screen.worldToScreenX(bx + 0.5);
-                float sy = screen.worldToScreenY(bz + 0.5);
+                float sx = screen.x(bx + 0.5);
+                float sy = screen.y(bz + 0.5);
                 // Off screen (the chunk test above is coarse): nothing to draw.
-                if (sx < -16 || sy < -16 || sx > screen.width + 16 || sy > screen.height + 16) continue;
+                if (sx < screen.minX() - 16 || sy < screen.minY() - 16 || sx > screen.maxX() + 16 || sy > screen.maxY() + 16) continue;
                 square(g, sx, sy, width, color);
                 for (int[] link : LINKS) {
                     if (!isTrack(bx + link[0], bz + link[1])) continue;
                     // A diagonal next to a straight joint would fill in a corner and bulge the line: skip it.
                     if (link[0] != 0 && link[1] != 0 && (isTrack(bx + link[0], bz) || isTrack(bx, bz + link[1]))) continue;
-                    float ex = screen.worldToScreenX(bx + link[0] + 0.5);
-                    float ey = screen.worldToScreenY(bz + link[1] + 0.5);
+                    float ex = screen.x(bx + link[0] + 0.5);
+                    float ey = screen.y(bz + link[1] + 0.5);
                     // Squares along the joint, at most a pixel apart, so diagonals stay as thick as straight runs.
                     int steps = Math.max(1, (int) Math.ceil(Math.max(Math.abs(ex - sx), Math.abs(ey - sy))));
                     for (int s = 1; s <= steps; s++) {
@@ -431,7 +445,7 @@ final class CreateTrains {
      * Each carriage as the area it covers: a dark box with a lighter inside, like a wagon seen from above. When the
      * map is zoomed out too far for that, a train icon instead. Returns the carriage under the mouse, or null.
      */
-    static Entity renderTrains(GuiGraphics g, WorldMapScreen screen, ClientLevel level, float partialTick, int mouseX, int mouseY) {
+    static Entity renderTrains(GuiGraphics g, View screen, ClientLevel level, float partialTick, int mouseX, int mouseY) {
         if (!active() || carriage == null) return null;
         Entity hovered = null;
         for (Entity e : level.entitiesForRendering()) {
@@ -440,9 +454,9 @@ final class CreateTrains {
             double oz = Mth.lerp(partialTick, e.zo, e.getZ()) - e.getZ();
             AABB box = e.getBoundingBox();
             RailLabels.Train label = RailLabels.train(trainId(e));
-            float sx = screen.worldToScreenX(box.getCenter().x + ox);
-            float sy = screen.worldToScreenY(box.getCenter().z + oz);
-            float perBlock = screen.worldToScreenX(1) - screen.worldToScreenX(0);
+            float sx = screen.x(box.getCenter().x + ox);
+            float sy = screen.y(box.getCenter().z + oz);
+            float perBlock = screen.x(1) - screen.x(0);
             // The box Create gives a carriage is padded and axis-aligned, far too big for a wagon. Draw the wagon at its
             // real size (from its blocks), turned the way the track under it runs.
             CarriageInfo info = info(e);

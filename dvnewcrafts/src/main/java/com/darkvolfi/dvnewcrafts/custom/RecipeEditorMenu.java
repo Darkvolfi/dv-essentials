@@ -28,6 +28,8 @@ public class RecipeEditorMenu extends AbstractContainerMenu {
     private final SimpleContainer ghosts = new SimpleContainer(CustomRecipe.SLOTS);
     /** The pack's recipes, client side; sent by the server on opening and after each change. */
     public List<CustomRecipe> recipes = List.of();
+    /** Client side: ids of the recipes switched off in this world. */
+    public List<String> disabled = List.of();
     /** Client side: which slots are in use. The server ignores unused slots when saving. */
     public RecipeKind kind = RecipeKind.SHAPED;
 

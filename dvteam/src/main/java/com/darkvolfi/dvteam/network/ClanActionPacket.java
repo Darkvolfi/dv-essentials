@@ -17,7 +17,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.network.NetworkEvent;
 
+import java.util.Map;
 import java.util.UUID;
+import java.util.WeakHashMap;
 import java.util.function.Supplier;
 
 /**
@@ -69,9 +71,10 @@ public record ClanActionPacket(Action action, UUID target, String text, int valu
     public static void handle(ClanActionPacket p, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().setPacketHandled(true);
         ServerPlayer player = ctx.get().getSender();
-        if (player == null) return;
+        if (player == null || overLimit(player)) return;
         MinecraftServer server = player.getServer();
         ClanData data = ClanData.get(server);
+        long revision = data.revision();
         ClanData.Clan clan = data.clanOf(player.getUUID());
         CompoundTag x = p.extra;
 
@@ -147,7 +150,24 @@ public record ClanActionPacket(Action action, UUID target, String text, int valu
             case VAULT_ACCESS -> data.setVaultAccess(player, Rank.values()[Math.floorMod(p.value, Rank.values().length)]);
         };
         TeamNetwork.tell(player, error);
-        TeamNetwork.syncToAll(server);
+        // The sync goes to every player, so only send it when the action really changed something.
+        if (data.revision() != revision) TeamNetwork.syncToAll(server);
+    }
+
+    /** Screens send one packet per click (two for the settlement screen); more than this is a modified client. */
+    private static final int MAX_PER_SECOND = 5;
+    /** Per player: {tick the current second started, packets in it}. Weak, so logged-out players drop out. */
+    private static final Map<ServerPlayer, int[]> RECENT = new WeakHashMap<>();
+
+    /** Packets past the limit are dropped silently. */
+    private static boolean overLimit(ServerPlayer player) {
+        int now = player.server.getTickCount();
+        int[] recent = RECENT.computeIfAbsent(player, p -> new int[] {now, 0});
+        if (now - recent[0] >= 20) {
+            recent[0] = now;
+            recent[1] = 0;
+        }
+        return ++recent[1] > MAX_PER_SECOND;
     }
 
     /** Swaps one banner from the inventory for a banner with the clan's flag. */

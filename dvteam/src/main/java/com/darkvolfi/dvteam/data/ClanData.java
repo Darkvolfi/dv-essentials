@@ -313,9 +313,21 @@ public class ClanData extends SavedData {
     private final List<War> wars = new ArrayList<>();
     /** "clanA|clanB" (sorted) → wall-clock time until which they can't fight again. */
     private final Map<String, Long> cooldowns = new HashMap<>();
+    /** Counts changes, so packet handlers can tell whether clients need a new sync. */
+    private long revision;
 
     public static ClanData get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(ClanData::load, ClanData::new, DATA_NAME);
+    }
+
+    @Override
+    public void setDirty() {
+        super.setDirty();
+        revision++;
+    }
+
+    public long revision() {
+        return revision;
     }
 
     // ---------------------------------------------------------------- lookups

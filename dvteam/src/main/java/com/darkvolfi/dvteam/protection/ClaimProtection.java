@@ -5,6 +5,7 @@ import com.darkvolfi.dvteam.data.ClanData;
 import com.darkvolfi.dvteam.data.ClanTypes.Perm;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,6 +20,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.ButtonBlock;
 import net.minecraft.world.level.block.CocoaBlock;
@@ -32,20 +34,28 @@ import net.minecraft.world.level.block.StemBlock;
 import net.minecraft.world.level.block.SweetBerryBushBlock;
 import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.piston.PistonStructureResolver;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.util.BlockSnapshot;
+import net.minecraftforge.event.entity.ProjectileImpactEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.level.ExplosionEvent;
+import net.minecraftforge.event.level.PistonEvent;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * Settlement protection: each action maps to one {@link Perm}, checked against the settlement the block or
@@ -191,10 +201,27 @@ public final class ClaimProtection {
         if (!allowed(level, event.getEntity(), target.blockPosition(), perm)) event.setCanceled(true);
     }
 
+    /**
+     * Arrows, tridents, snowballs and the like shot by a player: same rules as hitting the entity by hand.
+     * Item frames, paintings and armor stands never see {@link LivingAttackEvent}, so this is their only guard.
+     */
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public static void onProjectileImpact(ProjectileImpactEvent event) {
+        if (!(event.getRayTraceResult() instanceof EntityHitResult hit) || !(event.getProjectile().getOwner() instanceof Player player)) return;
+        Entity target = hit.getEntity();
+        if (!(target.level() instanceof ServerLevel level) || target instanceof Enemy || target instanceof Player) return;
+        Perm perm = target instanceof LivingEntity ? Perm.ANIMALS : Perm.BUILD;
+        if (!allowed(level, player, target.blockPosition(), perm)) event.setCanceled(true);
+    }
+
     /** No PvP in trade centers; clanmates and allies only hurt each other with friendly fire on. */
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onLivingAttack(LivingAttackEvent event) {
-        if (!(event.getEntity() instanceof ServerPlayer victim) || !(event.getSource().getEntity() instanceof ServerPlayer attacker)) return;
+        if (!(event.getEntity() instanceof ServerPlayer victim)) {
+            onAnimalAttack(event);
+            return;
+        }
+        if (!(event.getSource().getEntity() instanceof ServerPlayer attacker)) return;
         if (victim == attacker) return;
         ClanData data = ClanData.get(victim.getServer());
         String dim = victim.level().dimension().location().toString();
@@ -207,6 +234,77 @@ public final class ClaimProtection {
         ClanData.Clan v = data.clanOf(victim.getUUID());
         if (a == null || v == null) return;
         if ((a == v || data.mutualAllies(a, v)) && !(a.friendlyFire && v.friendlyFire)) event.setCanceled(true);
+    }
+
+    /** Damage a player causes without a hit (sweeping edge, thorns, splash potions): same rules as a hit. */
+    private static void onAnimalAttack(LivingAttackEvent event) {
+        LivingEntity target = event.getEntity();
+        if (!(target.level() instanceof ServerLevel level) || target instanceof Enemy) return;
+        if (!(event.getSource().getEntity() instanceof Player player)) return;
+        if (!allowed(level, player, target.blockPosition(), Perm.ANIMALS)) event.setCanceled(true);
+    }
+
+    /**
+     * Pistons are not players, so they may only move blocks within one clan's land or out of it, never into or
+     * out of another clan's land (or from the wild into a claim).
+     */
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public static void onPiston(PistonEvent.Pre event) {
+        if (!(event.getLevel() instanceof ServerLevel level)) return;
+        BlockPos piston = event.getPos();
+        boolean extend = event.getPistonMoveType().isExtend;
+        // A plain piston pulls nothing back, only its own head.
+        if (!extend && level.getBlockState(piston).is(Blocks.PISTON)) return;
+        ClanData data = ClanData.get(level.getServer());
+        String dim = level.dimension().location().toString();
+        if (!claimNear(data, dim, piston)) return; // a piston reaches at most 13 blocks, so one chunk over
+        PistonStructureResolver resolver = event.getStructureHelper();
+        if (resolver == null || !resolver.resolve()) return; // nothing will move
+        UUID home = clanIdAt(data, dim, piston);
+        Direction move = resolver.getPushDirection();
+        List<BlockPos> touched = new ArrayList<>(resolver.getToDestroy());
+        touched.add(piston.relative(event.getDirection())); // the head
+        for (BlockPos p : resolver.getToPush()) {
+            touched.add(p);
+            touched.add(p.relative(move));
+        }
+        for (BlockPos p : touched) {
+            UUID owner = clanIdAt(data, dim, p);
+            if (owner != null && !owner.equals(home)) {
+                event.setCanceled(true);
+                return;
+            }
+        }
+    }
+
+    /**
+     * Lava making stone or obsidian, or setting fire: only on land of the same clan as the fluid (or wild land).
+     * Plain fluid flow has no Forge event in 1.20.1, so it is not covered.
+     */
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public static void onFluidPlace(BlockEvent.FluidPlaceBlockEvent event) {
+        if (!(event.getLevel() instanceof ServerLevel level)) return;
+        ClanData data = ClanData.get(level.getServer());
+        String dim = level.dimension().location().toString();
+        UUID owner = clanIdAt(data, dim, event.getPos());
+        if (owner != null && !owner.equals(clanIdAt(data, dim, event.getLiquidPos()))) {
+            event.setNewState(event.getOriginalState());
+        }
+    }
+
+    private static UUID clanIdAt(ClanData data, String dim, BlockPos pos) {
+        ClanData.Settlement s = data.settlementAt(dim, pos.getX() >> 4, pos.getZ() >> 4);
+        return s == null ? null : s.clanId;
+    }
+
+    private static boolean claimNear(ClanData data, String dim, BlockPos pos) {
+        int cx = pos.getX() >> 4, cz = pos.getZ() >> 4;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                if (data.claimAt(dim, cx + dx, cz + dz) != null) return true;
+            }
+        }
+        return false;
     }
 
     @SubscribeEvent(priority = EventPriority.HIGH)

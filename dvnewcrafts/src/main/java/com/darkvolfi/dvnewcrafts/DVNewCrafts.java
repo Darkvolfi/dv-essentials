@@ -1,5 +1,14 @@
 package com.darkvolfi.dvnewcrafts;
 
+import com.darkvolfi.dvnewcrafts.client.NewCraftsClient;
+import com.darkvolfi.dvnewcrafts.custom.RecipeEditorMenu;
+import com.darkvolfi.dvnewcrafts.network.NewCraftsNetwork;
+import com.darkvolfi.dvnewcrafts.recipe.ToolDamagingShapedRecipe;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.common.extensions.IForgeMenuType;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.particles.SimpleParticleType;
@@ -43,6 +52,13 @@ public class DVNewCrafts {
     private static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MOD_ID);
     private static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MOD_ID);
     private static final DeferredRegister<ParticleType<?>> PARTICLES = DeferredRegister.create(ForgeRegistries.PARTICLE_TYPES, MOD_ID);
+    private static final DeferredRegister<RecipeSerializer<?>> RECIPE_SERIALIZERS = DeferredRegister.create(ForgeRegistries.RECIPE_SERIALIZERS, MOD_ID);
+    private static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(ForgeRegistries.MENU_TYPES, MOD_ID);
+
+    public static final RegistryObject<RecipeSerializer<ToolDamagingShapedRecipe>> TOOL_DAMAGING_SHAPED =
+            RECIPE_SERIALIZERS.register("tool_damaging_shaped", ToolDamagingShapedRecipe.Serializer::new);
+    public static final RegistryObject<MenuType<RecipeEditorMenu>> RECIPE_EDITOR =
+            MENUS.register("recipe_editor", () -> IForgeMenuType.create(RecipeEditorMenu::fromNetwork));
 
     /**
      * The copper torch's green flame. Made here rather than in the registry's supplier because the torch blocks need
@@ -97,7 +113,11 @@ public class DVNewCrafts {
         BLOCKS.register(modBus);
         ITEMS.register(modBus);
         PARTICLES.register(modBus);
+        RECIPE_SERIALIZERS.register(modBus);
+        MENUS.register(modBus);
         modBus.addListener(DVNewCrafts::onCreativeTabs);
+        NewCraftsNetwork.register();
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> NewCraftsClient::registerRecipeScreen);
     }
 
     private static RegistryObject<Item> armor(String name, ArmorItem.Type type) {

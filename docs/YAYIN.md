@@ -231,7 +231,7 @@ The library behind the DV mods. Install it together with any DV mod.
 
 ## Değişiklik listesi
 
-Yükleme sırası ve hazır jar'lar: masaüstünde `DV Yayin/Guncellemeler` (betik: `AGENTS/calisma/yayin-guncelleme.sh`). 2026-11-10 dalgası: Lib 1.0.2, Backpack 1.0.0.1, Vein 1.0.0.1, Grave 1.0.0.1, Map 1.0.1.0, Team 1.0.0.1, Souls 1.0.1.0, Food 1.0.1.0, Lens 1.0.1.0, Music 1.0.1.0, New Crafts 1.1.0. DV Lens 1.0.0.1–1.0.0.2 ve DV Music 1.0.0.1 sitelere yüklenmedi; içerikleri 1.0.1.0'da.
+Yükleme sırası ve hazır jar'lar: masaüstünde `DV Yayin/Guncellemeler` (betik: `AGENTS/calisma/yayin-guncelleme.sh`). 2026-11-10 dalgası: Lib 1.0.2, Backpack 1.0.0.1, Vein 1.0.0.2, Grave 1.0.0.2, Map 1.0.1.0, Team 1.0.0.2, Souls 1.0.1.0, Food 1.0.1.0, Lens 1.0.1.1, Music 1.0.1.0, New Crafts 1.1.0. Vein/Grave 1.0.0.1, Team 1.0.0.1 ve Lens 1.0.1.0 hiç yüklenmedi; içerikleri bir üst sürümde. DV Lens 1.0.0.1–1.0.0.2 ve DV Music 1.0.0.1 sitelere yüklenmedi; içerikleri 1.0.1.0'da.
 
 ### DV New Crafts 1.1.0
 Yöneticiler için oyun içi tarif ekranı (DV menüsü ya da Mods → Config): şekilli, şekilsiz, fırın, tütsüleyici, yüksek fırın, kamp ateşi ve taş kesici tarifleri eklenir, düzenlenir, silinir; dünyanın veri paketine yazılır, hemen yüklenir. Yeni tarif: ortada makas, çevresinde 8 çürük et → 8 deri (makas 8 can kaybeder).
@@ -240,6 +240,22 @@ Sayfalara yazılacak İngilizce metin: "Operators can now add, edit and delete r
 ### DV Backpack 1.0.0.1
 Hata düzeltmesi: Toplama kartı, yerdeki yığının yalnızca bir kısmı çantaya sığınca o kısmı envantere de veriyordu (eşya kopyalanıyordu).
 Sayfalara yazılacak İngilizce metin: "Fixed an item duplication: with a Pickup card, when only part of a stack fitted into the backpack, that part also went into the inventory."
+
+### DV Vein 1.0.0.2
+Güvenlik: tarla hasadı ve toplu kırkma her ekin ve her koyun için koruma modlarına soruyor (eskiden yalnız tıklanan hedef). Sitelere yüklenmeyen 1.0.0.1'in düzeltmeleri de içinde.
+Sayfalara yazılacak İngilizce metin: "Field harvesting and mass shearing with the vein key now ask claim mods about every crop and every sheep, not only the one you clicked, so you can no longer harvest or shear across into someone else's land (works with DV Team and other claim mods that use Forge's events). Also fixed a crash when vein mining with a full inventory, and spawn protection and the world border now apply to every block of a vein."
+
+### DV Grave 1.0.0.2
+Mezar yalnız ölen oyuncunun üstündeki eşyaları alıyor; aynı anda yakına düşen başkalarının eşyaları yerde kalıyor. Sitelere yüklenmeyen 1.0.0.1'in düzeltmeleri de içinde.
+Sayfalara yazılacak İngilizce metin: "The grave now only takes items you were actually carrying when you died; items thrown by other players or dropped by mobs and blocks next to you in the same moment stay on the ground. Also fixed experience being duplicated when keepInventory is on, and experience is no longer lost when no place for a grave is found."
+
+### DV Team 1.0.0.2
+Güvenlik: piston, lav, ok ve mermiler, süpürme vuruşu, diken ve sıçrayan iksirler koruma alanını aşamıyor; klan işlemlerine oyuncu başına hız sınırı. Sitelere yüklenmeyen 1.0.0.1'in değişikliği de içinde.
+Sayfalara yazılacak İngilizce metin: "Closed several ways around claim protection: pistons can no longer push or pull blocks into or out of another clan's land, lava can no longer make stone or start fires across a claim border, and arrows and other projectiles, sweeping attacks, thorns and splash potions from players no longer hurt protected animals, item frames, paintings or armor stands. Clan actions are rate-limited per player and only resync clients when something actually changed. The clan and claim buttons on the world map match DV Map 1.0.1.0's larger toolbar."
+
+### DV Lens 1.0.1.1
+Sunucu, oyuncu başına blok bilgisi isteklerini sınırlıyor. Sitelere yüklenmeyen 1.0.1.0'ın içeriği de içinde.
+Sayfalara yazılacak İngilizce metin: "Chest contents and furnaces/brewing stands are now two separate settings. The Toggle DV Lens key is back in the controls (the light marks key showed twice instead). The breaking bar fills smoothly. The server now limits how often each player can ask for block details, so a modified client can no longer flood it."
 
 ### DV Vein 1.0.0.1
 Hata düzeltmesi: envanter doluyken damar kırmak sunucuyu çökertebiliyordu. Spawn koruması ve dünya sınırı artık damarın her bloğu için geçerli.

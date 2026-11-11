@@ -67,6 +67,7 @@ final class CreateTrains {
         if (!active() || mc.level == null || mc.player == null) {
             if (!TRACKS.isEmpty()) tracksVersion++;
             TRACKS.clear();
+            CURVES.clear();
             TRAIN_IDS.clear();
             return;
         }
@@ -76,6 +77,7 @@ final class CreateTrains {
             dimension = level.dimension();
             if (!TRACKS.isEmpty()) tracksVersion++;
             TRACKS.clear();
+            CURVES.clear();
             TRAIN_IDS.clear();
             cursor = 0;
         }
@@ -90,7 +92,9 @@ final class CreateTrains {
         int next = (cursor + CHUNKS_PER_TICK) % total;
         if (next < cursor) {
             // A full round: forget chunks that have been unloaded since.
-            if (TRACKS.keySet().removeIf(key -> !level.hasChunk(ChunkPos.getX(key), ChunkPos.getZ(key)))) tracksVersion++;
+            boolean gone = TRACKS.keySet().removeIf(key -> !level.hasChunk(ChunkPos.getX(key), ChunkPos.getZ(key)));
+            gone |= CURVES.keySet().removeIf(key -> !level.hasChunk(ChunkPos.getX(key), ChunkPos.getZ(key)));
+            if (gone) tracksVersion++;
         }
         cursor = next;
     }
@@ -100,8 +104,9 @@ final class CreateTrains {
         for (Map.Entry<ResourceKey<Block>, Block> e : BuiltInRegistries.BLOCK.entrySet()) {
             ResourceLocation id = e.getKey().location();
             // The rails themselves only: stations, signals and observers stand beside the track and would blot the line.
+            // "Fake" track is the invisible filler under a curve; the curve itself is drawn from its end's data.
             String path = id.getPath();
-            if (id.getNamespace().equals(CREATE) && path.contains("track")
+            if (id.getNamespace().equals(CREATE) && path.contains("track") && !path.contains("fake")
                     && !path.contains("station") && !path.contains("signal") && !path.contains("observer")) blocks.add(e.getValue());
         }
         trackBlocks = blocks;
@@ -112,7 +117,7 @@ final class CreateTrains {
         long key = ChunkPos.asLong(chunkX, chunkZ);
         LevelChunk chunk = level.getChunkSource().getChunk(chunkX, chunkZ, ChunkStatus.FULL, false);
         if (chunk == null || chunk.isEmpty() || trackBlocks.isEmpty()) {
-            if (TRACKS.remove(key) != null) tracksVersion++;
+            if (TRACKS.remove(key) != null | CURVES.remove(key) != null) tracksVersion++;
             return;
         }
         long[] bits = null;
@@ -131,6 +136,112 @@ final class CreateTrains {
         }
         long[] old = bits == null ? TRACKS.remove(key) : TRACKS.put(key, bits);
         if (!Arrays.equals(old, bits)) tracksVersion++;
+        scanCurves(chunk, key);
+    }
+
+    // --- Curves: Create keeps each curve once, in the track block entity at one of its ends ---
+
+    /**
+     * A curve between two track blocks, on the map plane: its ends, the direction from each end into the curve, and
+     * the blocks the ends stand on (to join the curve into named lines).
+     */
+    private record Curve(double x1, double z1, double x2, double z2, double ax1, double az1, double ax2, double az2,
+                         int bx1, int bz1, int bx2, int bz2) {
+        /** Points along the curve, as {x0, z0, x1, z1, ...} in world coordinates. */
+        double[] points() {
+            double dist = Math.hypot(x2 - x1, z2 - z1);
+            double h = handle(dist);
+            double c1x = x1 + ax1 * h, c1z = z1 + az1 * h;
+            double c2x = x2 + ax2 * h, c2z = z2 + az2 * h;
+            int n = Mth.clamp((int) Math.ceil(dist * 2), 8, 64);
+            double[] p = new double[(n + 1) * 2];
+            for (int i = 0; i <= n; i++) {
+                double t = i / (double) n, u = 1 - t;
+                double a = u * u * u, b = 3 * u * u * t, c = 3 * u * t * t, d = t * t * t;
+                p[2 * i] = a * x1 + b * c1x + c * c2x + d * x2;
+                p[2 * i + 1] = a * z1 + b * c1z + c * c2z + d * z2;
+            }
+            return p;
+        }
+
+        /**
+         * Length of the Bézier handles. For a circular arc of turning angle θ the classic 4/3·tan(θ/4)·r keeps the
+         * curve round; nearly straight, a third of the distance.
+         */
+        private double handle(double dist) {
+            // Direction of travel at the far end is the opposite of its "into the curve" axis.
+            double cos = Mth.clamp(ax1 * -ax2 + az1 * -az2, -1, 1);
+            double turn = Math.acos(cos);
+            if (turn < 1.0E-3 || dist < 1.0E-3) return dist / 3;
+            double r = dist / (2 * Math.sin(turn / 2));
+            return Math.min(r * 4 / 3 * Math.tan(turn / 4), dist);
+        }
+    }
+
+    private static final Map<Long, java.util.List<Curve>> CURVES = new HashMap<>();
+
+    /**
+     * Reads the curves of the chunk's track blocks from their saved data: "Connections", each with "Primary" (every
+     * curve is saved at both ends, only the primary one is drawn), "Starts" (the two ends, relative to the block) and
+     * "Axes" (the direction from each end into the curve). No Create classes are used.
+     */
+    private static void scanCurves(LevelChunk chunk, long key) {
+        java.util.List<Curve> found = null;
+        for (net.minecraft.world.level.block.entity.BlockEntity be : chunk.getBlockEntities().values()) {
+            if (!trackBlocks.contains(be.getBlockState().getBlock())) continue;
+            CompoundTag tag;
+            try {
+                tag = be.saveWithoutMetadata();
+            } catch (RuntimeException ex) {
+                continue;
+            }
+            ListTag connections = tag.getList("Connections", Tag.TAG_COMPOUND);
+            BlockPos pos = be.getBlockPos();
+            for (int i = 0; i < connections.size(); i++) {
+                CompoundTag c = connections.getCompound(i);
+                if (!c.getBoolean("Primary")) continue;
+                double[] s1 = vec(c.get("Starts"), 0), s2 = vec(c.get("Starts"), 1);
+                double[] a1 = vec(c.get("Axes"), 0), a2 = vec(c.get("Axes"), 1);
+                if (s1 == null || s2 == null || a1 == null || a2 == null) continue;
+                double x1 = s1[0] + pos.getX(), z1 = s1[2] + pos.getZ();
+                double x2 = s2[0] + pos.getX(), z2 = s2[2] + pos.getZ();
+                double l1 = Math.hypot(a1[0], a1[2]), l2 = Math.hypot(a2[0], a2[2]);
+                if (l1 < 1.0E-6 || l2 < 1.0E-6) continue;
+                if (found == null) found = new java.util.ArrayList<>();
+                found.add(new Curve(x1, z1, x2, z2, a1[0] / l1, a1[2] / l1, a2[0] / l2, a2[2] / l2,
+                        Mth.floor(x1), Mth.floor(z1), Mth.floor(x2), Mth.floor(z2)));
+            }
+        }
+        java.util.List<Curve> old = found == null ? CURVES.remove(key) : CURVES.put(key, found);
+        if (!java.util.Objects.equals(old, found)) tracksVersion++;
+    }
+
+    /**
+     * The {@code index}-th vector of a saved pair: each is either a list of three doubles or a compound holding one,
+     * depending on how Create's helper wrote it.
+     */
+    private static double[] vec(Tag pair, int index) {
+        if (!(pair instanceof ListTag list) || list.size() <= index) return null;
+        Tag t = list.get(index);
+        if (t instanceof CompoundTag compound) {
+            for (String k : compound.getAllKeys()) {
+                if (compound.get(k) instanceof ListTag inner) {
+                    t = inner;
+                    break;
+                }
+            }
+        }
+        if (t instanceof ListTag l && l.size() >= 3 && l.getElementType() == Tag.TAG_DOUBLE) {
+            return new double[] {l.getDouble(0), l.getDouble(1), l.getDouble(2)};
+        }
+        return null;
+    }
+
+    /** Every curve in the loaded chunks. */
+    private static Iterable<Curve> allCurves() {
+        java.util.List<Curve> all = new java.util.ArrayList<>();
+        for (java.util.List<Curve> list : CURVES.values()) all.addAll(list);
+        return all;
     }
 
     // --- Named lines: every track block joined to a labelled anchor takes the label's name and colour ---
@@ -160,6 +271,14 @@ final class CreateTrains {
                 if (isTrack(bx + dx, bz + dz)) return new int[] {bx + dx, bz + dz};
             }
         }
+        // On a curve: the block at its first end stands for it (a curve belongs to the line of its ends).
+        double mx = bx + 0.5, mz = bz + 0.5;
+        for (Curve c : allCurves()) {
+            double[] p = c.points();
+            for (int i = 0; i < p.length; i += 2) {
+                if (Math.abs(p[i] - mx) <= 1.5 && Math.abs(p[i + 1] - mz) <= 1.5) return new int[] {c.bx1(), c.bz1()};
+            }
+        }
         return null;
     }
 
@@ -170,6 +289,12 @@ final class CreateTrains {
         LINE_OF.clear();
         if (dimension == null) return;
         String dim = dimension.location().toString();
+        // A curve joins its two end blocks, however far apart they are.
+        Map<Long, java.util.List<long[]>> curveLinks = new HashMap<>();
+        for (Curve c : allCurves()) {
+            curveLinks.computeIfAbsent(cell(c.bx1(), c.bz1()), k -> new java.util.ArrayList<>()).add(new long[] {c.bx2(), c.bz2()});
+            curveLinks.computeIfAbsent(cell(c.bx2(), c.bz2()), k -> new java.util.ArrayList<>()).add(new long[] {c.bx1(), c.bz1()});
+        }
         for (RailLabels.Line line : RailLabels.lines()) {
             if (!dim.equals(line.dimension) || !isTrack(line.x, line.z) || LINE_OF.containsKey(cell(line.x, line.z))) continue;
             // Flood through touching track blocks (diagonals too), the same joins the map draws.
@@ -187,6 +312,11 @@ final class CreateTrains {
                         todo.add(new long[] {nx, nz});
                     }
                 }
+                for (long[] other : curveLinks.getOrDefault(cell((int) p[0], (int) p[1]), java.util.List.of())) {
+                    if (!isTrack((int) other[0], (int) other[1]) || LINE_OF.containsKey(cell((int) other[0], (int) other[1]))) continue;
+                    LINE_OF.put(cell((int) other[0], (int) other[1]), line);
+                    todo.add(other);
+                }
             }
         }
     }
@@ -194,6 +324,7 @@ final class CreateTrains {
     /** Forgets everything of the world just left, so its tracks and trains never show in the next one. */
     static void reset() {
         TRACKS.clear();
+        CURVES.clear();
         TRAIN_IDS.clear();
         dimension = null;
         cursor = 0;
@@ -213,11 +344,38 @@ final class CreateTrains {
      * in the track colour on top, so the line stands out from the terrain at every zoom.
      */
     static void renderTracks(GuiGraphics g, WorldMapScreen screen, ClientLevel level, int minCx, int minCz, int maxCx, int maxCz, float zoom) {
-        if (!active() || TRACKS.isEmpty()) return;
+        if (!active() || TRACKS.isEmpty() && CURVES.isEmpty()) return;
         rebuildLines();
         int width = Math.max(2, Math.round(zoom * 0.4f));
         renderTrackPass(g, screen, level, minCx, minCz, maxCx, maxCz, width + 2, 0xFF1A1420, false);
+        renderCurves(g, screen, width + 2, 0xFF1A1420, false);
         renderTrackPass(g, screen, level, minCx, minCz, maxCx, maxCz, width, trackColor(), true);
+        renderCurves(g, screen, width, trackColor(), true);
+    }
+
+    /** Each curve as a smooth line through its points, in the same width and colours as the straight track. */
+    private static void renderCurves(GuiGraphics g, WorldMapScreen screen, int width, int defaultColor, boolean byLine) {
+        for (Curve c : allCurves()) {
+            RailLabels.Line line = byLine ? LINE_OF.get(cell(c.bx1(), c.bz1())) : null;
+            int color = line != null ? 0xFF000000 | line.color : defaultColor;
+            double[] p = c.points();
+            float px = screen.worldToScreenX(p[0]), py = screen.worldToScreenY(p[1]);
+            for (int i = 2; i < p.length; i += 2) {
+                float x = screen.worldToScreenX(p[i]), y = screen.worldToScreenY(p[i + 1]);
+                boolean visible = Math.max(px, x) >= -16 && Math.max(py, y) >= -16
+                        && Math.min(px, x) <= screen.width + 16 && Math.min(py, y) <= screen.height + 16;
+                if (visible) {
+                    // Squares at most a pixel apart, like the joints of straight track.
+                    int steps = Math.max(1, (int) Math.ceil(Math.max(Math.abs(x - px), Math.abs(y - py))));
+                    for (int s = 0; s <= steps; s++) {
+                        float t = s / (float) steps;
+                        square(g, px + (x - px) * t, py + (y - py) * t, width, color);
+                    }
+                }
+                px = x;
+                py = y;
+            }
+        }
     }
 
     /** With {@code byLine}, blocks of a named line are drawn in that line's colour instead of {@code color}. */

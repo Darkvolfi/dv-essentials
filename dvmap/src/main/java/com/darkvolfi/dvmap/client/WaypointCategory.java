@@ -29,11 +29,21 @@ public final class WaypointCategory {
         this.icon = icon;
     }
 
-    /** The categories a world has before the player changes them. */
+    /**
+     * The categories a world starts with: only General, which holds waypoints without a category and stays out of
+     * the list while empty. Everything else the player makes (user's decision, 2026-11-10).
+     */
     public static List<WaypointCategory> defaults() {
         List<WaypointCategory> list = new ArrayList<>();
-        for (int i = 0; i < BUILT_IN.length; i++) list.add(new WaypointCategory(BUILT_IN[i], null, BUILT_IN_COLORS[i], null));
+        list.add(new WaypointCategory(GENERAL, null, BUILT_IN_COLORS[0], null));
         return list;
+    }
+
+    /** One of the categories older versions gave every world (Home, Mine...), never renamed by the player. */
+    public boolean isOldBuiltIn() {
+        if (name != null || isGeneral()) return false;
+        for (String id : BUILT_IN) if (id.equals(this.id)) return true;
+        return false;
     }
 
     public boolean isGeneral() {

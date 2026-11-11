@@ -8,7 +8,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
@@ -39,7 +38,6 @@ public class WaypointListScreen extends Screen {
     private static final int TAB_HEIGHT = 14;
     private static final String[] OPEN = {".......", "#######", ".#####.", "..###..", "...#...", ".......", "......."};
     private static final String[] CLOSED = {".#.....", ".##....", ".###...", ".####..", ".###...", ".##....", ".#....."};
-    private static final String[] SPAWN = {"...#...", "..###..", ".#####.", "#######", ".#...#.", ".#.#.#.", ".#####."};
     private static final List<String> BASE_DIMENSIONS = List.of(
             Level.OVERWORLD.location().toString(), Level.NETHER.location().toString(), Level.END.location().toString());
 
@@ -114,30 +112,28 @@ public class WaypointListScreen extends Screen {
         rows.clear();
         Map<String, List<Row>> own = new LinkedHashMap<>();
         for (WaypointCategory c : WaypointManager.categories()) own.put(c.id, new ArrayList<>());
-        List<Row> auto = new ArrayList<>();
+        List<Row> deaths = new ArrayList<>();
         for (Waypoint wp : WaypointManager.all()) {
             if (!dimension.equals(wp.dimension)) continue;
             if (wp.deathPoint) {
-                auto.add(Row.entry(Kind.WAYPOINT, "auto", wp, null, null));
+                deaths.add(Row.entry(Kind.WAYPOINT, "deaths", wp, null, null));
             } else {
                 String id = wp.category().id;
                 own.get(id).add(Row.entry(Kind.WAYPOINT, "cat:" + id, wp, null, null));
             }
         }
-        if (minecraft.level != null && dimension.equals(Level.OVERWORLD.location().toString())) {
-            BlockPos spawn = minecraft.level.getSharedSpawnPos();
-            auto.add(Row.entry(Kind.PLACE, "auto", null, new MapOverlayHook.Place(
-                    Component.translatable("dvmap.waypoint.spawn"), SPAWN, 0x7CE08A, spawn.getX(), spawn.getY(), spawn.getZ()), null));
-        }
         List<Row> structures = new ArrayList<>();
         for (StructureMarkers.Entry e : StructureMarkers.forDimension(dimension)) {
             structures.add(Row.entry(Kind.STRUCTURE, "structures", null, null, e));
         }
+        // Only what the player made shows: their categories (General once it holds something) and deaths;
+        // structures and map hooks (DV Team's clan places) come at the end once they have entries.
         for (WaypointCategory c : WaypointManager.categories()) {
+            if (c.isGeneral() && own.get(c.id).isEmpty()) continue;
             section("cat:" + c.id, c.displayName(), own.get(c.id), c);
         }
-        section("auto", Component.translatable("dvmap.waypoint.section.auto"), auto, null);
-        section("structures", Component.translatable("dvmap.waypoint.section.structures"), structures, null);
+        section("deaths", Component.translatable("dvmap.waypoint.section.deaths"), deaths, null);
+        if (!structures.isEmpty()) section("structures", Component.translatable("dvmap.waypoint.section.structures"), structures, null);
 
         ResourceKey<Level> key = ResourceKey.create(Registries.DIMENSION, new ResourceLocation(dimension));
         for (int i = 0; i < MapOverlayHook.HOOKS.size(); i++) {
@@ -147,7 +143,7 @@ public class WaypointListScreen extends Screen {
             String id = "hook" + i;
             List<Row> places = new ArrayList<>();
             for (MapOverlayHook.Place p : hook.places(key)) places.add(Row.entry(Kind.PLACE, id, null, p, null));
-            section(id, title, places, null);
+            if (!places.isEmpty()) section(id, title, places, null);
         }
     }
 

@@ -150,7 +150,7 @@
   "dvmap.structure.minecraft.ruined_portal_nether": "Ruined Portal",
   "dvmap.structure.minecraft.ancient_city": "Ancient City",
   "dvmap.structure.minecraft.trail_ruins": "Trail Ruins",
-  "dvmap.waypoint.section.auto": "Automatic",
+  "dvmap.waypoint.section.deaths": "Deaths",
   "dvmap.waypoint.section.structures": "Structures",
   "dvmap.waypoint.spawn": "World Spawn",
   "dvmap.dimension.minecraft.overworld": "Overworld",

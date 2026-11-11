@@ -99,6 +99,7 @@ Kullanıcının oyunda bulduğu hatalar ve istekleri. Nedenler kodda bulundu, he
   - "Şarkılar" menüsünden bir kategori seçilirse sadece o kategori çalar (her yerde).
 
 ### DV Map (1.0.1.0)
+- **✅ (2026-11-10, kullanıcının kararı) İşaret listesi sade.** Dünya hiç kategoriyle başlamıyor: eski 8 hazır kategori (Genel, Ev, Maden...) yok. Genel sadece içinde işaret varken görünür (kategorisiz işaretler oraya düşer). Eski dünyalarda boş ve adı değiştirilmemiş hazır kategoriler yüklenince silinir. Ölüm işaretleri kendi "Ölüm" bölümünde; "Otomatik" bölümü ve doğma noktası satırı kaldırıldı. Yapılar ve DV Team klan bölümleri sadece doluyken, en sonda görünür.
 - **✅ (2026-11-10) İstek: kendi işaret kategorilerimiz.**
   - Şu an kategoriler sabit bir listede (`Waypoint.Category`: General, Home, Mine, Village, Farm, Portal, Danger, Explore). İşaret listesi "My Waypoints / Automatic / Structures" bölümleriyle gruplanıyor.
   - Plan: oyuncu kendi kategorisini açabilsin: ad, renk ve isteğe bağlı simge. İşaret listesinde her kategori kendi açılır-kapanır bölümü olur.

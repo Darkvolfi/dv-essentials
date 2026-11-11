@@ -82,6 +82,8 @@ public final class WaypointManager {
             String id = wp.category.toLowerCase(Locale.ROOT);
             wp.category = findCategory(id) != null ? id : WaypointCategory.GENERAL;
         }
+        // Older versions gave every world eight categories; the empty, untouched ones go.
+        CATEGORIES.removeIf(c -> c.isOldBuiltIn() && WAYPOINTS.stream().noneMatch(wp -> !wp.deathPoint && c.id.equals(wp.category)));
     }
 
     public static void save() {

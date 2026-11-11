@@ -150,7 +150,7 @@
   "dvmap.structure.minecraft.ruined_portal_nether": "Yıkık Geçit",
   "dvmap.structure.minecraft.ancient_city": "Kadim Şehir",
   "dvmap.structure.minecraft.trail_ruins": "Patika Kalıntıları",
-  "dvmap.waypoint.section.auto": "Otomatik",
+  "dvmap.waypoint.section.deaths": "Ölüm",
   "dvmap.waypoint.section.structures": "Yapılar",
   "dvmap.waypoint.spawn": "Doğma Noktası",
   "dvmap.dimension.minecraft.overworld": "Dünya",

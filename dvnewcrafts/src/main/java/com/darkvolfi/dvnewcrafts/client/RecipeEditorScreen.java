@@ -43,6 +43,8 @@ public class RecipeEditorScreen extends AbstractContainerScreen<RecipeEditorMenu
     private String selected = "";
     /** Delete needs a second click. */
     private boolean deleteArmed;
+    /** Name the player was warned about: saving it again replaces the recipe of that name. */
+    private String overwriteArmed = "";
     private Component status = Component.empty();
 
     public RecipeEditorScreen(RecipeEditorMenu menu, Inventory inventory, Component title) {
@@ -55,6 +57,11 @@ public class RecipeEditorScreen extends AbstractContainerScreen<RecipeEditorMenu
 
     @Override
     protected void init() {
+        // Resizing the window runs init again and makes new boxes: carry over what was typed.
+        String oldName = nameBox == null ? "" : nameBox.getValue();
+        String oldCount = countBox == null ? "1" : countBox.getValue();
+        String oldTime = timeBox == null ? "200" : timeBox.getValue();
+        String oldXp = xpBox == null ? "0.1" : xpBox.getValue();
         super.init();
         int x = leftPos + RIGHT;
         int y = topPos;
@@ -86,6 +93,10 @@ public class RecipeEditorScreen extends AbstractContainerScreen<RecipeEditorMenu
                 .bounds(leftPos + LIST_X, y + imageHeight - 24, 42, 16).build());
         deleteButton = addRenderableWidget(Button.builder(Component.translatable("dvnewcrafts.recipes.delete"), b -> delete())
                 .bounds(leftPos + LIST_X + 46, y + imageHeight - 24, 42, 16).build());
+        nameBox.setValue(oldName);
+        countBox.setValue(oldCount);
+        timeBox.setValue(oldTime);
+        xpBox.setValue(oldXp);
         setKind(menu.kind);
     }
 
@@ -141,6 +152,14 @@ public class RecipeEditorScreen extends AbstractContainerScreen<RecipeEditorMenu
             return;
         }
         nameBox.setValue(name);
+        // Saving under the name of another saved recipe would replace it: ask for a second click first.
+        boolean taken = !name.equals(selected) && menu.recipes.stream().anyMatch(r -> r.name().equals(name));
+        if (taken && !name.equals(overwriteArmed)) {
+            overwriteArmed = name;
+            status = Component.translatable("dvnewcrafts.recipes.exists", name);
+            return;
+        }
+        overwriteArmed = "";
         RecipeKind kind = kindButton.getValue();
         NewCraftsNetwork.CHANNEL.sendToServer(new NewCraftsNetwork.Save(name, kind.ordinal(),
                 parseInt(countBox.getValue(), 1), parseInt(timeBox.getValue(), kind.defaultCookTime),

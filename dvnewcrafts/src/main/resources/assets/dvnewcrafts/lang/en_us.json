@@ -37,6 +37,7 @@
   "dvnewcrafts.recipes.new": "New",
   "dvnewcrafts.recipes.delete": "Delete",
   "dvnewcrafts.recipes.delete.confirm": "Sure?",
+  "dvnewcrafts.recipes.exists": "A recipe called %s already exists. Press Save again to replace it.",
   "dvnewcrafts.recipes.empty": "No recipes yet. Click the slots with items, name it and save.",
   "dvnewcrafts.recipes.unreadable": "This file couldn't be read; it can only be deleted.",
   "dvnewcrafts.recipes.saved": "Saved: %s",

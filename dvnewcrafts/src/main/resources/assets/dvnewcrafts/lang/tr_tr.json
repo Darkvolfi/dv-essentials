@@ -37,6 +37,7 @@
   "dvnewcrafts.recipes.new": "Yeni",
   "dvnewcrafts.recipes.delete": "Sil",
   "dvnewcrafts.recipes.delete.confirm": "Emin misin?",
+  "dvnewcrafts.recipes.exists": "%s adında bir tarif zaten var. Üstüne yazmak için Kaydet'e tekrar bas.",
   "dvnewcrafts.recipes.empty": "Henüz tarif yok. Eşyalarla yuvalara tıkla, ad ver ve kaydet.",
   "dvnewcrafts.recipes.unreadable": "Bu dosya okunamadı; yalnızca silinebilir.",
   "dvnewcrafts.recipes.saved": "Kaydedildi: %s",

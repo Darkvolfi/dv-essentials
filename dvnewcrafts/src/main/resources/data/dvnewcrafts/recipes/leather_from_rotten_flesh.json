@@ -1,0 +1,22 @@
+{
+  "type": "dvnewcrafts:tool_damaging_shaped",
+  "category": "misc",
+  "pattern": [
+    "FFF",
+    "FSF",
+    "FFF"
+  ],
+  "key": {
+    "F": {
+      "item": "minecraft:rotten_flesh"
+    },
+    "S": {
+      "tag": "forge:shears"
+    }
+  },
+  "result": {
+    "item": "minecraft:leather",
+    "count": 8
+  },
+  "damage": 8
+}

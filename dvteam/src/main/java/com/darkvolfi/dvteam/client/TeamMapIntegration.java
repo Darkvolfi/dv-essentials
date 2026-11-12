@@ -7,7 +7,7 @@ import com.darkvolfi.dvmap.client.MapOverlayHook;
 import com.darkvolfi.dvmap.client.WorldMapScreen;
 import com.darkvolfi.dvteam.TeamConfig;
 import com.darkvolfi.dvteam.data.ClanData;
-import com.darkvolfi.dvteam.data.ClanTypes.Rank;
+import com.darkvolfi.dvteam.data.ClanTypes.Manage;
 import com.darkvolfi.dvteam.data.ClanTypes.SettlementType;
 import com.darkvolfi.dvteam.network.ChunkClaimActionPacket;
 import com.darkvolfi.dvteam.network.TeamNetwork;
@@ -110,7 +110,7 @@ public final class TeamMapIntegration implements MapOverlayHook {
 
                 boolean war = ClientClanCache.atWarWithMe(clan.id);
                 g.fill(x0, y0, x1, y1, fillAlpha | clan.color);
-                int border = borderAlpha | (war ? WAR_RED : clan.color);
+                int border = borderAlpha | (war ? WAR_RED : edgeColor(clan.color));
                 int th = (!isMinimap && scale >= 1.5f) || war ? 2 : 1;
                 // Only the settlement's outer edges get a border.
                 if (!same(dimension, cx, cz - 1, s)) g.fill(x0, y0, x1, y0 + th, border);
@@ -141,6 +141,12 @@ public final class TeamMapIntegration implements MapOverlayHook {
             int sy = Math.round(centerScreenY + (float) ((c[1] - centerWorldZ) * scale));
             drawSettlement(g, font, s, clan, sx, sy, scale, isMinimap);
         }
+    }
+
+    /** The border in the clan colour, but white for very dark colours, which would vanish against the map. */
+    private static int edgeColor(int rgb) {
+        int r = rgb >> 16 & 0xFF, gr = rgb >> 8 & 0xFF, b = rgb & 0xFF;
+        return (r * 299 + gr * 587 + b * 114) / 1000 < 60 ? 0xFFFFFF : rgb;
     }
 
     private static boolean same(ResourceKey<Level> dim, int cx, int cz, ClanData.Settlement s) {
@@ -200,9 +206,16 @@ public final class TeamMapIntegration implements MapOverlayHook {
                                    int chunkX, int chunkZ, int blockX, int blockZ, int button) {
         if (!claimMode || button != 0 && button != 1) return false;
         ClanData.Clan mine = ClientClanCache.myClan();
-        if (mine == null || !ClientClanCache.iAm(Rank.OFFICER)) return true; // the bar explains why
+        if (mine == null || !ClientClanCache.can(Manage.CLAIM)) return true; // the bar explains why
         if (button == 0 && !Screen.hasShiftDown() && ClientClanCache.claimAt(dimension, chunkX, chunkZ) == null
                 && !nextToMine(mine, dimension, chunkX, chunkZ)) {
+            // Say why right away instead of asking for a name the server would then refuse (it checks again).
+            String error = foundError(mine, dimension, chunkX, chunkZ);
+            if (error != null) {
+                Minecraft mc = Minecraft.getInstance();
+                if (mc.player != null) mc.player.displayClientMessage(Component.translatable(error).withStyle(ChatFormatting.RED), true);
+                return true;
+            }
             Minecraft.getInstance().setScreen(new FoundSettlementScreen(screen, dimension.location().toString(), chunkX, chunkZ));
             return true;
         }
@@ -219,6 +232,24 @@ public final class TeamMapIntegration implements MapOverlayHook {
         if (button == 0 && !Screen.hasShiftDown() && !nextToMine(mine, dimension, chunkX, chunkZ)) return true;
         send(dimension, chunkX, chunkZ, button);
         return true;
+    }
+
+    /**
+     * The server's checks for founding a settlement on an unclaimed chunk that isn't next to one of ours, in the
+     * same order; null when it would be allowed. Village and trade center limits depend on the type picked later.
+     */
+    private static String foundError(ClanData.Clan mine, ResourceKey<Level> dim, int cx, int cz) {
+        ClanData.Snapshot lim = ClientClanCache.limits();
+        if (lim == null) return null;
+        if (ClientClanCache.chunkCount(mine.id) >= ClientClanCache.maxChunks(mine)) return "dvteam.err.limit_clan";
+        int gap = lim.minGap();
+        for (int dz = -gap; dz <= gap; dz++) {
+            for (int dx = -gap; dx <= gap; dx++) {
+                ClanData.Settlement s = ClientClanCache.settlementAt(dim, cx + dx, cz + dz);
+                if (s != null && !s.clanId.equals(mine.id)) return "dvteam.err.too_close";
+            }
+        }
+        return null;
     }
 
     private static boolean nextToMine(ClanData.Clan mine, ResourceKey<Level> dim, int cx, int cz) {
@@ -250,7 +281,7 @@ public final class TeamMapIntegration implements MapOverlayHook {
         Component text;
         if (mine == null) {
             text = Component.translatable("dvteam.map.need_clan").withStyle(ChatFormatting.YELLOW);
-        } else if (!ClientClanCache.iAm(Rank.OFFICER)) {
+        } else if (!ClientClanCache.can(Manage.CLAIM)) {
             text = Component.translatable("dvteam.map.need_officer").withStyle(ChatFormatting.YELLOW);
         } else {
             ClanData.Snapshot lim = ClientClanCache.limits();

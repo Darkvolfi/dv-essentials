@@ -57,6 +57,9 @@ public final class LensOverlay {
     private static void render(ForgeGui gui, GuiGraphics g, float partialTick, int width, int height) {
         Minecraft mc = gui.getMinecraft();
         if (!LensConfig.ENABLED.get() || mc.options.hideGui || mc.options.renderDebug || mc.screen != null) return;
+        // The player list (Tab) sits in the same place at the top: make way for it, as the game shows it.
+        if (mc.options.keyPlayerList.isDown() && mc.player != null
+                && (!mc.isLocalServer() || mc.player.connection.getListedOnlinePlayers().size() > 1)) return;
         LensInfo info = LensInfo.lookAt(mc);
         if (info == null || info.lines().isEmpty()) return;
 

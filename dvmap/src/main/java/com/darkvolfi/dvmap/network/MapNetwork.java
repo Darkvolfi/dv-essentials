@@ -1,6 +1,7 @@
 package com.darkvolfi.dvmap.network;
 
 import com.darkvolfi.dvmap.DVMap;
+import com.darkvolfi.dvmap.MapServerConfig;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -27,7 +28,7 @@ import java.util.UUID;
  */
 @Mod.EventBusSubscriber(modid = DVMap.MOD_ID)
 public final class MapNetwork {
-    private static final String VERSION = "2";
+    private static final String VERSION = "3";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(DVMap.MOD_ID, "main"), () -> VERSION,
             NetworkRegistry.acceptMissingOr(VERSION), NetworkRegistry.acceptMissingOr(VERSION));
@@ -74,8 +75,11 @@ public final class MapNetwork {
 
             List<PlayerPositionsPacket.Entry> visible = new ArrayList<>();
             List<UUID> hidden = new ArrayList<>();
+            List<UUID> tagHidden = new ArrayList<>();
+            boolean tagsMayHide = MapServerConfig.ALLOW_HIDDEN_NAME_TAGS.get();
             for (ServerPlayer p : players) {
                 VisibilityPacket choice = VISIBILITY.get(p.getUUID());
+                if (tagsMayHide && choice != null && choice.nameHidden()) tagHidden.add(p.getUUID());
                 if (choice != null && choice.hidden()) {
                     hidden.add(p.getUUID());
                     continue;
@@ -92,7 +96,7 @@ public final class MapNetwork {
                 for (PlayerPositionsPacket.Entry e : visible) {
                     if (!e.id().equals(receiver.getUUID())) others.add(e);
                 }
-                CHANNEL.send(PacketDistributor.PLAYER.with(() -> receiver), new PlayerPositionsPacket(others, hidden));
+                CHANNEL.send(PacketDistributor.PLAYER.with(() -> receiver), new PlayerPositionsPacket(others, hidden, tagHidden));
             }
         }
     }

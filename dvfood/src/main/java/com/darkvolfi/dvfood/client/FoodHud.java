@@ -13,6 +13,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.food.FoodData;
@@ -138,12 +139,12 @@ public final class FoodHud {
         int health = Mth.ceil(player.getHealth());
         int newHealth = Math.min(Mth.ceil(player.getHealth() + foodGain) + (fx == null ? 0 : fx.gain), (int) maxHealth);
         int loss = fx == null ? 0 : fx.loss;
-        int absorb = fx == null ? 0 : fx.absorption;
+        int currentAbsorb = Mth.ceil(player.getAbsorptionAmount());
+        int absorb = fx == null ? 0 : addedAbsorption(player, fx.absorption, currentAbsorb);
         if (newHealth <= health && loss == 0 && absorb == 0) return;
 
         // Same row maths as Gui.renderHearts.
         int maxHp = Math.max((int) maxHealth, health);
-        int currentAbsorb = Mth.ceil(player.getAbsorptionAmount());
         int rows = Mth.ceil((maxHp + currentAbsorb + absorb) / 2.0f / 10.0f);
         int rowHeight = Math.max(10 - (rows - 2), 3);
         int v = player.level().getLevelData().isHardcore() ? 45 : 0;
@@ -183,6 +184,20 @@ public final class FoodHud {
             }
         }
         g.setColor(1f, 1f, 1f, 1f);
+    }
+
+    /**
+     * How much absorption the held item would really add. Absorption doesn't stack: with the effect already on, the
+     * game takes off what the old effect gave and puts on the new amount (only if the new one is at least as strong).
+     * So a second golden apple tops the yellow hearts back up instead of doubling them.
+     */
+    private static int addedAbsorption(Player player, int bonus, int current) {
+        if (bonus <= 0) return 0;
+        MobEffectInstance active = player.getEffect(MobEffects.ABSORPTION);
+        if (active == null) return bonus;
+        int old = 4 * (active.getAmplifier() + 1);
+        int after = bonus >= old ? Math.max(0, current - old) + bonus : current;
+        return Math.max(0, after - current);
     }
 
     /**

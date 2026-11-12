@@ -4,7 +4,6 @@ import com.darkvolfi.dvteam.TeamConfig;
 import com.darkvolfi.dvteam.data.BannerData;
 import com.darkvolfi.dvteam.data.ClanData;
 import com.darkvolfi.dvteam.data.ClanVault;
-import com.darkvolfi.dvteam.data.ClanTypes.Rank;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -27,14 +26,20 @@ import java.util.function.Supplier;
  * hides buttons it knows would fail.
  *
  * @param target a player, clan or settlement id, depending on the action
- * @param value  a rank ordinal, or ally perms | public perms << 8
- * @param extra  clan fields for CREATE and EDIT: Name, Tag, Color, Banner, FriendlyFire (each optional for EDIT)
+ * @param value  a rank id, or ally perms | public perms << 8
+ * @param extra  clan fields for CREATE and EDIT: Name, Tag, Color, Banner, FriendlyFire (each optional for EDIT);
+ *               rank fields for RANK_ADD and RANK_EDIT: Color, Manage, Land (the name is {@code text})
  */
 public record ClanActionPacket(Action action, UUID target, String text, int value, CompoundTag extra) {
     public enum Action {
         CREATE, EDIT, DISBAND, LEAVE, INVITE, JOIN, DECLINE, KICK, SET_RANK,
         ALLY_REQUEST, ALLY_BREAK, WAR_DECLARE, WAR_PEACE, WAR_SURRENDER,
-        RENAME_SETTLEMENT, SET_PERMS, UNCLAIM_ALL, GET_BANNER, VAULT_OPEN, VAULT_ACCESS
+        RENAME_SETTLEMENT, SET_PERMS, UNCLAIM_ALL, GET_BANNER, VAULT_OPEN,
+        RANK_ADD, RANK_EDIT, RANK_UP, RANK_DOWN, RANK_DELETE
+    }
+
+    public static ClanActionPacket rank(Action action, int rankId) {
+        return new ClanActionPacket(action, NONE, "", rankId, new CompoundTag());
     }
 
     private static final UUID NONE = new UUID(0L, 0L);
@@ -88,7 +93,7 @@ public record ClanActionPacket(Action action, UUID target, String text, int valu
                     x.contains("Banner") ? BannerData.load(x.getCompound("Banner")) : null,
                     x.contains("FriendlyFire") ? x.getBoolean("FriendlyFire") : null);
             case DISBAND -> {
-                if (clan == null || clan.rank(player.getUUID()) != Rank.LEADER) yield "dvteam.err.rank";
+                if (clan == null || !clan.isLeader(player.getUUID())) yield "dvteam.err.rank";
                 broadcast(server, "dvteam.msg.disbanded", clanName(clan));
                 data.disband(server, clan);
                 yield null;
@@ -109,7 +114,7 @@ public record ClanActionPacket(Action action, UUID target, String text, int valu
                 yield null;
             }
             case KICK -> data.kick(player, p.target);
-            case SET_RANK -> data.setRank(player, p.target, Rank.values()[Math.floorMod(p.value, Rank.values().length)]);
+            case SET_RANK -> data.setRank(player, p.target, p.value);
             case ALLY_REQUEST -> {
                 String e = data.requestAlliance(player, p.target);
                 ClanData.Clan other = data.clan(p.target);
@@ -147,7 +152,11 @@ public record ClanActionPacket(Action action, UUID target, String text, int valu
             }
             case GET_BANNER -> giveBanner(player, clan);
             case VAULT_OPEN -> ClanVault.open(player);
-            case VAULT_ACCESS -> data.setVaultAccess(player, Rank.values()[Math.floorMod(p.value, Rank.values().length)]);
+            case RANK_ADD -> data.addRank(player, p.text, x.getInt("Color"), x.getInt("Manage"), x.getInt("Land"));
+            case RANK_EDIT -> data.editRank(player, p.value, p.text, x.getInt("Color"), x.getInt("Manage"), x.getInt("Land"));
+            case RANK_UP -> data.moveRank(player, p.value, true);
+            case RANK_DOWN -> data.moveRank(player, p.value, false);
+            case RANK_DELETE -> data.deleteRank(player, p.value);
         };
         TeamNetwork.tell(player, error);
         // The sync goes to every player, so only send it when the action really changed something.

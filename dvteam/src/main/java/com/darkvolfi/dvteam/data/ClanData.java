@@ -2,7 +2,7 @@ package com.darkvolfi.dvteam.data;
 
 import com.darkvolfi.dvteam.TeamConfig;
 import com.darkvolfi.dvteam.data.ClanTypes.Perm;
-import com.darkvolfi.dvteam.data.ClanTypes.Rank;
+import com.darkvolfi.dvteam.data.ClanTypes.Manage;
 import com.darkvolfi.dvteam.data.ClanTypes.SettlementType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -56,14 +56,16 @@ public class ClanData extends SavedData {
         public String tag;
         public int color;
         public BannerData banner;
-        public final Map<UUID, Rank> members = new LinkedHashMap<>();
+        /** Player → rank id ({@link ClanRank#LEADER_ID} for the leader). */
+        public final Map<UUID, Integer> members = new LinkedHashMap<>();
+        /** The clan's ranks, highest first. Never empty: new members join the last one. */
+        public final List<ClanRank> ranks = new ArrayList<>();
+        private int nextRankId = ClanRank.LEADER_ID + 1;
         public final Set<UUID> invited = new LinkedHashSet<>();
         public final Set<UUID> allies = new LinkedHashSet<>();
         /** Clans this clan offered an alliance to. */
         public final Set<UUID> allyRequests = new LinkedHashSet<>();
         public boolean friendlyFire;
-        /** Lowest rank that may open the vault. */
-        public Rank vaultAccess = Rank.OFFICER;
         /** Server side only; never synced. */
         public final ClanVault vault;
 
@@ -78,27 +80,79 @@ public class ClanData extends SavedData {
 
         /** The clan colour for text: very dark colours are lifted toward white so they stay readable on dark panels and chat. */
         public int textColor() {
-            int r = color >> 16 & 0xFF, g = color >> 8 & 0xFF, b = color & 0xFF;
-            int luma = (r * 299 + g * 587 + b * 114) / 1000;
-            if (luma >= 90) return color;
-            float t = (90 - luma) / 90f * 0.6f;
-            r += Math.round((255 - r) * t);
-            g += Math.round((255 - g) * t);
-            b += Math.round((255 - b) * t);
-            return r << 16 | g << 8 | b;
+            return ClanTypes.readable(color);
         }
 
-        public Rank rank(UUID player) {
-            return members.get(player);
+        // ---- ranks. "Order" is the position in the hierarchy: the leader is -1, then the ranks top down.
+
+        public boolean isLeader(UUID player) {
+            Integer r = members.get(player);
+            return r != null && r == ClanRank.LEADER_ID;
         }
 
-        public boolean hasRank(UUID player, Rank rank) {
-            Rank r = members.get(player);
-            return r != null && r.atLeast(rank);
+        public ClanRank rankById(int rankId) {
+            for (ClanRank r : ranks) if (r.id == rankId) return r;
+            return null;
+        }
+
+        /** The player's rank; null for the leader and for non-members. */
+        public ClanRank rankOf(UUID player) {
+            Integer r = members.get(player);
+            return r == null ? null : rankById(r);
+        }
+
+        public ClanRank lowest() {
+            return ranks.get(ranks.size() - 1);
+        }
+
+        public int orderOf(int rankId) {
+            if (rankId == ClanRank.LEADER_ID) return -1;
+            for (int i = 0; i < ranks.size(); i++) if (ranks.get(i).id == rankId) return i;
+            return Integer.MAX_VALUE;
+        }
+
+        public int order(UUID player) {
+            Integer r = members.get(player);
+            return r == null ? Integer.MAX_VALUE : orderOf(r);
+        }
+
+        /** Whether {@code actor} is ranked strictly above {@code target}. */
+        public boolean above(UUID actor, UUID target) {
+            return members.containsKey(actor) && order(actor) < order(target);
+        }
+
+        /** A management right: the leader has all of them, everyone else what their rank grants. */
+        public boolean can(UUID player, Manage right) {
+            if (isLeader(player)) return true;
+            ClanRank r = rankOf(player);
+            return r != null && right.in(r.manage);
+        }
+
+        /** What a member may do on the clan's own land. */
+        public boolean mayLand(UUID player, Perm perm) {
+            if (isLeader(player)) return true;
+            ClanRank r = rankOf(player);
+            return r != null && perm.in(r.land);
+        }
+
+        ClanRank newRank(String name, int color, int manage, int land) {
+            ClanRank r = new ClanRank(nextRankId++, name, color, manage, land);
+            ranks.add(r);
+            return r;
+        }
+
+        /**
+         * The two ranks every clan starts with; they carry the rights of the old fixed Officer and Member ranks.
+         * Both may do everything on the clan's land, as members always could.
+         */
+        void addDefaultRanks(boolean officerVault, boolean memberVault) {
+            int officer = Manage.INVITE.bit() | Manage.KICK.bit() | Manage.CLAIM.bit() | (officerVault ? Manage.VAULT.bit() : 0);
+            newRank(ClanRank.DEFAULT_OFFICER, 0x55AAFF, officer, Perm.all());
+            newRank(ClanRank.DEFAULT_MEMBER, 0xAAAAAA, memberVault ? Manage.VAULT.bit() : 0, Perm.all());
         }
 
         public UUID leader() {
-            for (Map.Entry<UUID, Rank> e : members.entrySet()) if (e.getValue() == Rank.LEADER) return e.getKey();
+            for (Map.Entry<UUID, Integer> e : members.entrySet()) if (e.getValue() == ClanRank.LEADER_ID) return e.getKey();
             return members.keySet().iterator().next();
         }
 
@@ -108,27 +162,29 @@ public class ClanData extends SavedData {
             buf.writeUtf(tag, 16);
             buf.writeInt(color);
             banner.write(buf);
+            buf.writeVarInt(ranks.size());
+            for (ClanRank r : ranks) r.write(buf);
             buf.writeVarInt(members.size());
             members.forEach((p, r) -> {
                 buf.writeUUID(p);
-                buf.writeEnum(r);
+                buf.writeVarInt(r);
             });
             writeIds(buf, invited);
             writeIds(buf, allies);
             writeIds(buf, allyRequests);
             buf.writeBoolean(friendlyFire);
-            buf.writeEnum(vaultAccess);
         }
 
         static Clan read(FriendlyByteBuf buf) {
             Clan c = new Clan(buf.readUUID(), buf.readUtf(64), buf.readUtf(16), buf.readInt(), BannerData.read(buf));
             int n = buf.readVarInt();
-            for (int i = 0; i < n; i++) c.members.put(buf.readUUID(), buf.readEnum(Rank.class));
+            for (int i = 0; i < n; i++) c.ranks.add(ClanRank.read(buf));
+            n = buf.readVarInt();
+            for (int i = 0; i < n; i++) c.members.put(buf.readUUID(), buf.readVarInt());
             c.invited.addAll(readIds(buf));
             c.allies.addAll(readIds(buf));
             c.allyRequests.addAll(readIds(buf));
             c.friendlyFire = buf.readBoolean();
-            c.vaultAccess = buf.readEnum(Rank.class);
             return c;
         }
 
@@ -139,11 +195,15 @@ public class ClanData extends SavedData {
             t.putString("Tag", tag);
             t.putInt("Color", color);
             t.put("Banner", banner.save());
+            ListTag rl = new ListTag();
+            for (ClanRank r : ranks) rl.add(r.save());
+            t.put("Ranks", rl);
+            t.putInt("NextRankId", nextRankId);
             ListTag m = new ListTag();
             members.forEach((p, r) -> {
                 CompoundTag e = new CompoundTag();
                 e.putUUID("Id", p);
-                e.putString("Rank", r.name());
+                e.putInt("RankId", r);
                 m.add(e);
             });
             t.put("Members", m);
@@ -151,7 +211,6 @@ public class ClanData extends SavedData {
             t.put("Allies", saveIds(allies));
             t.put("AllyRequests", saveIds(allyRequests));
             t.putBoolean("FriendlyFire", friendlyFire);
-            t.putString("VaultAccess", vaultAccess.name());
             t.put("Vault", vault.createTag());
             return t;
         }
@@ -160,15 +219,43 @@ public class ClanData extends SavedData {
             Clan c = new Clan(t.getUUID("Id"), t.getString("Name"), t.getString("Tag"), t.getInt("Color"),
                     BannerData.load(t.getCompound("Banner")));
             ListTag m = t.getList("Members", Tag.TAG_COMPOUND);
-            for (int i = 0; i < m.size(); i++) {
-                CompoundTag e = m.getCompound(i);
-                c.members.put(e.getUUID("Id"), Rank.valueOf(e.getString("Rank")));
+            if (t.contains("Ranks", Tag.TAG_LIST)) {
+                ListTag rl = t.getList("Ranks", Tag.TAG_COMPOUND);
+                for (int i = 0; i < rl.size() && c.ranks.size() < ClanRank.MAX_RANKS; i++) {
+                    ClanRank r = ClanRank.load(rl.getCompound(i));
+                    if (r.id != ClanRank.LEADER_ID && c.rankById(r.id) == null) c.ranks.add(r);
+                }
+                int next = t.getInt("NextRankId");
+                for (ClanRank r : c.ranks) next = Math.max(next, r.id + 1);
+                c.nextRankId = Math.max(next, ClanRank.LEADER_ID + 1);
+                if (c.ranks.isEmpty()) c.addDefaultRanks(true, false); // damaged data: never leave a clan without ranks
+                for (int i = 0; i < m.size(); i++) {
+                    CompoundTag e = m.getCompound(i);
+                    int r = e.getInt("RankId");
+                    // A rank that no longer exists (damaged data) falls back to the lowest one.
+                    if (r != ClanRank.LEADER_ID && c.rankById(r) == null) r = c.lowest().id;
+                    c.members.put(e.getUUID("Id"), r);
+                }
+            } else {
+                // Saves before 1.0.1.0 had three fixed ranks (LEADER, OFFICER, MEMBER) and a "VaultAccess" field
+                // naming the lowest rank that could open the vault (default OFFICER). They become the two default
+                // ranks with exactly the old rights: the officer rank may invite, kick and claim; both may do
+                // everything on the clan's land; the vault right goes to the ranks VaultAccess allowed.
+                String vaultAccess = t.contains("VaultAccess") ? t.getString("VaultAccess") : "OFFICER";
+                c.addDefaultRanks(!vaultAccess.equals("LEADER"), vaultAccess.equals("MEMBER"));
+                int officer = c.ranks.get(0).id;
+                int member = c.ranks.get(1).id;
+                for (int i = 0; i < m.size(); i++) {
+                    CompoundTag e = m.getCompound(i);
+                    String old = e.getString("Rank");
+                    int r = old.equals("LEADER") ? ClanRank.LEADER_ID : old.equals("OFFICER") ? officer : member;
+                    c.members.put(e.getUUID("Id"), r);
+                }
             }
             c.invited.addAll(loadIds(t.getList("Invited", Tag.TAG_STRING)));
             c.allies.addAll(loadIds(t.getList("Allies", Tag.TAG_STRING)));
             c.allyRequests.addAll(loadIds(t.getList("AllyRequests", Tag.TAG_STRING)));
             c.friendlyFire = t.getBoolean("FriendlyFire");
-            if (t.contains("VaultAccess")) c.vaultAccess = Rank.valueOf(t.getString("VaultAccess"));
             c.vault.fromTag(t.getList("Vault", Tag.TAG_COMPOUND));
             return c;
         }
@@ -454,7 +541,8 @@ public class ClanData extends SavedData {
         }
         Clan clan = new Clan(UUID.randomUUID(), n, t, color, banner.validated());
         clan.vault.addListener(v -> setDirty());
-        clan.members.put(player.getUUID(), Rank.LEADER);
+        clan.addDefaultRanks(true, false); // as before: officers may open the vault, members not
+        clan.members.put(player.getUUID(), ClanRank.LEADER_ID);
         clans.put(clan.id, clan);
         playerClan.put(player.getUUID(), clan.id);
         for (Clan c : clans.values()) c.invited.remove(player.getUUID());
@@ -491,7 +579,7 @@ public class ClanData extends SavedData {
     public String leave(MinecraftServer server, ServerPlayer player) {
         Clan clan = clanOf(player.getUUID());
         if (clan == null) return "dvteam.err.no_clan";
-        if (clan.rank(player.getUUID()) == Rank.LEADER) {
+        if (clan.isLeader(player.getUUID())) {
             if (clan.members.size() > 1) return "dvteam.err.leader_leave";
             disband(server, clan);
             return null;
@@ -505,7 +593,7 @@ public class ClanData extends SavedData {
     public String invite(ServerPlayer actor, UUID target) {
         Clan clan = clanOf(actor.getUUID());
         if (clan == null) return "dvteam.err.no_clan";
-        if (!clan.hasRank(actor.getUUID(), Rank.OFFICER)) return "dvteam.err.rank";
+        if (!clan.can(actor.getUUID(), Manage.INVITE)) return "dvteam.err.rank";
         if (clanOf(target) != null) return "dvteam.err.target_in_clan";
         clan.invited.add(target);
         setDirty();
@@ -517,7 +605,7 @@ public class ClanData extends SavedData {
         if (clan == null || !clan.invited.contains(player.getUUID())) return "dvteam.err.no_invite";
         if (clanOf(player.getUUID()) != null) return "dvteam.err.already_in_clan";
         for (Clan c : clans.values()) c.invited.remove(player.getUUID());
-        clan.members.put(player.getUUID(), Rank.MEMBER);
+        clan.members.put(player.getUUID(), clan.lowest().id);
         playerClan.put(player.getUUID(), clan.id);
         setDirty();
         return null;
@@ -528,24 +616,104 @@ public class ClanData extends SavedData {
         if (clan != null && clan.invited.remove(player.getUUID())) setDirty();
     }
 
-    /** Officers can remove members; the leader can remove anyone but themself. */
+    /** Members with the kick right can remove members ranked strictly below them; the leader anyone but themself. */
     public String kick(ServerPlayer actor, UUID target) {
         Clan clan = clanOf(actor.getUUID());
         if (clan == null || !clan.members.containsKey(target) || target.equals(actor.getUUID())) return "dvteam.err.invalid";
-        Rank mine = clan.rank(actor.getUUID());
-        if (!mine.atLeast(Rank.OFFICER) || !mine.atLeast(clan.rank(target)) || mine == clan.rank(target)) return "dvteam.err.rank";
+        if (!clan.can(actor.getUUID(), Manage.KICK) || !clan.above(actor.getUUID(), target)) return "dvteam.err.rank";
         clan.members.remove(target);
         playerClan.remove(target);
         setDirty();
         return null;
     }
 
-    public String setRank(ServerPlayer actor, UUID target, Rank rank) {
+    /**
+     * Gives {@code target} the rank {@code rankId}. With the ranks right, only to members strictly below the actor
+     * and only ranks strictly below the actor's own. {@link ClanRank#LEADER_ID} hands over leadership (leader
+     * only); the old leader takes the highest rank.
+     */
+    public String setRank(ServerPlayer actor, UUID target, int rankId) {
         Clan clan = clanOf(actor.getUUID());
-        if (clan == null || !clan.members.containsKey(target) || target.equals(actor.getUUID())) return "dvteam.err.invalid";
-        if (clan.rank(actor.getUUID()) != Rank.LEADER) return "dvteam.err.rank";
-        if (rank == Rank.LEADER) clan.members.put(actor.getUUID(), Rank.OFFICER); // hand over leadership
-        clan.members.put(target, rank);
+        UUID me = actor.getUUID();
+        if (clan == null || !clan.members.containsKey(target) || target.equals(me)) return "dvteam.err.invalid";
+        if (rankId == ClanRank.LEADER_ID) {
+            if (!clan.isLeader(me)) return "dvteam.err.rank";
+            clan.members.put(me, clan.ranks.get(0).id);
+            clan.members.put(target, ClanRank.LEADER_ID);
+        } else {
+            if (clan.rankById(rankId) == null) return "dvteam.err.invalid";
+            if (!clan.can(me, Manage.RANKS) || !clan.above(me, target) || clan.order(me) >= clan.orderOf(rankId)) {
+                return "dvteam.err.rank";
+            }
+            clan.members.put(target, rankId);
+        }
+        setDirty();
+        return null;
+    }
+
+    // ---------------------------------------------------------------- rank definitions (leader only)
+
+    private static String rankFieldsError(String name, int color, int manage, int land) {
+        String n = name == null ? "" : name.trim();
+        if (n.isEmpty() || n.length() > ClanRank.NAME_MAX || n.chars().anyMatch(Character::isISOControl)) return "dvteam.err.rank_name";
+        if ((color & ~0xFFFFFF) != 0 || (manage & ~Manage.all()) != 0 || (land & ~Perm.all()) != 0) return "dvteam.err.invalid";
+        return null;
+    }
+
+    /** Adds a rank at the bottom, so it becomes the rank new members join. */
+    public String addRank(ServerPlayer actor, String name, int color, int manage, int land) {
+        Clan clan = clanOf(actor.getUUID());
+        if (clan == null) return "dvteam.err.no_clan";
+        if (!clan.isLeader(actor.getUUID())) return "dvteam.err.rank";
+        if (clan.ranks.size() >= ClanRank.MAX_RANKS) return "dvteam.err.rank_limit";
+        String error = rankFieldsError(name, color, manage, land);
+        if (error != null) return error;
+        clan.newRank(name.trim(), color, manage, land);
+        setDirty();
+        return null;
+    }
+
+    public String editRank(ServerPlayer actor, int rankId, String name, int color, int manage, int land) {
+        Clan clan = clanOf(actor.getUUID());
+        if (clan == null) return "dvteam.err.no_clan";
+        if (!clan.isLeader(actor.getUUID())) return "dvteam.err.rank";
+        ClanRank r = clan.rankById(rankId);
+        if (r == null) return "dvteam.err.invalid";
+        String error = rankFieldsError(name, color, manage, land);
+        if (error != null) return error;
+        // The screen sends a default rank's translation key back unchanged when its name was not edited.
+        r.name = name.trim();
+        r.color = color;
+        r.manage = manage;
+        r.land = land;
+        setDirty();
+        return null;
+    }
+
+    /** Moves a rank one step up ({@code up}) or down the order. */
+    public String moveRank(ServerPlayer actor, int rankId, boolean up) {
+        Clan clan = clanOf(actor.getUUID());
+        if (clan == null) return "dvteam.err.no_clan";
+        if (!clan.isLeader(actor.getUUID())) return "dvteam.err.rank";
+        int i = clan.orderOf(rankId);
+        int j = up ? i - 1 : i + 1;
+        if (i < 0 || i >= clan.ranks.size() || j < 0 || j >= clan.ranks.size()) return "dvteam.err.invalid";
+        Collections.swap(clan.ranks, i, j);
+        setDirty();
+        return null;
+    }
+
+    /** Deletes a rank; its members move to the rank below it, or (for the lowest rank) to the new lowest. */
+    public String deleteRank(ServerPlayer actor, int rankId) {
+        Clan clan = clanOf(actor.getUUID());
+        if (clan == null) return "dvteam.err.no_clan";
+        if (!clan.isLeader(actor.getUUID())) return "dvteam.err.rank";
+        int i = clan.orderOf(rankId);
+        if (i < 0 || i >= clan.ranks.size()) return "dvteam.err.invalid";
+        if (clan.ranks.size() <= 1) return "dvteam.err.last_rank";
+        int to = clan.ranks.get(i + 1 < clan.ranks.size() ? i + 1 : i - 1).id;
+        clan.members.replaceAll((p, r) -> r == rankId ? to : r);
+        clan.ranks.remove(i);
         setDirty();
         return null;
     }
@@ -554,7 +722,7 @@ public class ClanData extends SavedData {
     public String edit(ServerPlayer actor, String name, String tag, Integer color, BannerData banner, Boolean friendlyFire) {
         Clan clan = clanOf(actor.getUUID());
         if (clan == null) return "dvteam.err.no_clan";
-        if (clan.rank(actor.getUUID()) != Rank.LEADER) return "dvteam.err.rank";
+        if (!clan.isLeader(actor.getUUID())) return "dvteam.err.rank";
         if (name != null) {
             String n = name.trim();
             if (n.length() < NAME_MIN || n.length() > NAME_MAX) return "dvteam.err.name_length";
@@ -581,7 +749,7 @@ public class ClanData extends SavedData {
         Clan clan = clanOf(actor.getUUID());
         Clan other = clans.get(otherId);
         if (clan == null || other == null || other == clan) return "dvteam.err.invalid";
-        if (clan.rank(actor.getUUID()) != Rank.LEADER) return "dvteam.err.rank";
+        if (!clan.can(actor.getUUID(), Manage.DIPLOMACY)) return "dvteam.err.rank";
         if (warBetween(clan.id, other.id) != null) return "dvteam.err.at_war";
         if (other.allyRequests.contains(clan.id)) {
             other.allyRequests.remove(clan.id);
@@ -599,7 +767,7 @@ public class ClanData extends SavedData {
         Clan clan = clanOf(actor.getUUID());
         Clan other = clans.get(otherId);
         if (clan == null || other == null) return "dvteam.err.invalid";
-        if (clan.rank(actor.getUUID()) != Rank.LEADER) return "dvteam.err.rank";
+        if (!clan.can(actor.getUUID(), Manage.DIPLOMACY)) return "dvteam.err.rank";
         clan.allies.remove(other.id);
         other.allies.remove(clan.id);
         clan.allyRequests.remove(other.id);
@@ -612,7 +780,7 @@ public class ClanData extends SavedData {
         Clan clan = clanOf(actor.getUUID());
         Clan target = clans.get(targetId);
         if (clan == null || target == null || target == clan) return "dvteam.err.invalid";
-        if (clan.rank(actor.getUUID()) != Rank.LEADER) return "dvteam.err.rank";
+        if (!clan.can(actor.getUUID(), Manage.DIPLOMACY)) return "dvteam.err.rank";
         if (warBetween(clan.id, target.id) != null) return "dvteam.err.at_war";
         Long until = cooldowns.get(pairKey(clan.id, target.id));
         long now = System.currentTimeMillis();
@@ -631,7 +799,7 @@ public class ClanData extends SavedData {
     /** Peace needs both leaders; returns true when the war ended. */
     public boolean offerPeace(ServerPlayer actor, UUID otherId) {
         Clan clan = clanOf(actor.getUUID());
-        if (clan == null || clan.rank(actor.getUUID()) != Rank.LEADER) return false;
+        if (clan == null || !clan.can(actor.getUUID(), Manage.DIPLOMACY)) return false;
         War w = warBetween(clan.id, otherId);
         if (w == null) return false;
         if (w.attacker.equals(clan.id)) w.attackerPeace = true;
@@ -646,7 +814,7 @@ public class ClanData extends SavedData {
 
     public War surrender(ServerPlayer actor, UUID otherId) {
         Clan clan = clanOf(actor.getUUID());
-        if (clan == null || clan.rank(actor.getUUID()) != Rank.LEADER) return null;
+        if (clan == null || !clan.can(actor.getUUID(), Manage.DIPLOMACY)) return null;
         War w = warBetween(clan.id, otherId);
         if (w != null) endWar(w);
         return w;
@@ -668,19 +836,10 @@ public class ClanData extends SavedData {
         Settlement s = settlements.get(settlementId);
         Clan clan = clanOf(actor.getUUID());
         if (s == null || clan == null || !s.clanId.equals(clan.id)) return "dvteam.err.invalid";
-        if (!clan.hasRank(actor.getUUID(), Rank.OFFICER)) return "dvteam.err.rank";
+        if (!clan.can(actor.getUUID(), Manage.CLAIM)) return "dvteam.err.rank";
         String n = name.trim();
         if (n.length() < NAME_MIN || n.length() > NAME_MAX) return "dvteam.err.name_length";
         s.name = n;
-        setDirty();
-        return null;
-    }
-
-    public String setVaultAccess(ServerPlayer actor, Rank rank) {
-        Clan clan = clanOf(actor.getUUID());
-        if (clan == null) return "dvteam.err.no_clan";
-        if (clan.rank(actor.getUUID()) != Rank.LEADER) return "dvteam.err.rank";
-        clan.vaultAccess = rank;
         setDirty();
         return null;
     }
@@ -689,7 +848,7 @@ public class ClanData extends SavedData {
         Settlement s = settlements.get(settlementId);
         Clan clan = clanOf(actor.getUUID());
         if (s == null || clan == null || !s.clanId.equals(clan.id)) return "dvteam.err.invalid";
-        if (clan.rank(actor.getUUID()) != Rank.LEADER) return "dvteam.err.rank";
+        if (!clan.can(actor.getUUID(), Manage.SETTLEMENTS)) return "dvteam.err.rank";
         s.allyPerms = allyPerms & Perm.all();
         s.publicPerms = publicPerms & Perm.all();
         setDirty();
@@ -704,7 +863,7 @@ public class ClanData extends SavedData {
                         String newName, SettlementType newType) {
         Clan clan = clanOf(actor.getUUID());
         if (clan == null) return "dvteam.err.no_clan";
-        if (!clan.hasRank(actor.getUUID(), Rank.OFFICER)) return "dvteam.err.rank";
+        if (!clan.can(actor.getUUID(), Manage.CLAIM)) return "dvteam.err.rank";
         ChunkKey key = new ChunkKey(dim, cx, cz);
         Claim existing = claims.get(key);
         if (existing != null) {
@@ -745,7 +904,7 @@ public class ClanData extends SavedData {
     public String unclaim(MinecraftServer server, ServerPlayer actor, String dim, int cx, int cz) {
         Clan clan = clanOf(actor.getUUID());
         if (clan == null) return "dvteam.err.no_clan";
-        if (!clan.hasRank(actor.getUUID(), Rank.OFFICER)) return "dvteam.err.rank";
+        if (!clan.can(actor.getUUID(), Manage.CLAIM)) return "dvteam.err.rank";
         ChunkKey key = new ChunkKey(dim, cx, cz);
         Claim claim = claims.get(key);
         Settlement s = claim == null ? null : settlements.get(claim.settlementId);
@@ -761,7 +920,7 @@ public class ClanData extends SavedData {
     public String setForceLoaded(MinecraftServer server, ServerPlayer actor, String dim, int cx, int cz, boolean forced) {
         Clan clan = clanOf(actor.getUUID());
         if (clan == null) return "dvteam.err.no_clan";
-        if (!clan.hasRank(actor.getUUID(), Rank.OFFICER)) return "dvteam.err.rank";
+        if (!clan.can(actor.getUUID(), Manage.CLAIM)) return "dvteam.err.rank";
         ChunkKey key = new ChunkKey(dim, cx, cz);
         Claim claim = claims.get(key);
         Settlement s = claim == null ? null : settlements.get(claim.settlementId);
@@ -776,7 +935,7 @@ public class ClanData extends SavedData {
 
     public void unclaimAll(MinecraftServer server, ServerPlayer actor) {
         Clan clan = clanOf(actor.getUUID());
-        if (clan == null || clan.rank(actor.getUUID()) != Rank.LEADER) return;
+        if (clan == null || !clan.isLeader(actor.getUUID())) return;
         Iterator<Map.Entry<ChunkKey, Claim>> it = claims.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<ChunkKey, Claim> e = it.next();
@@ -855,7 +1014,8 @@ public class ClanData extends SavedData {
         Clan owner = clans.get(s.clanId);
         if (owner == null) return true;
         Clan mine = clanOf(player.getUUID());
-        if (mine == owner) return true;
+        // Members may do what their rank allows on their own land, and never less than what everyone may.
+        if (mine == owner) return owner.mayLand(player.getUUID(), perm) || perm.in(s.publicPerms);
         if (mine != null && raidable(server, s, cx, cz, mine.id)) return true;
         if (s.publicPerms != 0 && perm.in(s.publicPerms)) return true;
         return mine != null && mutualAllies(owner, mine) && perm.in(s.allyPerms);
@@ -901,6 +1061,7 @@ public class ClanData extends SavedData {
         buf.writeVarInt(TeamConfig.MAX_VILLAGE_CHUNKS.get());
         buf.writeVarInt(TeamConfig.MAX_FORCE_LOADED.get());
         buf.writeBoolean(TeamConfig.WARS_ENABLED.get());
+        buf.writeVarInt(TeamConfig.MIN_GAP.get());
 
         Map<UUID, String> names = new LinkedHashMap<>(playerNames);
         Set<UUID> online = new LinkedHashSet<>();
@@ -942,7 +1103,7 @@ public class ClanData extends SavedData {
 
     /** Client copy of the state, decoded from {@link #writeSync}. */
     public record Snapshot(int maxChunks, int maxVillages, int maxTrades, int maxVillageChunks, int maxForced,
-                           boolean warsEnabled, Map<UUID, String> names, Set<UUID> online,
+                           boolean warsEnabled, int minGap, Map<UUID, String> names, Set<UUID> online,
                            List<Clan> clans, List<Settlement> settlements, Map<ChunkKey, Claim> claims, List<War> wars) {
         public static Snapshot read(FriendlyByteBuf buf) {
             int maxChunks = buf.readVarInt();
@@ -951,6 +1112,7 @@ public class ClanData extends SavedData {
             int maxVillageChunks = buf.readVarInt();
             int maxForced = buf.readVarInt();
             boolean wars = buf.readBoolean();
+            int minGap = buf.readVarInt();
             Map<UUID, String> names = new LinkedHashMap<>();
             int n = buf.readVarInt();
             for (int i = 0; i < n; i++) names.put(buf.readUUID(), buf.readUtf(64));
@@ -976,7 +1138,7 @@ public class ClanData extends SavedData {
                 w.defenderPeace = buf.readBoolean();
                 warList.add(w);
             }
-            return new Snapshot(maxChunks, maxVillages, maxTrades, maxVillageChunks, maxForced, wars,
+            return new Snapshot(maxChunks, maxVillages, maxTrades, maxVillageChunks, maxForced, wars, minGap,
                     names, online, clans, settlements, claims, warList);
         }
     }

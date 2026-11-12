@@ -19,6 +19,7 @@ public final class RemotePlayers {
     private static List<PlayerPositionsPacket.Entry> players = List.of();
     private static Set<UUID> hidden = Set.of();
     private static Set<UUID> nameHidden = Set.of();
+    private static Set<UUID> tagHidden = Set.of();
     private static long lastUpdate;
     private static VisibilityPacket lastSent;
 
@@ -30,6 +31,7 @@ public final class RemotePlayers {
         Set<UUID> names = new HashSet<>();
         for (PlayerPositionsPacket.Entry e : players) if (e.nameHidden()) names.add(e.id());
         nameHidden = names;
+        tagHidden = new HashSet<>(packet.tagHidden());
         lastUpdate = System.currentTimeMillis();
     }
 
@@ -48,6 +50,11 @@ public final class RemotePlayers {
 
     public static boolean isNameHidden(UUID id) {
         return fresh() && nameHidden.contains(id);
+    }
+
+    /** The player also hides the name tag over their head, and the server allows that. */
+    public static boolean isTagHidden(UUID id) {
+        return fresh() && tagHidden.contains(id);
     }
 
     public static boolean serverHasMod() {
@@ -69,6 +76,7 @@ public final class RemotePlayers {
         players = List.of();
         hidden = Set.of();
         nameHidden = Set.of();
+        tagHidden = Set.of();
         lastUpdate = 0;
         lastSent = null;
     }

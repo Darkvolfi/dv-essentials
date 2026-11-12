@@ -11,7 +11,8 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 /** Server → client: the other players in this dimension, and who chose to hide. */
-public record PlayerPositionsPacket(List<Entry> players, List<UUID> hidden) {
+/** {@code tagHidden}: players whose name tag over their head is hidden too (when the server allows it). */
+public record PlayerPositionsPacket(List<Entry> players, List<UUID> hidden, List<UUID> tagHidden) {
     /** {@code name} is empty when the player hid it. */
     public record Entry(UUID id, String name, boolean nameHidden, int x, int y, int z, float yaw) {}
 
@@ -26,12 +27,13 @@ public record PlayerPositionsPacket(List<Entry> players, List<UUID> hidden) {
             b.writeFloat(e.yaw);
         });
         buf.writeCollection(p.hidden, FriendlyByteBuf::writeUUID);
+        buf.writeCollection(p.tagHidden, FriendlyByteBuf::writeUUID);
     }
 
     public static PlayerPositionsPacket decode(FriendlyByteBuf buf) {
         List<Entry> players = buf.readList(b -> new Entry(b.readUUID(), b.readUtf(16), b.readBoolean(),
                 b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readFloat()));
-        return new PlayerPositionsPacket(players, buf.readList(FriendlyByteBuf::readUUID));
+        return new PlayerPositionsPacket(players, buf.readList(FriendlyByteBuf::readUUID), buf.readList(FriendlyByteBuf::readUUID));
     }
 
     public static void handle(PlayerPositionsPacket p, Supplier<NetworkEvent.Context> ctx) {

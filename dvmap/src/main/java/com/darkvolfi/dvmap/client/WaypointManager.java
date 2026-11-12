@@ -11,6 +11,13 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
+import com.darkvolfi.dvmap.DVMap;
+import com.darkvolfi.dvmap.MapConfig;
+import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.ClientChatReceivedEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLPaths;
 
 import java.io.IOException;
@@ -26,6 +33,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+@Mod.EventBusSubscriber(modid = DVMap.MOD_ID, value = Dist.CLIENT)
 public final class WaypointManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Type LIST_TYPE = new TypeToken<List<Waypoint>>() {}.getType();
@@ -173,7 +181,8 @@ public final class WaypointManager {
     }
 
     public static boolean canTeleport(Minecraft mc) {
-        return mc.player != null && (mc.player.hasPermissions(2) || mc.player.isCreative());
+        // Exactly who may run /tp: creative mode alone doesn't allow it on a server (nor in a world without cheats).
+        return mc.player != null && mc.player.hasPermissions(2);
     }
 
     public static void teleportTo(Minecraft mc, Waypoint wp) {
@@ -183,7 +192,25 @@ public final class WaypointManager {
     /** Teleports into {@code dimension} (which may not be the current one); {@code y} may be "~". */
     public static void teleport(Minecraft mc, String dimension, int x, String y, int z) {
         if (mc.player == null || mc.getConnection() == null) return;
+        if (!MapConfig.TELEPORT_MESSAGE.get()) hideTeleportMessageUntil = System.currentTimeMillis() + 3000;
         mc.getConnection().sendUnsignedCommand("execute in " + dimension + " run tp @s " + x + " " + y + " " + z);
+    }
+
+    /** Until when the answer to the map's own teleport is kept out of chat (0: not waiting for one). */
+    private static long hideTeleportMessageUntil;
+
+    /** Hides the one "Teleported ..." message our teleport causes; a /tp typed by hand still shows. */
+    @SubscribeEvent
+    public static void onSystemChat(ClientChatReceivedEvent.System event) {
+        if (hideTeleportMessageUntil == 0) return;
+        if (System.currentTimeMillis() > hideTeleportMessageUntil) {
+            hideTeleportMessageUntil = 0;
+            return;
+        }
+        if (event.getMessage().getContents() instanceof TranslatableContents t && t.getKey().startsWith("commands.teleport.success")) {
+            hideTeleportMessageUntil = 0;
+            event.setCanceled(true);
+        }
     }
 
     /** Copies the file next to itself under {@code name}, once: an existing copy is kept. */

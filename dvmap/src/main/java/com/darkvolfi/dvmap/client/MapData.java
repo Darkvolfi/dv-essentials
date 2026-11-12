@@ -619,11 +619,16 @@ public final class MapData {
         return level.getChunkSource().getChunk(wx >> 4, wz >> 4, ChunkStatus.FULL, false) != null;
     }
 
+    /**
+     * The height a player stands at on the surface (the block above the top one), like the Y of a player there:
+     * teleporting to it lands on the ground, not inside it.
+     */
     public static int sampleSurfaceHeight(ClientLevel level, int wx, int wz) {
         LevelChunk chunk = level.getChunkSource().getChunk(wx >> 4, wz >> 4, ChunkStatus.FULL, false);
         if (chunk == null) return 64;
         // MOTION_BLOCKING_NO_LEAVES is server-only: the client never receives it and it reads as the world bottom.
-        return chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, wx & 15, wz & 15);
+        // getHeight gives the top block itself.
+        return chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, wx & 15, wz & 15) + 1;
     }
 
     public static void saveDirtyRegions() {

@@ -2,9 +2,13 @@ package com.darkvolfi.dvteam.client;
 
 import com.darkvolfi.dvteam.data.ClanData;
 import com.darkvolfi.dvteam.data.ClanLevel;
-import com.darkvolfi.dvteam.data.ClanTypes.Rank;
+import com.darkvolfi.dvteam.data.ClanRank;
+import com.darkvolfi.dvteam.data.ClanTypes.Manage;
 import com.darkvolfi.dvteam.data.ClanTypes.SettlementType;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 
@@ -48,6 +52,10 @@ public final class ClientClanCache {
             acc[1] /= acc[2];
         }
         if (Minecraft.getInstance().screen instanceof ClanScreen screen) screen.refresh();
+        // Name tags over heads carry the clan tag (ClanNameTagsClient); recompute them with the new state.
+        if (Minecraft.getInstance().level != null) {
+            for (var p : Minecraft.getInstance().level.players()) p.refreshDisplayName();
+        }
     }
 
     public static void clear() {
@@ -77,14 +85,29 @@ public final class ClientClanCache {
         return id == null ? null : CLANS.get(id);
     }
 
-    public static Rank myRank() {
+    public static boolean amLeader() {
         ClanData.Clan c = myClan();
-        return c == null ? null : c.rank(me());
+        return c != null && c.isLeader(me());
     }
 
-    public static boolean iAm(Rank rank) {
-        Rank r = myRank();
-        return r != null && r.atLeast(rank);
+    /** Whether I hold a management right in my clan (the server checks again). */
+    public static boolean can(Manage right) {
+        ClanData.Clan c = myClan();
+        return c != null && c.can(me(), right);
+    }
+
+    /** My place in my clan's order: -1 leader, then rank positions; larger is lower. */
+    public static int myOrder() {
+        ClanData.Clan c = myClan();
+        return c == null ? Integer.MAX_VALUE : c.order(me());
+    }
+
+    /** A member's rank as text in the rank's colour (the leader in gold). */
+    public static MutableComponent rankLabel(ClanData.Clan clan, UUID player) {
+        if (clan.isLeader(player)) return Component.translatable("dvteam.rank.leader").withStyle(ChatFormatting.GOLD);
+        ClanRank r = clan.rankOf(player);
+        if (r == null) return Component.literal("?");
+        return r.displayName().copy().withStyle(s -> s.withColor(r.textColor()));
     }
 
     public static ClanData.Clan clan(UUID id) {

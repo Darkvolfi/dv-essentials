@@ -4,7 +4,7 @@ import com.darkvolfi.dvlib.client.DVButton;
 import com.darkvolfi.dvlib.client.DVUi;
 import com.darkvolfi.dvteam.data.ClanData;
 import com.darkvolfi.dvteam.data.ClanTypes.Perm;
-import com.darkvolfi.dvteam.data.ClanTypes.Rank;
+import com.darkvolfi.dvteam.data.ClanTypes.Manage;
 import com.darkvolfi.dvteam.network.ClanActionPacket;
 import com.darkvolfi.dvteam.network.TeamNetwork;
 import net.minecraft.ChatFormatting;
@@ -42,8 +42,8 @@ public class SettlementScreen extends Screen {
     protected void init() {
         int l = (width - PANEL_W) / 2;
         int t = (height - panelHeight()) / 2;
-        boolean officer = ClientClanCache.iAm(Rank.OFFICER);
-        boolean leader = ClientClanCache.iAm(Rank.LEADER);
+        boolean officer = ClientClanCache.can(Manage.CLAIM); // renaming goes with founding settlements
+        boolean leader = ClientClanCache.can(Manage.SETTLEMENTS);
 
         EditBox nameBox = new EditBox(font, l + 10, t + 22, 190, 18, Component.translatable("dvteam.edit.name"));
         nameBox.setMaxLength(24);
@@ -70,7 +70,7 @@ public class SettlementScreen extends Screen {
 
         int by = t + panelHeight() - 26;
         addRenderableWidget(DVButton.builder(CommonComponents.GUI_DONE, b -> save()).bounds(width / 2 - 104, by, 100, 20).build())
-                .active = officer;
+                .active = officer || leader;
         addRenderableWidget(DVButton.builder(CommonComponents.GUI_CANCEL, b -> onClose()).bounds(width / 2 + 4, by, 100, 20).build());
     }
 

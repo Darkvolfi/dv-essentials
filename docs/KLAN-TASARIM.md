@@ -11,17 +11,26 @@ Durum: **onaylandı ve uygulandı** (2026-10-27), oyunda deneniyor. Kullanıcın
   - ✅ **Renk:** serbest renk seçici (renk tonu/doygunluk alanı + parlaklık çubuğu + `#RRGGBB` kutusu)
   - ✅ **Bayrak:** Minecraft sancağı gibi. Taban rengi + en çok 6 desen katmanı (vanilya tezgâhtaki desenler ve 16 boya rengi), canlı önizleme
 - ⚙️ İstenirse lider klan ekranından bayrağın **gerçek sancak eşyasını** alabilir (bir sancak karşılığında).
-- ✅ **Rütbeler:**
+- ✅ **Rütbeler** (2026-11-12, DV Team 1.0.1.0'dan beri klanın kendi tanımladığı sıralı rütbeler):
+  - **Lider** sabittir, rütbe değildir ve her şeye yetkilidir. Klanı dağıtma, liderliği devretme, rütbe tanımlarını düzenleme (ekle, adlandır, renk, sıra, izinler, sil), klanın adı/kısaltması/rengi/bayrağı, dost ateşi ve "Tümünü bırak" yalnız liderdedir.
+  - Lider en çok **10** rütbe açar. Her rütbenin adı (1–24 karakter), rengi ve sırası vardır; listede üstteki rütbe daha yüksektir. **Yeni üyeler en alttaki rütbeye** girer. Yeni rütbe en alta eklenir, bölge izinleri o anki en alttaki rütbeden kopyalanır.
+  - Her rütbenin iki izin grubu var:
+    - **Klan yönetimi:** davet etme · alt rütbeleri atma · bölge alma/bırakma/yüklü tutma ve yerleşim kurma/adlandırma · yerleşim izinleri (müttefik/herkes) · kasayı açma · ittifak ve savaş (savaş, barış, teslim) · alt rütbe verme
+    - **Klan bölgesinde:** yabancı izinleriyle aynı liste (inşa, kapı, sandık, hayvan, tarım, ticaret). Ör. "Acemi" yalnız kapı açar, sandığa dokunamaz. Bir üye kendi bölgesinde hiçbir zaman "Herkes" izninden daha azına sahip olmaz.
+  - Bir üye yalnız kendi rütbesinden **kesinlikle aşağıdaki** üyeleri atabilir ya da rütbelerini değiştirebilir ve yalnız kendinden aşağıdaki rütbeleri verebilir.
+  - Silinen rütbenin üyeleri bir alt rütbeye geçer (silinen en alttaysa yeni en alttakine). Liderden başka en az bir rütbe her zaman kalır.
+  - Liderlik devredilince eski lider en üstteki rütbeye geçer.
+  - Ekranda **Rütbeler** sekmesi: herkes rütbeleri ve izinlerini görür, yalnız lider değiştirir. Üyeler sekmesinde "Rütbe" menüsü yalnız verilebilecek rütbeleri gösterir.
+  - Yeni klanlar ve eski kayıtlar iki varsayılan rütbeyle başlar (adları oyuncunun dilinde görünür, lider değiştirene kadar):
 
-| Yetki | Lider | Subay | Üye |
-|---|:-:|:-:|:-:|
-| Bölgede inşa, sandık, kapı | ✔ | ✔ | ✔ |
-| Chunk al/bırak, yüklü tut | ✔ | ✔ | — |
-| Davet et, üye at (subay atamaz) | ✔ | ✔ | — |
-| Yerleşim kur, adlandır | ✔ | ✔ | — |
-| Yabancı/müttefik izinleri, ticaret merkezi ayarları | ✔ | — | — |
-| Savaş, barış, ittifak | ✔ | — | — |
-| Rütbe ver/al, liderliği devret, klanı dağıt, ad/renk/bayrak | ✔ | — | — |
+| İzin | Subay (Officer) | Üye (Member) |
+|---|:-:|:-:|
+| Klan bölgesinde her şey | ✔ | ✔ |
+| Davet, alt rütbeyi atma, bölge alma/bırakma/yüklü tutma, yerleşim kurma/adlandırma | ✔ | — |
+| Kasa | eski kayıtta kasa ayarı "subay+" ya da "üye+" ise ✔ (yeni klanda ✔) | eski ayar "üye+" ise ✔ |
+| Yerleşim izinleri, ittifak/savaş, rütbe verme | — | — |
+
+- ✅ **Klan etiketi oyuncu adında:** klandaki oyuncu sekme (Tab) listesinde, başının üstünde ve sohbette `[ETİKET] Ad` olarak görünür; etiket klan renginde. Klan sohbeti etiketi kendisi yazdığı için çift görünmez. Klansız oyuncu düz adıyla kalır.
 
 - Lider klandan çıkamaz; önce liderliği devreder ya da klanı dağıtır. Son üye çıkınca klan dağılır, bölgeleri boşalır.
 - Klan sohbeti `/klan msg` (ve `/dvteam msg`) kalır.
@@ -93,16 +102,17 @@ Durum: **onaylandı ve uygulandı** (2026-10-27), oyunda deneniyor. Kullanıcın
 - **Seviye** (kullanıcının kararı: üye + toprak puanı): her üye 10, her chunk 1 puan. Eşikler 0 / 25 / 60 / 110 / 180 → Sv1–Sv5 (`ClanLevel`).
   - Açtığı sınırlar (kullanıcının seçimi): toplam chunk sınırı (Sv1'de sunucu sınırının %40'ı, her seviye +%15, Sv5'te tamamı) ve yüklü tutulan chunk (her seviye sunucu sınırının beşte biri).
   - Toprak bırakılıp seviye düşerse eski chunk'lar kalır, yalnızca yenisi alınamaz.
-- **Kasa:** 27 slotluk ortak sandık, klan verisinde durur (blok yok). Klan ekranındaki Kasa düğmesi ya da `/klan vault`; yalnızca kendi klanının arazisinde açılır, araziden çıkınca kapanır. Kimin açacağını lider seçer (üye+ / subay+ / lider; varsayılan subay+). Klan dağılınca içindekiler lidere verilir.
+- **Kasa:** 27 slotluk ortak sandık, klan verisinde durur (blok yok). Klan ekranındaki Kasa düğmesi ya da `/klan vault`; yalnızca kendi klanının arazisinde açılır, araziden çıkınca kapanır. Kimin açacağını rütbelerin "kasayı açma" izni belirler (lider her zaman açar; 1.0.1.0 öncesi "üye+ / subay+ / lider" ayarı bu izne çevrildi). Klan dağılınca içindekiler lidere verilir.
 - **Sohbet:** `/klan msg` klana, `/klan ally` klana ve karşılıklı müttefiklere yazar. `/klan chat clan|ally|all` normal sohbeti o kanala yönlendirir (çıkışta sıfırlanır).
 - **Sınır yazısı:** yerleşime girince adı ekranın ortasında büyük başlık olarak çıkar (ayarla eski hotbar üstü yazısına dönülebilir).
 
 ## 6. Ekranlar (Y)
 
 - **Klansızken:** Klan Kur düğmesi, gelen davetler (Katıl), herkese açık klan listesi (ad, renk, üye sayısı).
-- **Klandayken**, beş sekme:
+- **Klandayken**, altı sekme:
   1. **Genel:** bayrak, ad, kısaltma, renk, rütben, chunk ve köy sayıları
   2. **Üyeler:** rütbe ver/al, at, liderliği devret
+  3. **Rütbeler:** rütbe listesi; lider ekler, düzenler, sıralar, siler (1.0.1.0'da eklendi, sonraki sekmeler bir kaydı)
   3. **Yerleşimler:** liste (ad, tür, chunk sayısı); yeniden adlandır, izinleri düzenle, haritada göster
   4. **Diplomasi:** ittifak teklif et/kabul et/boz, savaş ilan et, barış teklif et, teslim ol
   5. **Davet:** çevrimiçi oyunculara davet

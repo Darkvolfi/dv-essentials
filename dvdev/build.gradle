@@ -34,7 +34,14 @@ minecraft {
                 }
             }
         }
-        client {}
+        client {
+            // Several players at once for multiplayer tests: gradlew :dvdev:runClient -PmcUser=Name
+            // (offline-mode server). Each name gets its own folder so their logs and options don't clash.
+            if (project.hasProperty('mcUser')) {
+                workingDirectory rootProject.file("run-${project.property('mcUser')}")
+                args '--username', project.property('mcUser')
+            }
+        }
         server {
             args '--nogui'
         }
@@ -85,7 +92,12 @@ def copyCompatMods = tasks.register('copyCompatMods', Sync) {
 }
 def copyDevMods = tasks.register('copyDevMods', Copy) {
     from configurations.devMods
-    into rootProject.file('run/mods')
+    // A named test player (-PmcUser) runs in its own folder; it needs the same mods as the server in run/.
+    into rootProject.file(project.hasProperty('mcUser') ? "run-${project.property('mcUser')}/mods" : 'run/mods')
+}
+// The runs load each mod from its compiled classes: compile them first, or a run starts with stale code.
+tasks.matching { it.name.startsWith('prepareRun') }.configureEach { task ->
+    dvMods.each { task.dependsOn ":$it:classes" }
 }
 if (compat) {
     tasks.matching { it.name.startsWith('prepareRun') }.configureEach { dependsOn copyCompatMods }

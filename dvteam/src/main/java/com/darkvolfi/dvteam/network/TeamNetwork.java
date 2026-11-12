@@ -1,5 +1,6 @@
 package com.darkvolfi.dvteam.network;
 
+import com.darkvolfi.dvteam.ClanNameTags;
 import com.darkvolfi.dvteam.DVTeam;
 import com.darkvolfi.dvteam.data.ClanData;
 import net.minecraft.ChatFormatting;
@@ -13,7 +14,7 @@ import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 public final class TeamNetwork {
-    private static final String PROTOCOL = "3"; // 2: clans and settlements, 3: vault
+    private static final String PROTOCOL = "4"; // 2: clans and settlements, 3: vault, 4: clan-defined ranks
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(DVTeam.MOD_ID, "main"), () -> PROTOCOL, PROTOCOL::equals, PROTOCOL::equals);
 
@@ -46,6 +47,7 @@ public final class TeamNetwork {
     public static void syncToAll(MinecraftServer server) {
         if (server == null) return;
         CHANNEL.send(PacketDistributor.ALL.noArg(), new SyncClanPacket(ClanData.get(server), server));
+        ClanNameTags.refreshChanged(server);
     }
 
     /** Shows a failure reason (a translation key from {@link ClanData}) above the hotbar. */

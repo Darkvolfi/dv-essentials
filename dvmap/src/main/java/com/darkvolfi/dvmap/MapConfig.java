@@ -51,6 +51,7 @@ public final class MapConfig {
     public static final ForgeConfigSpec.BooleanValue DEATH_WAYPOINT;
     public static final ForgeConfigSpec.BooleanValue SHOW_STRUCTURES;
     public static final ForgeConfigSpec.BooleanValue SHOW_CREATE_TRAINS;
+    public static final ForgeConfigSpec.BooleanValue TELEPORT_MESSAGE;
     public static final ForgeConfigSpec.ConfigValue<String> CREATE_TRACK_COLOR;
 
     static {
@@ -111,6 +112,8 @@ public final class MapConfig {
                 .define("deathWaypoint", true);
         SHOW_STRUCTURES = b.comment("Mark villages, fortresses and other structures you've been inside (needs DV Map on the server).")
                 .define("showStructures", true);
+        TELEPORT_MESSAGE = b.comment("Show the chat message (\"Teleported ... to ...\") after teleporting from the map or the waypoint list. Your own /tp commands always show it.")
+                .define("teleportMessage", true);
         SHOW_CREATE_TRAINS = b.comment("Show Create's tracks and trains on the world map (only when Create is installed; loaded chunks only).")
                 .define("showCreateTrains", true);
         CREATE_TRACK_COLOR = b.comment("Colour of Create tracks on the world map, as #RRGGBB.")

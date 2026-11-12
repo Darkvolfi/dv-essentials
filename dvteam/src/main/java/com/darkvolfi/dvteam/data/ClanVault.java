@@ -12,7 +12,7 @@ import java.util.UUID;
 
 /**
  * A clan's shared chest, kept in the clan data instead of a block. It opens only on the clan's own land,
- * for members of at least the rank the leader chose, and closes when that stops being true.
+ * for the leader and ranks with the vault right, and closes when that stops being true.
  */
 public final class ClanVault extends SimpleContainer {
     public static final int SIZE = 27;
@@ -36,7 +36,7 @@ public final class ClanVault extends SimpleContainer {
     }
 
     private static String denied(ClanData data, ClanData.Clan clan, Player player) {
-        if (!clan.hasRank(player.getUUID(), clan.vaultAccess)) return "dvteam.err.vault_rank";
+        if (!clan.can(player.getUUID(), ClanTypes.Manage.VAULT)) return "dvteam.err.vault_rank";
         ChunkPos cp = player.chunkPosition();
         if (data.clanAt(player.level().dimension().location().toString(), cp.x, cp.z) != clan) return "dvteam.err.vault_land";
         return null;

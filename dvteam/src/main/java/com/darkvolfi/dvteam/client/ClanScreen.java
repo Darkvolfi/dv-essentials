@@ -6,7 +6,8 @@ import com.darkvolfi.dvlib.client.DVIconButton;
 import com.darkvolfi.dvlib.client.DVUi;
 import com.darkvolfi.dvteam.data.ClanData;
 import com.darkvolfi.dvteam.data.ClanLevel;
-import com.darkvolfi.dvteam.data.ClanTypes.Rank;
+import com.darkvolfi.dvteam.data.ClanRank;
+import com.darkvolfi.dvteam.data.ClanTypes.Manage;
 import com.darkvolfi.dvteam.data.ClanTypes.SettlementType;
 import com.darkvolfi.dvteam.network.ClanActionPacket;
 import com.darkvolfi.dvteam.network.ClanActionPacket.Action;
@@ -38,6 +39,7 @@ public class ClanScreen extends Screen {
     private enum Tab {
         GENERAL(TeamMapIntegration.SHIELD),
         MEMBERS(new String[]{"##...##", "##...##", ".......", "###.###", "###.###", "###.###", "#.#.#.#"}),
+        RANKS(new String[]{"...#...", "..#.#..", ".#...#.", "...#...", "..#.#..", ".#...#.", "#.....#"}),
         SETTLEMENTS(new String[]{"...#...", "..###..", ".#####.", "#######", ".##.##.", ".##.##.", ".#####."}),
         DIPLOMACY(new String[]{"#.....#", ".#...#.", "..#.#..", "...#...", "..#.#..", ".#...#.", "##...##"}),
         INVITE(new String[]{".##....", ".##..#.", ".....#.", "###.###", "###..#.", "###..#.", "#.#...."});
@@ -124,6 +126,7 @@ public class ClanScreen extends Screen {
             switch (tab) {
                 case GENERAL -> buildGeneral(clan);
                 case MEMBERS -> buildMembers(clan);
+                case RANKS -> buildRanks(clan);
                 case SETTLEMENTS -> buildSettlements(clan);
                 case DIPLOMACY -> buildDiplomacy(clan);
                 case INVITE -> buildInvite(clan);
@@ -157,10 +160,11 @@ public class ClanScreen extends Screen {
 
     private void buildGeneral(ClanData.Clan clan) {
         ClanData.Snapshot lim = ClientClanCache.limits();
-        boolean leader = ClientClanCache.iAm(Rank.LEADER);
+        boolean leader = ClientClanCache.amLeader();
         // The first three rows have no buttons: the flag is drawn on their right.
         rows.add(new Row(clanLabel(clan), List.of()));
-        rows.add(new Row(Component.translatable("dvteam.screen.your_rank", Component.translatable(ClientClanCache.myRank().translationKey())), List.of()));
+        rows.add(new Row(Component.translatable("dvteam.screen.your_rank",
+                ClientClanCache.rankLabel(clan, minecraft.player.getUUID())), List.of()));
         rows.add(new Row(Component.translatable("dvteam.screen.counts",
                 ClientClanCache.chunkCount(clan.id), ClientClanCache.maxChunks(clan),
                 ClientClanCache.settlementCount(clan.id, SettlementType.VILLAGE), lim.maxVillages(),
@@ -171,16 +175,9 @@ public class ClanScreen extends Screen {
                 ? Component.translatable("dvteam.screen.level_max", level, ClientClanCache.points(clan))
                 : Component.translatable("dvteam.screen.level", level, ClientClanCache.points(clan), next);
         DVButton vault = button(Component.translatable("dvteam.screen.vault"), 50, b -> send(ClanActionPacket.of(Action.VAULT_OPEN)));
-        vault.active = ClientClanCache.iAm(clan.vaultAccess);
+        vault.active = ClientClanCache.can(Manage.VAULT);
         vault.setTooltip(Tooltip.create(Component.translatable("dvteam.screen.vault.tooltip")));
-        DVButton access = button(Component.translatable("dvteam.screen.vault_access", Component.translatable(clan.vaultAccess.translationKey())), 110, b -> {
-            List<DVChoicePopup.Option<Rank>> options = new ArrayList<>();
-            for (Rank r : Rank.values()) options.add(new DVChoicePopup.Option<>(r, Component.translatable(r.translationKey())));
-            DVChoicePopup.open(b, options, clan.vaultAccess,
-                    picked -> send(new ClanActionPacket(Action.VAULT_ACCESS, clan.id, "", picked.ordinal(), new CompoundTag())));
-        }).menu();
-        access.active = leader;
-        rows.add(new Row(levelLabel, List.of(access, vault)));
+        rows.add(new Row(levelLabel, List.of(vault)));
         DVButton ff = button(onOff("dvteam.screen.friendly_fire", clan.friendlyFire), 120, b -> {
             CompoundTag fields = new CompoundTag();
             fields.putBoolean("FriendlyFire", !clan.friendlyFire);
@@ -205,27 +202,81 @@ public class ClanScreen extends Screen {
     }
 
     private void buildMembers(ClanData.Clan clan) {
-        Rank mine = ClientClanCache.myRank();
-        for (Map.Entry<UUID, Rank> e : clan.members.entrySet()) {
-            UUID id = e.getKey();
-            Rank rank = e.getValue();
+        boolean leader = ClientClanCache.amLeader();
+        int mine = ClientClanCache.myOrder();
+        // Highest first: the leader, then each rank in order.
+        List<UUID> sorted = new ArrayList<>(clan.members.keySet());
+        sorted.sort((a, b) -> Integer.compare(clan.order(a), clan.order(b)));
+        for (UUID id : sorted) {
+            boolean below = mine < clan.order(id);
             boolean online = ClientClanCache.online(id);
-            MutableComponent label = Component.literal((rank == Rank.LEADER ? "★ " : rank == Rank.OFFICER ? "◆ " : "• ") + ClientClanCache.playerName(id))
+            MutableComponent label = Component.literal((clan.isLeader(id) ? "★ " : "• ") + ClientClanCache.playerName(id))
                     .withStyle(online ? ChatFormatting.WHITE : ChatFormatting.GRAY)
-                    .append(Component.literal("  ").append(Component.translatable(rank.translationKey())).withStyle(ChatFormatting.DARK_GRAY));
+                    .append(Component.literal("  ")).append(ClientClanCache.rankLabel(clan, id));
             List<DVButton> buttons = new ArrayList<>();
-            if (mine == Rank.LEADER && rank != Rank.LEADER) {
-                Rank next = rank == Rank.OFFICER ? Rank.MEMBER : Rank.OFFICER;
-                buttons.add(button(Component.translatable(rank == Rank.OFFICER ? "dvteam.action.demote" : "dvteam.action.promote"), 60, b ->
-                        send(new ClanActionPacket(Action.SET_RANK, id, "", next.ordinal(), new CompoundTag()))));
-                buttons.add(button(Component.translatable("dvteam.action.make_leader"), 60, b -> confirm(
-                        Component.translatable("dvteam.confirm.make_leader", ClientClanCache.playerName(id)),
-                        () -> send(new ClanActionPacket(Action.SET_RANK, id, "", Rank.LEADER.ordinal(), new CompoundTag())))));
+            if (below && ClientClanCache.can(Manage.RANKS)) {
+                // Only ranks strictly below my own can be given.
+                List<DVChoicePopup.Option<Integer>> options = new ArrayList<>();
+                for (ClanRank r : clan.ranks) {
+                    if (clan.orderOf(r.id) > mine) {
+                        options.add(new DVChoicePopup.Option<>(r.id, r.displayName().copy().withStyle(s -> s.withColor(r.textColor()))));
+                    }
+                }
+                if (!options.isEmpty()) {
+                    buttons.add(button(Component.translatable("dvteam.action.set_rank"), 60, b -> DVChoicePopup.open(b, options,
+                            clan.members.get(id), picked -> send(new ClanActionPacket(Action.SET_RANK, id, "", picked, new CompoundTag())))).menu());
+                }
             }
-            if (mine != null && mine.atLeast(Rank.OFFICER) && mine.ordinal() > rank.ordinal()) {
+            if (leader && !clan.isLeader(id)) {
+                buttons.add(button(Component.translatable("dvteam.action.make_leader"), 60, b -> confirm(
+                        Component.translatable("dvteam.confirm.make_leader", ClientClanCache.playerName(id), clan.ranks.get(0).displayName()),
+                        () -> send(new ClanActionPacket(Action.SET_RANK, id, "", ClanRank.LEADER_ID, new CompoundTag())))));
+            }
+            if (below && ClientClanCache.can(Manage.KICK)) {
                 buttons.add(button(Component.translatable("dvteam.action.kick"), 40, b -> send(ClanActionPacket.target(Action.KICK, id))));
             }
             rows.add(new Row(label, buttons));
+        }
+    }
+
+    /** Everyone sees the ranks and what they may do; only the leader adds, edits, orders and deletes them. */
+    private void buildRanks(ClanData.Clan clan) {
+        boolean leader = ClientClanCache.amLeader();
+        rows.add(new Row(Component.literal("★ ").append(Component.translatable("dvteam.rank.leader"))
+                .withStyle(ChatFormatting.GOLD).append(Component.literal("  ").append(Component.translatable("dvteam.ranks.leader_all"))
+                        .withStyle(ChatFormatting.GRAY)), List.of()));
+        for (int i = 0; i < clan.ranks.size(); i++) {
+            ClanRank r = clan.ranks.get(i);
+            long count = clan.members.values().stream().filter(v -> v == r.id).count();
+            MutableComponent label = Component.literal("■ ").withStyle(s -> s.withColor(r.color))
+                    .append(r.displayName().copy().withStyle(s -> s.withColor(r.textColor())))
+                    .append(Component.literal("  " + count + "👤").withStyle(ChatFormatting.GRAY));
+            if (i == clan.ranks.size() - 1) label.append(Component.literal("  ").append(Component.translatable("dvteam.ranks.entry")).withStyle(ChatFormatting.DARK_GRAY));
+            List<DVButton> buttons = new ArrayList<>();
+            if (leader) {
+                DVButton up = button(Component.literal("▲"), 18, b -> send(ClanActionPacket.rank(Action.RANK_UP, r.id)));
+                up.active = i > 0;
+                DVButton down = button(Component.literal("▼"), 18, b -> send(ClanActionPacket.rank(Action.RANK_DOWN, r.id)));
+                down.active = i < clan.ranks.size() - 1;
+                buttons.add(up);
+                buttons.add(down);
+                buttons.add(button(Component.translatable("dvteam.screen.edit"), 60, b -> minecraft.setScreen(new RankEditScreen(this, clan, r, true))));
+                // Members of a deleted rank move one rank down, or up when it was the lowest.
+                ClanRank heir = clan.ranks.size() < 2 ? null : clan.ranks.get(i + 1 < clan.ranks.size() ? i + 1 : i - 1);
+                DVButton delete = button(Component.literal("×").withStyle(ChatFormatting.RED), 18, b -> confirm(
+                        Component.translatable("dvteam.confirm.rank_delete", r.displayName(), heir.displayName()),
+                        () -> send(ClanActionPacket.rank(Action.RANK_DELETE, r.id))));
+                delete.active = heir != null;
+                buttons.add(delete);
+            } else {
+                buttons.add(button(Component.translatable("dvteam.ranks.view"), 60, b -> minecraft.setScreen(new RankEditScreen(this, clan, r, false))));
+            }
+            rows.add(new Row(label, buttons));
+        }
+        if (leader) {
+            DVButton add = button(Component.translatable("dvteam.ranks.add"), 120, b -> minecraft.setScreen(new RankEditScreen(this, clan, null, true)));
+            add.active = clan.ranks.size() < ClanRank.MAX_RANKS;
+            rows.add(new Row(Component.translatable("dvteam.ranks.count", clan.ranks.size(), ClanRank.MAX_RANKS).withStyle(ChatFormatting.GRAY), List.of(add)));
         }
     }
 
@@ -242,7 +293,7 @@ public class ClanScreen extends Screen {
     }
 
     private void buildDiplomacy(ClanData.Clan clan) {
-        boolean leader = ClientClanCache.iAm(Rank.LEADER);
+        boolean leader = ClientClanCache.can(Manage.DIPLOMACY);
         long now = System.currentTimeMillis();
         for (ClanData.Clan other : ClientClanCache.clans()) {
             if (other.id.equals(clan.id)) continue;
@@ -289,7 +340,7 @@ public class ClanScreen extends Screen {
     }
 
     private void buildInvite(ClanData.Clan clan) {
-        boolean officer = ClientClanCache.iAm(Rank.OFFICER);
+        boolean officer = ClientClanCache.can(Manage.INVITE);
         for (Map.Entry<UUID, String> e : ClientClanCache.playerNames().entrySet()) {
             UUID id = e.getKey();
             if (!ClientClanCache.online(id) || ClientClanCache.clanOf(id) != null) continue;

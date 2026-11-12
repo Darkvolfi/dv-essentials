@@ -9,6 +9,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -23,6 +25,7 @@ import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.event.entity.living.LivingExperienceDropEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModList;
@@ -170,6 +173,19 @@ public final class GraveEvents {
             event.setCanceled(true);
             return;
         }
+    }
+
+    /**
+     * The owner can always open their own grave, also when they died on land a claim mod protects (DV Team or
+     * another): opened here, before those mods see the click and refuse it. Everyone else follows the claim rules.
+     */
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onRightClickGrave(PlayerInteractEvent.RightClickBlock event) {
+        if (!(event.getEntity() instanceof ServerPlayer player) || player.isSecondaryUseActive()) return;
+        if (!(event.getLevel().getBlockEntity(event.getPos()) instanceof GraveBlockEntity grave) || !grave.isOwner(player)) return;
+        if (event.getHand() == InteractionHand.MAIN_HAND) GraveBlock.open(player, event.getPos(), grave);
+        event.setCanceled(true);
+        event.setCancellationResult(InteractionResult.CONSUME);
     }
 
     @SubscribeEvent

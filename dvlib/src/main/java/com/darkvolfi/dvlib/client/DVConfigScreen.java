@@ -385,6 +385,7 @@ public class DVConfigScreen extends Screen {
         DVUi.icon(g, DVUi.SEARCH, l + PAD + 5, top() + 34, 1, 0xFF8A80A8);
 
         g.enableScissor(l + 1, viewTop(), l + w - 1, viewBottom());
+        Component clippedLabel = null;
         boolean any = false;
         for (Row row : rows) {
             if (!row.shown) continue;
@@ -401,10 +402,19 @@ public class DVConfigScreen extends Screen {
                 g.drawString(font, row.label, textX, y + 7, row.icon != null ? DVUi.accent() : 0xFFA0A0A0);
                 continue;
             }
-            if (mouseY >= y && mouseY < y + ROW_HEIGHT && mouseX >= l && mouseX < l + w) {
+            boolean rowHovered = mouseY >= y && mouseY < y + ROW_HEIGHT && mouseX >= l && mouseX < l + w;
+            if (rowHovered) {
                 g.fill(l + 4, y + 1, l + w - 4, y + ROW_HEIGHT - 1, 0x22FFFFFF);
             }
-            g.drawString(font, row.label, l + PAD, y + 7, 0xFFE6E6F0);
+            // A label longer than the room before its control is cut with "…"; the whole text shows on hover.
+            int room = row.widget.getX() - (l + PAD) - 6;
+            if (font.width(row.label) > room) {
+                String cut = font.plainSubstrByWidth(row.label.getString(), room - font.width("…")) + "…";
+                g.drawString(font, cut, l + PAD, y + 7, 0xFFE6E6F0);
+                if (rowHovered && mouseX < row.widget.getX()) clippedLabel = row.label;
+            } else {
+                g.drawString(font, row.label, l + PAD, y + 7, 0xFFE6E6F0);
+            }
         }
         if (!any && !query.isEmpty()) {
             g.drawCenteredString(font, Component.translatable("dvlib.search.none"), l + w / 2, viewTop() + 7, 0xA0A0A0);
@@ -421,6 +431,7 @@ public class DVConfigScreen extends Screen {
             g.fill(barX, thumbY, barX + 2, thumbY + thumbHeight, DVUi.accent());
         }
         super.render(g, mouseX, mouseY, partialTick);
+        if (clippedLabel != null) g.renderTooltip(font, clippedLabel, mouseX, mouseY);
     }
 
     @Override

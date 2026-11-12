@@ -14,7 +14,8 @@ public class DVMap {
 
     public DVMap() {
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, MapConfig.SPEC);
+        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, MapServerConfig.SPEC);
         MapNetwork.register();
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> DVConfigScreen.register(MOD_ID, MapConfig.SPEC, null, null));
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> DVConfigScreen.register(MOD_ID, MapConfig.SPEC, MapServerConfig.SPEC, null));
     }
 }

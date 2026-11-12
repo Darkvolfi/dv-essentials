@@ -110,6 +110,7 @@
   "dvmap.bar.structures": "Structures",
   "dvmap.bar.create_trains": "Create tracks & trains",
   "dvmap.config.showCreateTrains": "Create tracks & trains on the map",
+  "dvmap.config.teleportMessage": "Message after teleporting from the map",
   "dvmap.config.createTrackColor": "Create track colour",
   "dvmap.bar.export": "Save PNG",
   "dvmap.bar.export.tooltip": "Save the explored surface map of this dimension as one image in the screenshots folder.",

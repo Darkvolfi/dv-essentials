@@ -73,13 +73,17 @@ public class GraveBlock extends BaseEntityBlock {
                     : Component.translatable("dvgrave.locked", grave.ownerName(), minutes), true);
             return InteractionResult.CONSUME;
         }
-        NetworkHooks.openScreen(sp, grave, buf -> {
+        open(sp, pos, grave);
+        return InteractionResult.CONSUME;
+    }
+
+    static void open(ServerPlayer player, BlockPos pos, GraveBlockEntity grave) {
+        NetworkHooks.openScreen(player, grave, buf -> {
             buf.writeBlockPos(pos);
             buf.writeVarInt(grave.container().getContainerSize());
             buf.writeVarInt(grave.xp());
             buf.writeUtf(grave.ownerName());
         });
-        return InteractionResult.CONSUME;
     }
 
     /** A creative player breaking it: spill the contents rather than lose them. */

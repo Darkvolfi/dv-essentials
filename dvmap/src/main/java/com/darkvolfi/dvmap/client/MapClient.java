@@ -11,7 +11,9 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
+import net.minecraftforge.client.event.RenderNameTagEvent;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
+import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -111,6 +113,14 @@ public final class MapClient {
         Player old = event.getOldPlayer();
         if (!MapConfig.DEATH_WAYPOINT.get() || !old.isDeadOrDying()) return;
         WaypointManager.recordDeath(old.level().dimension(), old.blockPosition());
+    }
+
+    /** A player who hides their name (and whom the server lets hide it) shows no name tag over their head. */
+    @SubscribeEvent
+    public static void onNameTag(RenderNameTagEvent event) {
+        if (event.getEntity() instanceof Player p && RemotePlayers.isTagHidden(p.getUUID())) {
+            event.setResult(Event.Result.DENY);
+        }
     }
 
     /** Potion effect icons sit in the top-right corner too: move them left of the minimap, along the top. */

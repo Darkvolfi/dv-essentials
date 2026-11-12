@@ -130,11 +130,11 @@ Kullanıcının oyunda bulduğu hatalar ve istekleri. Nedenler kodda bulundu, he
   - Önce yalnız bu oyuncunun haritasında, dünya başına saklanır. Sunucuda herkesle paylaşmak DV Team'in klan demiryolları ile gelir.
   - Açık soru: bir hattı tanımak için hattın bir bloğu saklanır; hat değişince (ray eklenip sökülünce) ad doğru hatta kalmalı.
 
-### DV Map (yarım)
-- **İstek: "İsmimi gizle" dünyadaki isim etiketini de gizlesin** (kullanıcının kararı, 2026-11-12). Sunucu ayarı `allowHiddenNameTags` (varsayılan açık) ve oyunculara giden "etiketi gizli" listesi yazıldı (ağ sürümü 3). Eksik: istemcide `RenderNameTagEvent` ile o oyuncuların etiketini çizmemek. Yalnız DV Map kurulu oyuncularda çalışır.
+### DV Map
+- ✅ (2026-11-12) "İsmimi gizle" dünyadaki isim etiketini de gizliyor (kullanıcının kararı). Sunucu ayarı `allowHiddenNameTags` (varsayılan açık); sunucu gizleyenlerin listesini gönderir, DV Map kurulu istemciler `RenderNameTagEvent` ile o etiketi çizmez. Ağ sürümü 3. DV Map kurulu olmayan oyuncular ismi yine görür.
 
 ### DV Team (sonraki)
-- **İstek: klanın kendi rütbeleri** (kullanıcının kararı, 2026-11-12). Lider sabit; lider en çok 10 sıralı rütbe açar (ad, renk), her birine yönetim izinleri (davet, atma, bölge, yerleşim, kasa, savaş/ittifak, rütbe verme) ve klanın kendi bölgesindeki izinler (inşa, kapı, sandık, hayvan, tarım) verilir. Üye yalnız kendinden aşağıdakileri yönetir. Eski OFFICER/MEMBER kayıtları iki varsayılan rütbeye taşınır. ✅ Yazıldı ve ana koda alındı (DV Team 1.0.1.0, 2026-11-12); çok oyunculu testte sunucu açıldı, ayrıntılı deneme kullanıcıda. Açık kararlar: Subay yerleşim izinlerini değiştirebilsin mi; klan adı/renk/bayrak bir izin olsun mu; yeni rütbe en alta mı eklensin.
+- **İstek: klanın kendi rütbeleri** (kullanıcının kararı, 2026-11-12). Lider sabit; lider en çok 10 sıralı rütbe açar (ad, renk), her birine yönetim izinleri (davet, atma, bölge, yerleşim, kasa, savaş/ittifak, rütbe verme) ve klanın kendi bölgesindeki izinler (inşa, kapı, sandık, hayvan, tarım) verilir. Üye yalnız kendinden aşağıdakileri yönetir. Eski OFFICER/MEMBER kayıtları iki varsayılan rütbeye taşınır. ✅ Yazıldı ve ana koda alındı (DV Team 1.0.1.0, 2026-11-12); çok oyunculu testte sunucu açıldı, ayrıntılı deneme kullanıcıda. Şimdilik böyle kaldı (2026-11-12): Subay yerleşim izinlerini değiştiremez (lider SETTLEMENTS iznini verebilir), klan adı/renk/bayrak liderde, yeni rütbe en alta eklenir.
 - **İstek: klan demiryolları** (kullanıcının isteği, 2026-11-10).
   - Bir klan, ray hatlarını ve trenlerini kendi adıyla sahiplenir. Klan üyelerinin haritasında hat klan rengiyle ve adıyla görünür; diğer oyuncular da kimin hattı olduğunu görür.
   - Ad ve renk sunucuda saklanır, klan üyeleri arasında paylaşılır. Yalnız yetkili klan üyeleri değiştirebilir.

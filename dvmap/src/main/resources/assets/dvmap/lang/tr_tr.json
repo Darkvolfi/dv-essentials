@@ -37,7 +37,8 @@
   "dvmap.config.mobFaces": "Canlıları yüzleriyle göster",
   "dvmap.config.dayNight": "Gece haritayı karart",
   "dvmap.config.hideMe": "Beni diğer oyuncuların haritasında gizle",
-  "dvmap.config.hideMyName": "İsmimi diğer oyuncuların haritasında gizle",
+  "dvmap.config.hideMyName": "İsmimi gizle (haritalar ve başımın üstü)",
+  "dvmap.config.allowHiddenNameTags": "Oyuncular başlarının üstündeki ismi gizleyebilir",
 
   "dvmap.waypoint.shape": "Şekil",
   "dvmap.shape.star": "Yıldız",

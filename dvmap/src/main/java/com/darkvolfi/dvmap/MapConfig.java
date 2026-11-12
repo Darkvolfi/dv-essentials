@@ -102,7 +102,7 @@ public final class MapConfig {
                 .define("dayNight", true);
         HIDE_ME = b.comment("Hide yourself from other players' maps (needs DV Map on the server). Also hides your name.")
                 .define("hideMe", false);
-        HIDE_MY_NAME = b.comment("Hide your name on other players' maps (needs DV Map on the server).")
+        HIDE_MY_NAME = b.comment("Hide your name on other players' maps, and the name tag over your head for players with DV Map if the server allows it (needs DV Map on the server).")
                 .define("hideMyName", false);
         SHOW_WAYPOINTS_MINIMAP = b.comment("Show waypoint markers on the minimap.")
                 .define("showWaypointsOnMinimap", true);

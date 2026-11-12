@@ -37,7 +37,8 @@
   "dvmap.config.mobFaces": "Show creatures as faces",
   "dvmap.config.dayNight": "Darken the map at night",
   "dvmap.config.hideMe": "Hide me on other players' maps",
-  "dvmap.config.hideMyName": "Hide my name on other players' maps",
+  "dvmap.config.hideMyName": "Hide my name (maps and name tag)",
+  "dvmap.config.allowHiddenNameTags": "Players may hide their name tag",
 
   "dvmap.waypoint.shape": "Shape",
   "dvmap.shape.star": "Star",

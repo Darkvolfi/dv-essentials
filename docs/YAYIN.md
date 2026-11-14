@@ -20,6 +20,7 @@ DV New Crafts'in bakır dokuları Minecraft dokularından türetilmiştir ve MIT
 | DV Backpack | `dvbackpack-1.20.1-1.0.0.0.jar` | ikisi (zorunlu) | DV Lib; DV Slots, Curios isteğe bağlı | Storage, Equipment |
 | DV New Crafts | `dvnewcrafts-1.20.1-1.0.0.0.jar` | ikisi (zorunlu) | — | Equipment, Decoration |
 | DV Science of Souls | `dvsouls-1.20.1-1.0.0.0.jar` | ikisi (zorunlu) | DV Lib; DV Backpack, JEI isteğe bağlı | Mobs, Magic, Technology |
+| DV Glass | `dvglass-1.20.1-1.0.0.0.jar` | istemci | DV Lib | Decoration, Utility |
 
 Jar'lar: `<mod>/build/libs/` (`.\gradlew.bat build` ile üretilir).
 
@@ -229,9 +230,34 @@ The library behind the DV mods. Install it together with any DV mod.
 
 ---
 
+## DV Glass
+**Summary:** Connected glass: glass blocks and panes of the same kind join into one clear surface.
+
+- Glass, all 16 stained glass colours, tinted glass and glass panes connect on their own, no new blocks
+- Only the same kind joins: red with red, blocks with blocks, panes with panes
+- The frame only stays where the glass ends; inner corners keep a small corner dot
+- **Borderless mode** (option, off by default): also removes the streaks inside the glass, leaving just the outer frame
+- Its textures are made from the vanilla glass, so resource packs that change glass are not followed yet
+- Built on Forge's model system, so Embeddium/Rubidium should work too
+- Client-side only
+
+**Türkçe taslak:**
+**Özet:** Bağlantılı cam: aynı türden cam bloklar ve paneller tek bir temiz yüzey olarak birleşir.
+
+- Cam, 16 renkli cam, karartılmış cam ve cam paneller kendiliğinden birleşir; yeni blok yok
+- Yalnızca aynı tür birleşir: kırmızı kırmızıyla, blok blokla, panel panelle
+- Çerçeve sadece camın bittiği yerde kalır; iç köşelerde küçük bir köşe noktası kalır
+- **Çerçevesiz mod** (ayar, varsayılan kapalı): camın içindeki parıltı çizgilerini de kaldırır, yalnızca dış çerçeve kalır
+- Dokular oyunun kendi camından türetilir; camı değiştiren doku paketleri şimdilik izlenmez
+- Forge'un model sistemiyle çalışır; Embeddium/Rubidium ile de çalışması hedeflenir
+- Yalnızca istemci
+
 ## Değişiklik listesi
 
 Yükleme sırası ve hazır jar'lar: masaüstünde `DV Yayin/Guncellemeler` (betik: `AGENTS/calisma/yayin-guncelleme.sh`). 2026-11-10 dalgası: Lib 1.0.2, Backpack 1.0.0.1, Vein 1.0.0.2, Grave 1.0.0.2, Map 1.0.1.0, Team 1.0.1.0, Souls 1.0.1.0, Food 1.0.1.0, Lens 1.0.1.1, Music 1.0.1.0, New Crafts 1.1.0, Slots 1.0.1.0. Vein/Grave 1.0.0.1, Team 1.0.0.1 ve Lens 1.0.1.0 hiç yüklenmedi; içerikleri bir üst sürümde. DV Lens 1.0.0.1–1.0.0.2 ve DV Music 1.0.0.1 sitelere yüklenmedi; içerikleri 1.0.1.0'da.
+
+### DV Glass 1.0.0.0
+İlk sürüm: bağlantılı cam (cam, renkli camlar, karartılmış cam, cam paneller) ve çerçevesiz mod ayarı.
 
 ### DV Slots 1.0.1.0
 Mending büyüsü DV slotlarındaki eşyaları da onarıyor (sırttaki elytra). Toplanan XP, oyunun kendi seçimindeki gibi, onarılacak eşyalar arasından eşit şansla birine gider. Başka bir elytra moduyla çakışmada oyun artık çökmüyor: sırttaki elytra ile uçuş o modla çalışmaz, oyun açılır.

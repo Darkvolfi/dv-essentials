@@ -258,6 +258,14 @@ Paint (Mask (Disc 16 18 2.5)) (Col '#B8F4FF')                     # soul's glow
 Part (RectS 8 24 16 3) '#5A4436'                                  # soul sand base
 Save-Icon 'dvsouls'
 
+# ---------- DV Glass: four glass blocks joined into one pane, frame only on the outside
+New-Icon '#8FD3E8'
+Part (RectS 5 5 22 22) '#D0EAE9'                                  # outer frame
+Paint (Mask (RectS 7 7 18 18)) (Col '#9FD4E0')                    # the joined glass, no inner lines
+Paint (Mask (Seg 10 15 15 10 0.6)) (Col '#F4FFFF')                # streaks
+Paint (Mask (Seg 18 22 22 18 0.6)) (Col '#F4FFFF')
+Save-Icon 'dvglass'
+
 # ---------- write files (nearest-neighbour scaling keeps the pixels sharp)
 function Scale($bmp, [int]$size) {
     $big = New-Object System.Drawing.Bitmap($size, $size)

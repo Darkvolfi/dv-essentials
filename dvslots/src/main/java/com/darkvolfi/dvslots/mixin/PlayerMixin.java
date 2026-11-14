@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 /** Server side: allows starting an elytra flight with the elytra in the back slot. */
 @Mixin(Player.class)
 abstract class PlayerMixin {
-    @Redirect(method = "tryToStartFallFlying", at = @At(value = "INVOKE",
+    @Redirect(method = "tryToStartFallFlying", require = 0, at = @At(value = "INVOKE",
             target = "Lnet/minecraft/world/entity/player/Player;getItemBySlot(Lnet/minecraft/world/entity/EquipmentSlot;)Lnet/minecraft/world/item/ItemStack;"))
     private ItemStack dvslots$chestOrBack(Player self, EquipmentSlot slot) {
         return SlotData.chestOrBack(self, slot);

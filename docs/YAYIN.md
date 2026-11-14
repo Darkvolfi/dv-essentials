@@ -234,8 +234,8 @@ The library behind the DV mods. Install it together with any DV mod.
 Yükleme sırası ve hazır jar'lar: masaüstünde `DV Yayin/Guncellemeler` (betik: `AGENTS/calisma/yayin-guncelleme.sh`). 2026-11-10 dalgası: Lib 1.0.2, Backpack 1.0.0.1, Vein 1.0.0.2, Grave 1.0.0.2, Map 1.0.1.0, Team 1.0.1.0, Souls 1.0.1.0, Food 1.0.1.0, Lens 1.0.1.1, Music 1.0.1.0, New Crafts 1.1.0, Slots 1.0.1.0. Vein/Grave 1.0.0.1, Team 1.0.0.1 ve Lens 1.0.1.0 hiç yüklenmedi; içerikleri bir üst sürümde. DV Lens 1.0.0.1–1.0.0.2 ve DV Music 1.0.0.1 sitelere yüklenmedi; içerikleri 1.0.1.0'da.
 
 ### DV Slots 1.0.1.0
-Mending büyüsü DV slotlarındaki eşyaları da onarıyor (sırttaki elytra). Toplanan XP, oyunun kendi seçimindeki gibi, onarılacak eşyalar arasından eşit şansla birine gider.
-Sayfalara yazılacak İngilizce metin: "Mending now repairs what you wear in the DV slots too, like the elytra on your back. Each experience orb picks one damaged Mending item, among your armor, hands and DV slots alike, as the game does."
+Mending büyüsü DV slotlarındaki eşyaları da onarıyor (sırttaki elytra). Toplanan XP, oyunun kendi seçimindeki gibi, onarılacak eşyalar arasından eşit şansla birine gider. Başka bir elytra moduyla çakışmada oyun artık çökmüyor: sırttaki elytra ile uçuş o modla çalışmaz, oyun açılır.
+Sayfalara yazılacak İngilizce metin: "Mending now repairs what you wear in the DV slots too, like the elytra on your back. Each experience orb picks one damaged Mending item, among your armor, hands and DV slots alike, as the game does. Safer alongside other elytra mods: if one changes the same flight code, the game still starts and only back-slot flying is skipped."
 
 ### DV New Crafts 1.1.0
 Yöneticiler için oyun içi tarif ekranı (DV menüsü ya da Mods → Config): şekilli, şekilsiz, fırın, tütsüleyici, yüksek fırın, kamp ateşi ve taş kesici tarifleri eklenir, düzenlenir, silinir; dünyanın veri paketine yazılır, hemen yüklenir. Oyunun ve diğer modların tarifleri de kapatılabilir: sonuç yuvasına eşyayı koy, Kapat; listeden seçip Aç ile geri gelir. Yeni tarif: ortada makas, çevresinde 8 çürük et → 8 deri (makas 8 can kaybeder).

@@ -176,7 +176,8 @@ public class SkinScreen extends Screen {
             }
         }
 
-        if (slot == SkinData.SKIN) {
+        // With the account's own skin the arm model comes with it, so the switch would do nothing
+        if (slot == SkinData.SKIN && !kind[slot].equals("none")) {
             addRenderableWidget(new DVSwitch(rx, t + 112, Component.translatable("dvskin.slim"), slim, v -> slim = v));
         }
 
@@ -491,7 +492,7 @@ public class SkinScreen extends Screen {
             case "dv" -> wrapped(g, Component.translatable("dvskin.hint.dv"), rx, y + 20, rw, 0xFF6A6478);
             default -> wrapped(g, Component.translatable("dvskin.hint." + kind[slot]), rx, y + 20, rw, 0xFF6A6478);
         }
-        if (slot == SkinData.SKIN) {
+        if (slot == SkinData.SKIN && !kind[slot].equals("none")) {
             g.drawString(font, Component.translatable("dvskin.slim"), rx + DVSwitch.WIDTH + 6, t + 114, 0xFFE6E6F0);
         }
 

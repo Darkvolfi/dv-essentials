@@ -289,8 +289,8 @@ Yükleme sırası ve hazır jar'lar: masaüstünde `DV Yayin/Guncellemeler` (bet
 İlk sürüm: skin (dosya, Mojang adı, Ely.by adı, bağlantı), DV pelerinleri ve kendi pelerin, ayrı elytra dokusu, ince/kalın kol, döndürülen önizleme; sunucu üzerinden paylaşım (`allowSkins`, `allowCapes`).
 
 ### DV Lib 1.0.4
-DV menüsünde DV Skin da var (simgesi ve kısa açıklamasıyla). 1.0.3 henüz yüklenmediyse onun yerine bu yüklenir; içeriği 1.0.3'ü de kapsar.
-Sayfalara yazılacak İngilizce metin: "DV Skin now has its tile in the DV menu."
+1.0.3 hiç yüklenmedi; 1.0.4 onun yerine çıkar ve içeriğini kapsar. DV menüsünde DV Glass ve DV Skin de var (simgeleri ve kısa açıklamalarıyla). DV modları artık yeni sürüm çıkınca haber veriyor: DV menüsündeki kutuda ve DV düğmesinde yeşil işaret (bu sürümden sonra güncellenen modlarda).
+Sayfalara yazılacak İngilizce metin: "DV Glass and DV Skin now have their tiles in the DV menu. DV mods now tell you when a new version is out: a green mark on their tile and on the DV button (for mods updated from now on)."
 
 ### DV Glass 1.0.0.0
 İlk sürüm: bağlantılı cam (cam, renkli camlar, karartılmış cam, cam paneller) ve çerçevesiz mod ayarı.

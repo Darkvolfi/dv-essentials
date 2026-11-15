@@ -146,6 +146,7 @@ $themes['dv'] = @{ base = '#14111C'; border = '#FF9A2E'; deco = {
     $o = Col '#FF9A2E'; $sh = Col '#7A3E0A'
     $D = @('###.', '#..#', '#..#', '#..#', '#..#', '###.'); $V = @('#..#', '#..#', '#..#', '#..#', '.##.', '.##.')
     $x0 = [int][Math]::Floor(($w - 9) / 2); $y0 = [int][Math]::Floor(($h - 6) / 2) - 2
+    if ($h -gt 16) { $D = @('....', '....', '....', '....', '....', '....'); $x0 = -2; $y0 = 8 }   # wing: only the V, it is mirrored on the other wing and the rim is dark
     foreach ($pass in 0) {
         $c = if ($pass) { $sh } else { $o }; $off = $pass
         foreach ($set in @(@($D, 0), @($V, 5))) {
@@ -196,21 +197,22 @@ function Build([string]$name, $t) {
     Fill $tex 12 1 10 16 $inner
     Fill $tex 1 0 10 1 $edge; Fill $tex 11 0 10 1 $edge; Fill $tex 0 1 1 16 $edge; Fill $tex 11 1 1 16 $edge
     # elytra: the wing's visible face is the box's BACK face (36,2); only the wing-shaped part is used
-    # (stepped right edge, cut lower-left corner). The pale/plain faces around it are filled as edges.
+    # (stepped right edge, cut lower-left corner). Every other elytra face is one flat dark tone (template: red/green/blue strips).
     $right = @(5, 6, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9)
     $left = @(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 3)
-    New-Face 10 20 $base $border; & $t.deco 10 20; $wing = $script:F
+    $wEdge = MixC $base $BLACK 0.45   # flat dark theme tone for the rim and every thin face: keeps the wing looking thin
+    New-Face 10 20 $base $wEdge; & $t.deco 10 20; $wing = $script:F
     for ($fy = 0; $fy -lt 20; $fy++) {
         for ($fx = 0; $fx -lt 10; $fx++) {
             $in = ($fx -ge $left[$fy]) -and ($fx -le $right[$fy])
             if (-not $in) { continue }
             $isEdge = ($fy -eq 0) -or ($fy -eq 19) -or ($fx -eq $left[$fy]) -or ($fx -eq $right[$fy]) -or ($fx -le $right[$fy - 1] -eq $false) -or ($fx -lt $left[$fy - 1]) -or ($fx -lt $left[$fy + 1]) -or ($fx -gt $right[$fy + 1])
-            $tex[(36 + $fx), (2 + $fy)] = $(if ($isEdge) { $border } else { $wing[$fx, $fy] })
+            $tex[(36 + $fx), (2 + $fy)] = $(if ($isEdge) { $wEdge } else { $wing[$fx, $fy] })
             # the inside face (24,2) is the mirror image, plain
-            $tex[(24 + 9 - $fx), (2 + $fy)] = $inner
+            $tex[(24 + 9 - $fx), (2 + $fy)] = $wEdge
         }
     }
-    Fill $tex 24 0 10 2 $edge; Fill $tex 34 0 10 2 $edge; Fill $tex 22 2 2 20 $edge; Fill $tex 34 2 2 20 $edge
+    Fill $tex 24 0 10 2 $wEdge; Fill $tex 34 0 10 2 $wEdge; Fill $tex 22 2 2 20 $wEdge; Fill $tex 34 2 2 20 $wEdge
     $bmp = New-Object System.Drawing.Bitmap(64, 32, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
     for ($y = 0; $y -lt 32; $y++) { for ($x = 0; $x -lt 64; $x++) {
         $v = $tex[$x, $y]

@@ -72,9 +72,15 @@ $themes['souls'] = @{ base = '#1B2A4E'; border = '#0E1630'; deco = {
     param($w, $h)
     $p = @{ c = (Col '#7FEAF7'); e = (Col '#0E1630'); g = (Col '#3A66B8'); s = (Col '#4F7BD0') }
     SprC @('.cccc.', 'cccccc', 'ceccec', 'cccccc', 'cccccc', 'c.cc.c') $p -1
-    foreach ($q in @(@(2, 2), @(($w - 3), 3), @(2, ($h - 4)), @(($w - 3), ($h - 3)), @(($w - 2), ($h - 7)))) { Px $q[0] $q[1] $p.s }
-    for ($x = 1; $x -lt $w - 1; $x += 2) { Px $x ($h - 2) $p.g }          # soul flames licking up the hem
-    for ($x = 2; $x -lt $w - 1; $x += 4) { Px $x ($h - 3) $p.g }
+    # blue flames standing along the hem: dark base, bright middle, pale tip
+    $heights = @(2, 4, 3, 4, 2, 4, 3, 2)
+    for ($i = 0; $i -lt $heights.Count; $i++) {
+        $hh = $heights[$i]
+        for ($k = 0; $k -lt $hh; $k++) {
+            $col = if ($k -eq $hh - 1) { Col '#C4F4FF' } elseif ($k -ge 1) { Col '#4FB4F0' } else { $p.g }
+            Px (1 + $i) ($h - 2 - $k) $col
+        }
+    }
 } }
 
 $themes['map'] = @{ base = '#D9C28F'; border = '#8B6A3A'; deco = {

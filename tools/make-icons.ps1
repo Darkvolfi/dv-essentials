@@ -267,15 +267,25 @@ Paint (Mask (Seg 18 22 22 18 0.6)) (Col '#F4FFFF')
 Save-Icon 'dvglass'
 
 
-# ---------- DV Skin: a character seen from behind, wearing a cape
+# ---------- DV Skin: a character seen from behind, wearing a cape; the left half is a normal player,
+# the right half has turned into something else (dark body, DV orange and purple)
 New-Icon '#FF9A2E'
 Part (RectS 12 25 3 3) '#2F3F8F'; Part (RectS 17 25 3 3) '#2F3F8F'  # legs
 Part (RectS 8 11 3 10) '#4FC3F7'; Part (RectS 21 11 3 10) '#4FC3F7' # arms
 Part (RectS 13 5 6 6) '#C69C6D'                                   # head
 Paint (Mask (RectS 13 5 6 2)) (Col '#5A3A22')                     # hair
 Part (RectS 11 11 10 15) '#E5534B'                                # cape
-Paint (Mask (RectS 17 12 3 13)) (Col '#C2403A')                   # cape shade
+Paint (Mask (RectS 13 12 3 13)) (Col '#C2403A')                   # cape shade
 Paint (Mask (RectS 12 24 8 1)) (Col '#FF9A2E')                    # orange hem
+# right half: transformed
+Paint (Mask (RectS 16 5 3 6)) (Col '#2A2438')                     # dark head
+Paint (Mask (RectS 16 5 3 2)) (Col '#14111C')
+Paint (Mask (RectS 17 8 2 1)) (Col '#FF9A2E')                     # glowing eye slit
+Paint (Mask (RectS 16 11 5 15)) (Col '#9B6BFF')                   # purple cape
+Paint (Mask (RectS 19 12 2 13)) (Col '#7A52D6')
+Paint (Mask (RectS 16 24 4 1)) (Col '#FF9A2E')
+Paint (Mask (RectS 21 11 3 10)) (Col '#FF9A2E')                   # orange arm
+Paint (Mask (RectS 17 26 3 2)) (Col '#14111C')                    # dark leg
 Save-Icon 'dvskin'
 # ---------- write files (nearest-neighbour scaling keeps the pixels sharp)
 function Scale($bmp, [int]$size) {

@@ -6,9 +6,9 @@
 #
 # Layout (checked against PlayerModel.createMesh and ElytraModel.createLayer, MC 1.20.1):
 #   cape   = box 10x16x1 at texOffs(0,0):  top (1,0)  bottom (11,0)  sides (0,1)/(11,1)  OUTER (1,1)  inner (12,1)
-#   elytra = box 10x20x2 at texOffs(22,0): top (24,0) bottom (34,0)  sides (22,2)/(34,2)  OUTER (24,2) inner (36,2)
+#   elytra = box 10x20x2 at texOffs(22,0): the visible wing face is the BACK face (36,2), wing-shaped (stepped right edge, cut lower-left corner);
 # The two regions do not overlap, so one 64x32 image serves both. The outer face is drawn once per size
-# (10x16 for the cape, 10x20 for the elytra wing) from the same design; the inner faces and edges are plain.
+# the same design is drawn on both (10x16 cape, 10x20 wing); inner faces and edges are plain.
 
 Add-Type -AssemblyName System.Drawing
 $ErrorActionPreference = 'Stop'
@@ -164,12 +164,13 @@ $dyes = [ordered]@{
 }
 $colorDeco = {
     param($w, $h)
+    $my = if ($h -gt 16) { 9 } else { 3 }   # the wing is narrower at the top: start lower
     $base = $script:F[([int]($w / 2)), 5]
     $mark = if ((Lum $base) -lt 0.5) { MixC $base $WHITE 0.45 } else { MixC $base $BLACK 0.40 }
     $D = @('##.', '#.#', '#.#', '#.#', '##.'); $V = @('#.#', '#.#', '#.#', '#.#', '.#.')
     for ($j = 0; $j -lt 5; $j++) { for ($i = 0; $i -lt 3; $i++) {
-        if ($D[$j][$i] -eq '#') { Px (1 + $i + 1) (3 + $j) $mark }
-        if ($V[$j][$i] -eq '#') { Px (1 + 4 + $i + 1) (3 + $j) $mark } } }
+        if ($D[$j][$i] -eq '#') { Px (1 + $i + 1) ($my + $j) $mark }
+        if ($V[$j][$i] -eq '#') { Px (1 + 4 + $i + 1) ($my + $j) $mark } } }
 }
 foreach ($k in $dyes.Keys) {
     $b = Col ('#' + $dyes[$k])
@@ -194,10 +195,21 @@ function Build([string]$name, $t) {
     Blit $tex $capeFace 1 1
     Fill $tex 12 1 10 16 $inner
     Fill $tex 1 0 10 1 $edge; Fill $tex 11 0 10 1 $edge; Fill $tex 0 1 1 16 $edge; Fill $tex 11 1 1 16 $edge
-    # elytra (same design, 10x20 wing)
-    New-Face 10 20 $base $border; & $t.deco 10 20; $wingFace = $script:F
-    Blit $tex $wingFace 24 2
-    Fill $tex 36 2 10 20 $inner
+    # elytra: the wing's visible face is the box's BACK face (36,2); only the wing-shaped part is used
+    # (stepped right edge, cut lower-left corner). The pale/plain faces around it are filled as edges.
+    $right = @(5, 6, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9)
+    $left = @(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 3)
+    New-Face 10 20 $base $border; & $t.deco 10 20; $wing = $script:F
+    for ($fy = 0; $fy -lt 20; $fy++) {
+        for ($fx = 0; $fx -lt 10; $fx++) {
+            $in = ($fx -ge $left[$fy]) -and ($fx -le $right[$fy])
+            if (-not $in) { continue }
+            $isEdge = ($fy -eq 0) -or ($fy -eq 19) -or ($fx -eq $left[$fy]) -or ($fx -eq $right[$fy]) -or ($fx -le $right[$fy - 1] -eq $false) -or ($fx -lt $left[$fy - 1]) -or ($fx -lt $left[$fy + 1]) -or ($fx -gt $right[$fy + 1])
+            $tex[(36 + $fx), (2 + $fy)] = $(if ($isEdge) { $border } else { $wing[$fx, $fy] })
+            # the inside face (24,2) is the mirror image, plain
+            $tex[(24 + 9 - $fx), (2 + $fy)] = $inner
+        }
+    }
     Fill $tex 24 0 10 2 $edge; Fill $tex 34 0 10 2 $edge; Fill $tex 22 2 2 20 $edge; Fill $tex 34 2 2 20 $edge
     $bmp = New-Object System.Drawing.Bitmap(64, 32, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
     for ($y = 0; $y -lt 32; $y++) { for ($x = 0; $x -lt 64; $x++) {

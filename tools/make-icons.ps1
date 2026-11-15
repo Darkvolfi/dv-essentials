@@ -266,6 +266,17 @@ Paint (Mask (Seg 10 15 15 10 0.6)) (Col '#F4FFFF')                # streaks
 Paint (Mask (Seg 18 22 22 18 0.6)) (Col '#F4FFFF')
 Save-Icon 'dvglass'
 
+
+# ---------- DV Skin: a character seen from behind, wearing a cape
+New-Icon '#FF9A2E'
+Part (RectS 12 25 3 3) '#2F3F8F'; Part (RectS 17 25 3 3) '#2F3F8F'  # legs
+Part (RectS 8 11 3 10) '#4FC3F7'; Part (RectS 21 11 3 10) '#4FC3F7' # arms
+Part (RectS 13 5 6 6) '#C69C6D'                                   # head
+Paint (Mask (RectS 13 5 6 2)) (Col '#5A3A22')                     # hair
+Part (RectS 11 11 10 15) '#E5534B'                                # cape
+Paint (Mask (RectS 17 12 3 13)) (Col '#C2403A')                   # cape shade
+Paint (Mask (RectS 12 24 8 1)) (Col '#FF9A2E')                    # orange hem
+Save-Icon 'dvskin'
 # ---------- write files (nearest-neighbour scaling keeps the pixels sharp)
 function Scale($bmp, [int]$size) {
     $big = New-Object System.Drawing.Bitmap($size, $size)

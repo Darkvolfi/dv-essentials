@@ -137,7 +137,7 @@ $themes['backpack'] = @{ base = '#8A5530'; border = '#4E2D17'; deco = {
     Box 1 1 ($w - 2) 3 $p.f                                               # lid
     Box 2 4 2 ($h - 5) $p.s; Box ($w - 4) 4 2 ($h - 5) $p.s              # shoulder straps
     Box 1 ([int]($h / 2)) ($w - 2) 2 $p.s                                 # cross strap
-    for ($y = 5; $y -lt $h - 1; $y += 2) { Px 2 $y $p.t; Px ($w - 4) $y $p.t }
+    for ($y = 5; $y -lt $h - 1; $y += 2) { Px 2 $y $p.t; Px ($w - 3) $y $p.t }
     Spr @('bbbb', 'b..b', 'bbbb') $p ([int][Math]::Floor(($w - 4) / 2)) ([int]($h / 2) - 1)
 } }
 

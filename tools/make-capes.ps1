@@ -94,11 +94,11 @@ $themes['map'] = @{ base = '#D9C28F'; border = '#8B6A3A'; deco = {
     Px ($w - 3) ($h - 3) $p.d; Px ($w - 4) ($h - 3) $p.d
 } }
 
-$themes['team'] = @{ base = '#A82727'; border = '#E8B93C'; deco = {
+$themes['team'] = @{ base = '#A82727'; border = '#5E1212'; deco = {
     param($w, $h)
-    $p = @{ g = (Col '#E8B93C'); r = (Col '#8E1C1C'); w = (Col '#FFF1C1') }
-    SprC @('gggggg', 'grwwrg', 'grwwrg', 'gwwwwg', 'grwwrg', '.grrg.', '..gg..') $p 0
-    for ($x = 2; $x -lt $w - 2; $x += 2) { Px $x 2 $p.g }                 # banner fringe at the top
+    # the DV Team logo: shield, gold cross, darker right half, pale core
+    $p = @{ g = (Col '#E8B93C'); r = (Col '#E04040'); d = (Col '#8E1C1C'); w = (Col '#FFF1C1') }
+    SprC @('gggggggg', 'grrggddg', 'grrggddg', 'gggwwggg', 'gggwwggg', 'grrggddg', '.grggdg.', '..gggg..', '...gg...') $p 0
 } }
 
 $themes['glass'] = @{ base = '#8FD3E8'; border = '#E6FAFF'; deco = {

@@ -323,6 +323,10 @@ Sayfalara yazılacak İngilizce metin: "Chest contents and furnaces/brewing stan
 Ayarı olmayan DV modları menüde tıklanıyor ve bilgi kutusu açıyor. Kurulu olmayan modların kutuları CurseForge sayfasını açıyor. Ayar ekranında uzun adlar artık düğmenin altına girmiyor; kısaltılıyor, tam adı fareyle görünüyor.
 Sayfalara yazılacak İngilizce metin: "DV mods without settings can be clicked in the DV menu and show a short info box. Tiles of mods you don't have open their CurseForge page. Long setting and key names no longer run under their buttons; they are shortened and show in full on hover."
 
+### DV Lib 1.0.3
+DV menüsünde DV Glass da var (simgesi ve kısa açıklamasıyla).
+Sayfalara yazılacak İngilizce metin: "DV Glass now has its tile in the DV menu."
+
 ### DV Lens 1.0.0.2
 "Toggle DV Lens" tuşu Kontroller ekranında yoktu, yerine "Show where mobs can spawn" iki kez çıkıyordu; ikisi de artık ayrı ve atanabilir.
 Kırılma çubuğu tık tık değil, akıcı doluyor.

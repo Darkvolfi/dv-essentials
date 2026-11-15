@@ -49,6 +49,8 @@
   "dvlib.mod.dvnewcrafts.desc": "Recipes for saddles, name tags and more, plus copper gear.",
   "dvlib.mod.dvsouls.name": "DV Science of Souls",
   "dvlib.mod.dvsouls.desc": "Catch souls, fuse them into new creatures, bind pets.",
+  "dvlib.mod.dvglass.name": "DV Glass",
+  "dvlib.mod.dvglass.desc": "Glass blocks and panes join into one clear surface.",
   "dvlib.config.server": "Server",
   "dvlib.config.keys": "Keys"
 }

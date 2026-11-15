@@ -34,6 +34,8 @@ import java.util.List;
 public final class ConnectedGlassModel extends BakedModelWrapper<BakedModel> {
     /** 8 connection bits per face, face {@code d} at bits {@code d.ordinal() * 8}; see {@link #NEIGHBOURS}. */
     private static final ModelProperty<Long> CONNECTIONS = new ModelProperty<>();
+    /** Extra bits after the 6 faces: the same glass directly above / below (used to hide stacked pane edges). */
+    private static final long SAME_ABOVE = 1L << 48, SAME_BELOW = 1L << 49;
 
     /** Texture variants, in index order: frame on all sides, frame top+bottom, frame left+right, corner dots, none. */
     private static final String[] VARIANTS = {"full", "horizontal", "vertical", "corner", "none"};
@@ -100,7 +102,14 @@ public final class ConnectedGlassModel extends BakedModelWrapper<BakedModel> {
                 }
             }
         }
+        // Only a pane of the same shape covers the whole edge; otherwise hiding it would leave a hole.
+        if (level.getBlockState(pos.above()) == state) connections |= SAME_ABOVE;
+        if (level.getBlockState(pos.below()) == state) connections |= SAME_BELOW;
         return data.derive().with(CONNECTIONS, connections).build();
+    }
+
+    private static boolean hiddenEdge(Direction dir, long connections) {
+        return dir == Direction.UP ? (connections & SAME_ABOVE) != 0 : dir == Direction.DOWN && (connections & SAME_BELOW) != 0;
     }
 
     private static boolean isSame(boolean[] same, int x, int y, int z) {
@@ -125,6 +134,9 @@ public final class ConnectedGlassModel extends BakedModelWrapper<BakedModel> {
             if (quad.getSprite().contents().name().equals(glassTexture)) {
                 int bits = (int) (connections >>> (quad.getDirection().ordinal() * 8)) & 0xFF;
                 split(quad, bits, sprites, first, out);
+            } else if (pane && hiddenEdge(quad.getDirection(), connections)) {
+                // Vanilla pane edges on top and bottom have no cullface, so stacked panes would show a line between them.
+                continue;
             } else {
                 out.add(quad);
             }

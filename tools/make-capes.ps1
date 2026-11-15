@@ -101,14 +101,13 @@ $themes['team'] = @{ base = '#A82727'; border = '#5E1212'; deco = {
     SprC @('gggggggg', 'grrggddg', 'grrggddg', 'gggwwggg', 'gggwwggg', 'grrggddg', '.grggdg.', '..gggg..', '...gg...') $p 0
 } }
 
-$themes['glass'] = @{ base = '#8FD3E8'; border = '#E6FAFF'; deco = {
+$themes['glass'] = @{ base = '#A8D8E4'; border = '#E4F7F9'; deco = {
     param($w, $h)
-    $light = Col '#F4FFFF'; $mid = Col '#B8E6F2'
-    for ($x = 1; $x -lt $w - 1; $x++) { Px $x 1 $mid; Px $x ($h - 2) $mid }
-    for ($y = 1; $y -lt $h - 1; $y++) { Px 1 $y $mid; Px ($w - 2) $y $mid }
-    foreach ($i in 0..3) { Px (3 + $i) (6 - $i) $light }                  # streaks
-    foreach ($i in 0..1) { Px (6 + $i) (11 - $i) $light }
-    Px 2 3 $light
+    # like vanilla glass: pale frame, clear blue pane, evenly spaced diagonal glints of equal length
+    $light = Col '#F4FFFF'
+    $starts = @(@(2, 5), @(5, 8))
+    if ($h -gt 16) { $starts += @(@(2, 14), @(5, 17)) }
+    foreach ($s in $starts) { for ($k = 0; $k -lt 4; $k++) { Px ($s[0] + $k) ($s[1] - $k) $light } }
 } }
 
 $themes['music'] = @{ base = '#3E2A6E'; border = '#241540'; deco = {

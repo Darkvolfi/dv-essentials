@@ -278,9 +278,9 @@ Part (RectS 11 11 10 15) '#E5534B'                                # cape
 Paint (Mask (RectS 13 12 3 13)) (Col '#C2403A')                   # cape shade
 Paint (Mask (RectS 12 24 8 1)) (Col '#FF9A2E')                    # orange hem
 # right half: transformed
-Paint (Mask (RectS 16 5 3 6)) (Col '#2A2438')                     # dark head
+Paint (Mask (RectS 16 5 3 5)) (Col '#2A2438')                     # dark head
+Paint (Mask (RectS 16 10 3 1)) (Col '#120F1C')                    # black line closing the head at the bottom
 Paint (Mask (RectS 16 5 3 2)) (Col '#14111C')
-Paint (Mask (RectS 17 8 2 1)) (Col '#FF9A2E')                     # glowing eye slit
 Paint (Mask (RectS 16 11 5 15)) (Col '#9B6BFF')                   # purple cape
 Paint (Mask (RectS 19 12 2 13)) (Col '#7A52D6')
 Paint (Mask (RectS 16 24 4 1)) (Col '#FF9A2E')

@@ -54,6 +54,7 @@
   "dvskin.error.network": "Couldn't download it. Check the name or link and your connection.",
   "dvskin.error.timeout": "The download took too long.",
   "dvskin.error.bad_url": "That isn't a web link (http or https).",
+  "dvskin.error.namemc": "NameMC doesn't allow downloads from games. Press Download on its page, then pick the file with the File source.",
   "dvskin.error.file": "The file can't be read.",
   "dvskin.error.save": "Couldn't save your choice.",
   "dvskin.error.no_dv_capes": "No DV capes found.",

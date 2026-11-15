@@ -123,6 +123,9 @@ public final class SkinDownloader {
             URI uri = new URI(text);
             String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase(java.util.Locale.ROOT);
             if (!scheme.equals("http") && !scheme.equals("https") || uri.getHost() == null) throw new SkinException("bad_url");
+            // NameMC blocks downloads that don't come from a browser, even for its picture links
+            String host = uri.getHost().toLowerCase(java.util.Locale.ROOT);
+            if (host.equals("namemc.com") || host.endsWith(".namemc.com")) throw new SkinException("namemc");
             return uri.toURL();
         } catch (SkinException e) {
             throw e;

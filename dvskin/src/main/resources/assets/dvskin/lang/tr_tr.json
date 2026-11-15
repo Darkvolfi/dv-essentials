@@ -54,6 +54,7 @@
   "dvskin.error.network": "İndirilemedi. Adı ya da bağlantıyı ve internetini kontrol et.",
   "dvskin.error.timeout": "İndirme çok uzun sürdü.",
   "dvskin.error.bad_url": "Bu bir web bağlantısı değil (http ya da https).",
+  "dvskin.error.namemc": "NameMC oyunlardan indirmeye izin vermiyor. Sayfasındaki Download ile indir, sonra Dosya kaynağından seç.",
   "dvskin.error.file": "Dosya okunamıyor.",
   "dvskin.error.save": "Seçimin kaydedilemedi.",
   "dvskin.error.no_dv_capes": "DV pelerini bulunamadı.",

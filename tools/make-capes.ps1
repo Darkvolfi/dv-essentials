@@ -18,6 +18,16 @@ $langDir = Join-Path $root 'dvskin\src\main\resources\assets\dvskin\lang'
 $shotDir = Join-Path $root 'AGENTS\ekran'
 foreach ($d in $capeDir, $langDir, $shotDir) { New-Item -ItemType Directory -Force $d | Out-Null }
 
+# Which elytra pixels the game itself draws (alpha > 0), read from Minecraft's client jar in the Gradle cache
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$mcJar = Join-Path $env:USERPROFILE '.gradle\caches\forge_gradle\minecraft_repo\versions\1.20.1\client-extra.jar'
+$zip = [System.IO.Compression.ZipFile]::OpenRead($mcJar)
+$stream = $zip.GetEntry('assets/minecraft/textures/entity/elytra.png').Open()
+$vanillaElytra = New-Object System.Drawing.Bitmap $stream
+$stream.Dispose(); $zip.Dispose()
+$script:ElytraMask = New-Object 'bool[,]' 64, 32
+for ($y = 0; $y -lt 32; $y++) { for ($x = 0; $x -lt 64; $x++) { $script:ElytraMask[$x, $y] = $vanillaElytra.GetPixel($x, $y).A -gt 0 } }
+
 # ---------- colour helpers (ARGB ints)
 function Col([string]$hex) {
     $v = [Convert]::ToInt32($hex.TrimStart('#'), 16)
@@ -208,11 +218,14 @@ function Build([string]$name, $t) {
             if (-not $in) { continue }
             $isEdge = ($fy -eq 0) -or ($fy -eq 19) -or ($fx -eq $left[$fy]) -or ($fx -eq $right[$fy]) -or ($fx -le $right[$fy - 1] -eq $false) -or ($fx -lt $left[$fy - 1]) -or ($fx -lt $left[$fy + 1]) -or ($fx -gt $right[$fy + 1])
             $tex[(36 + $fx), (2 + $fy)] = $(if ($isEdge) { $wEdge } else { $wing[$fx, $fy] })
-            # the inside face (24,2) is the mirror image, plain
-            $tex[(24 + 9 - $fx), (2 + $fy)] = $wEdge
         }
     }
-    Fill $tex 24 0 10 2 $wEdge; Fill $tex 34 0 10 2 $wEdge; Fill $tex 22 2 2 20 $wEdge; Fill $tex 34 2 2 20 $wEdge
+    # The game's own elytra is see-through everywhere but the wing's outer face and a few rim pixels; a solid inner
+    # face and rims make the wing look like a thick block. Use the vanilla elytra's alpha as the mask: transparent
+    # where it is, our wing (or the flat rim tone) where it isn't.
+    for ($y = 0; $y -lt 22; $y++) { for ($x = 22; $x -lt 46; $x++) {
+        if ($script:ElytraMask[$x, $y]) { if ($tex[$x, $y] -eq 0) { $tex[$x, $y] = $wEdge } } else { $tex[$x, $y] = 0 }
+    } }
     $bmp = New-Object System.Drawing.Bitmap(64, 32, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
     for ($y = 0; $y -lt 32; $y++) { for ($x = 0; $x -lt 64; $x++) {
         $v = $tex[$x, $y]

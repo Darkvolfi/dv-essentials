@@ -1,0 +1,10 @@
+{
+  "homepage": "https://www.curseforge.com/projects/1786937",
+  "promos": {
+    "1.20.1-latest": "1.0.0.1",
+    "1.20.1-recommended": "1.0.0.1"
+  },
+  "1.20.1": {
+    "1.0.0.1": "Fixed an item duplication: with a Pickup card, when only part of a stack fitted into the backpack, that part also went into the inventory."
+  }
+}

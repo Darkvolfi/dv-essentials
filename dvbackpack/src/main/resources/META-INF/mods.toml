@@ -8,6 +8,7 @@ modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
 displayURL="https://github.com/Darkvolfi/dv-essentials"
+updateJSONURL="https://raw.githubusercontent.com/Darkvolfi/dv-essentials/main/updates/${mod_id}.json"
 logoFile="${mod_id}_logo.png"
 authors="${mod_authors}"
 description='''${mod_description}'''

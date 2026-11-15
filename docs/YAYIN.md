@@ -260,8 +260,8 @@ Yükleme sırası ve hazır jar'lar: masaüstünde `DV Yayin/Guncellemeler` (bet
 İlk sürüm: bağlantılı cam (cam, renkli camlar, karartılmış cam, cam paneller) ve çerçevesiz mod ayarı.
 
 ### DV Slots 1.0.1.0
-Mending büyüsü DV slotlarındaki eşyaları da onarıyor (sırttaki elytra). Toplanan XP, oyunun kendi seçimindeki gibi, onarılacak eşyalar arasından eşit şansla birine gider. Başka bir elytra moduyla çakışmada oyun artık çökmüyor: sırttaki elytra ile uçuş o modla çalışmaz, oyun açılır.
-Sayfalara yazılacak İngilizce metin: "Mending now repairs what you wear in the DV slots too, like the elytra on your back. Each experience orb picks one damaged Mending item, among your armor, hands and DV slots alike, as the game does. Safer alongside other elytra mods: if one changes the same flight code, the game still starts and only back-slot flying is skipped."
+Mending büyüsü DV slotlarındaki eşyaları da onarıyor (sırttaki elytra). Toplanan XP, oyunun kendi seçimindeki gibi, onarılacak eşyalar arasından eşit şansla birine gider. Başka bir elytra moduyla çakışmada oyun artık çökmüyor: sırttaki elytra ile uçuş o modla çalışmaz, oyun açılır. Sırttaki elytra varken pelerin ayrıca çizilmiyor (göğüsteki elytra gibi): pelerinin dokusu elytrada görünür, ikisi üst üste binmez.
+Sayfalara yazılacak İngilizce metin: "Mending now repairs what you wear in the DV slots too, like the elytra on your back. Each experience orb picks one damaged Mending item, among your armor, hands and DV slots alike, as the game does. Safer alongside other elytra mods: if one changes the same flight code, the game still starts and only back-slot flying is skipped. With an elytra on your back your cape is no longer drawn on top of it; like a chest elytra, the wings wear your cape's texture instead."
 
 ### DV New Crafts 1.1.0
 Yöneticiler için oyun içi tarif ekranı (DV menüsü ya da Mods → Config): şekilli, şekilsiz, fırın, tütsüleyici, yüksek fırın, kamp ateşi ve taş kesici tarifleri eklenir, düzenlenir, silinir; dünyanın veri paketine yazılır, hemen yüklenir. Oyunun ve diğer modların tarifleri de kapatılabilir: sonuç yuvasına eşyayı koy, Kapat; listeden seçip Aç ile geri gelir. Yeni tarif: ortada makas, çevresinde 8 çürük et → 8 deri (makas 8 can kaybeder).
@@ -324,8 +324,8 @@ Ayarı olmayan DV modları menüde tıklanıyor ve bilgi kutusu açıyor. Kurulu
 Sayfalara yazılacak İngilizce metin: "DV mods without settings can be clicked in the DV menu and show a short info box. Tiles of mods you don't have open their CurseForge page. Long setting and key names no longer run under their buttons; they are shortened and show in full on hover."
 
 ### DV Lib 1.0.3
-DV menüsünde DV Glass da var (simgesi ve kısa açıklamasıyla).
-Sayfalara yazılacak İngilizce metin: "DV Glass now has its tile in the DV menu."
+DV menüsünde DV Glass da var (simgesi ve kısa açıklamasıyla). DV modları artık yeni sürüm çıkınca haber veriyor: DV menüsündeki kutuda ve DV düğmesinde yeşil işaret (bu sürümden sonra güncellenen modlarda).
+Sayfalara yazılacak İngilizce metin: "DV Glass now has its tile in the DV menu. DV mods now tell you when a new version is out: a green mark on their tile and on the DV button (for mods updated from now on)."
 
 ### DV Lens 1.0.0.2
 "Toggle DV Lens" tuşu Kontroller ekranında yoktu, yerine "Show where mobs can spawn" iki kez çıkıyordu; ikisi de artık ayrı ve atanabilir.
@@ -349,6 +349,6 @@ Sayfalara yazılacak İngilizce metin: "The DV menu shows DV New Crafts' new ico
 - [ ] NeoForge istemcisinde (başlatıcıyla) bir kez dene
 - [x] Mod ikonları: `art/icons/<mod>.png` (512, sayfalar için), jar içinde `<mod>_logo.png` (128); yeniden üretmek için `tools/make-icons.ps1`
 - [x] GitHub bağlantıları eklendi: `displayURL`, `issueTrackerURL` (2026-11-06)
-- [ ] Modrinth projeleri açılınca her modun `mods.toml`'una `updateJSONURL` ekle (DV menüsündeki güncelleme işareti bunu kullanır)
+- [x] `updateJSONURL` her modda (2026-11-15): `https://raw.githubusercontent.com/Darkvolfi/dv-essentials/main/updates/<mod_id>.json`. **Bir sürüm CurseForge'da onaylanınca:** `bash tools/update-json.sh <mod_id> <sürüm> …` çalıştır, `updates/` klasörünü commit + push et. Önceden değil: dosya GitHub'a girer girmez oyunculara "güncelleme var" denir. Bu satırı içermeyen jar'lar (2026-11-15'e kadar yüklenenler) kontrol yapmaz; bir sonraki sürümlerinde başlar.
 - [ ] Ekran görüntüleri (her sayfa için 2–3)
 - [x] DV Science of Souls dokuları özgün çizimle değişti (2026-11-05); oyun içinde bakılacak. DV New Crafts bakır dokuları kullanıcının kararıyla vanilyadan türetilmiş olarak kalıyor

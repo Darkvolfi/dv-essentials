@@ -9,7 +9,8 @@
     "PlayerMixin"
   ],
   "client": [
-    "LocalPlayerMixin"
+    "LocalPlayerMixin",
+    "CapeLayerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

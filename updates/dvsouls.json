@@ -1,0 +1,10 @@
+{
+  "homepage": "https://www.curseforge.com/projects/1786946",
+  "promos": {
+    "1.20.1-latest": "1.0.1.0",
+    "1.20.1-recommended": "1.0.1.0"
+  },
+  "1.20.1": {
+    "1.0.1.0": "New Block of Soul Coal (burns nine times as long). With DV Backpack the gold soul card is made from its blank card. The Soul Collar now fits any creature without an owner, enemies too (not bosses); it works once, and only the one who put it on can lay the shard on the altar. Fixes: no shard drops when another mod cancels the death; the shard of a creature that died in the void is no longer lost."
+  }
+}

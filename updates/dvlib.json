@@ -1,0 +1,10 @@
+{
+  "homepage": "https://www.curseforge.com/projects/1786909",
+  "promos": {
+    "1.20.1-latest": "1.0.2",
+    "1.20.1-recommended": "1.0.2"
+  },
+  "1.20.1": {
+    "1.0.2": "DV mods without settings can be clicked in the DV menu and show a short info box. Tiles of mods you don't have open their CurseForge page. Long setting and key names no longer run under their buttons; they are shortened and show in full on hover."
+  }
+}

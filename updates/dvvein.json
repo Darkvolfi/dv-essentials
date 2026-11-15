@@ -1,0 +1,10 @@
+{
+  "homepage": "https://www.curseforge.com/projects/1786964",
+  "promos": {
+    "1.20.1-latest": "1.0.0.2",
+    "1.20.1-recommended": "1.0.0.2"
+  },
+  "1.20.1": {
+    "1.0.0.2": "Field harvesting and mass shearing with the vein key now ask claim mods about every crop and every sheep, not only the one you clicked, so you can no longer harvest or shear across into someone else's land (works with DV Team and other claim mods that use Forge's events). Also fixed a crash when vein mining with a full inventory, and spawn protection and the world border now apply to every block of a vein."
+  }
+}

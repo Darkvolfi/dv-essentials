@@ -1,0 +1,10 @@
+{
+  "homepage": "https://www.curseforge.com/projects/1786939",
+  "promos": {
+    "1.20.1-latest": "1.0.0.2",
+    "1.20.1-recommended": "1.0.0.2"
+  },
+  "1.20.1": {
+    "1.0.0.2": "The grave now only takes items you were actually carrying when you died; items thrown by other players or dropped by mobs and blocks next to you in the same moment stay on the ground. You can now always open your own grave, also when you died on land another clan or a claim mod protects. Also fixed experience being duplicated when keepInventory is on, and experience is no longer lost when no place for a grave is found."
+  }
+}

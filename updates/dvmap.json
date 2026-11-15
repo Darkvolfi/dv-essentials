@@ -1,0 +1,10 @@
+{
+  "homepage": "https://www.curseforge.com/projects/1786917",
+  "promos": {
+    "1.20.1-latest": "1.0.1.0",
+    "1.20.1-recommended": "1.0.1.0"
+  },
+  "1.20.1": {
+    "1.0.1.0": "Your own waypoint categories with name, colour and icon; the waypoint list starts clean (no preset categories, deaths in their own section, empty sections hidden). Right-click on the map opens a menu: add a waypoint, teleport, share in chat, copy coordinates; on a waypoint also edit, move and delete. The block under the cursor is outlined. Create tracks and trains show on the world map and the minimap (Create is not required), curves drawn as smooth curves, and you can give a rail line or a train a name and a colour. New look: clear height shading with contour lines, dark nights with lit places glowing, water that darkens with depth, short grass no longer speckles the ground, and a reworked cave view (black rock, flooded caves and lava visible). The map now covers your whole render distance (adjustable). The minimap can be truly round, grows up to 240 px and zooms in six steps; the map screen's buttons are larger. Fixes: the teleport option only shows to players allowed to use /tp (creative mode alone doesn't allow it on a server), teleporting from the map lands on the ground instead of one block inside it (the Y the map shows is now the height you stand at), the chat message after a map teleport can be turned off, \"Hide my name\" now also hides the name tag over your head for players with DV Map (servers can turn this off), waypoint beams no longer show through the ground next to other mods' overlays, standing under a tall tree no longer switches to the cave view, no dark lines between map tiles. Existing waypoints are kept; the old file is backed up as waypoints-1.0.0.json."
+  }
+}

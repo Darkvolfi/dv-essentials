@@ -21,6 +21,7 @@ DV New Crafts'in bakır dokuları Minecraft dokularından türetilmiştir ve MIT
 | DV New Crafts | `dvnewcrafts-1.20.1-1.0.0.0.jar` | ikisi (zorunlu) | — | Equipment, Decoration |
 | DV Science of Souls | `dvsouls-1.20.1-1.0.0.0.jar` | ikisi (zorunlu) | DV Lib; DV Backpack, JEI isteğe bağlı | Mobs, Magic, Technology |
 | DV Glass | `dvglass-1.20.1-1.0.0.0.jar` | istemci | DV Lib | Decoration, Utility |
+| DV Skin | `dvskin-1.20.1-1.0.0.0.jar` | ikisi (ikisi de isteğe bağlı; paylaşım için sunucuda da) | DV Lib | Cosmetic, Utility |
 
 Jar'lar: `<mod>/build/libs/` (`.\gradlew.bat build` ile üretilir).
 
@@ -252,9 +253,44 @@ The library behind the DV mods. Install it together with any DV mod.
 - Forge'un model sistemiyle çalışır; Embeddium/Rubidium ile de çalışması hedeflenir
 - Yalnızca istemci
 
+## DV Skin
+**Summary:** Your own skin, cape and elytra — from a file, a Mojang or Ely.by name, or a link — seen by everyone with DV Skin.
+
+- **Skin** from a PNG file (pick it or drop it on the window), a Mojang player name, an Ely.by player name, or a direct PNG link
+- **Capes:** 8 DV-themed and 16 colour capes, or your own picture. Choose none and a real Mojang cape stays
+- **Elytra** can wear its own picture; otherwise it follows the cape, as in vanilla
+- Slim (Alex) or wide (Steve) arms
+- A model on the screen to turn with the mouse while you pick
+- Your choice is the same in every world and on every server
+- With DV Skin on the server, everyone who has it sees your look; without it, only you do. Players without the mod see normal skins
+- Standard sizes only: skins 64×64 or 64×32, capes and elytra 64×32
+- Safe for servers: only players' own computers download pictures; the server never connects anywhere, checks every picture and limits how often and how much each player sends. Server settings: `allowSkins`, `allowCapes`
+- Opens from the DV menu or a key (unbound by default)
+
+**Türkçe taslak:**
+**Özet:** Kendi skinin, pelerinin ve elytran — dosyadan, Mojang ya da Ely.by adından veya bir bağlantıdan — DV Skin'i olan herkes görür.
+
+- **Skin:** PNG dosyası (seç ya da pencereye bırak), Mojang oyuncu adı, Ely.by oyuncu adı ya da doğrudan PNG bağlantısı
+- **Pelerin:** 8 DV temalı ve 16 renkli pelerin ya da kendi resmin. "Yok" seçilirse gerçek Mojang pelerinin kalır
+- **Elytra** kendi resmini giyebilir; seçilmezse vanilyadaki gibi pelerini izler
+- İnce (Alex) ya da kalın (Steve) kollar
+- Seçerken fareyle döndürülen bir model
+- Seçimin her dünyada ve her sunucuda aynı
+- Sunucuda da DV Skin varsa modu olan herkes görünüşünü görür; yoksa yalnız sen görürsün. Modu olmayanlar normal skinleri görür
+- Yalnız standart boyut: skin 64×64 ya da 64×32, pelerin ve elytra 64×32
+- Sunucular için güvenli: resimleri yalnızca oyuncuların bilgisayarı indirir; sunucu hiçbir yere bağlanmaz, her resmi doğrular, her oyuncunun ne sıklıkta ve ne kadar gönderdiğini sınırlar. Sunucu ayarları: `allowSkins`, `allowCapes`
+- DV menüsünden ya da bir tuştan açılır (varsayılan atanmamış)
+
 ## Değişiklik listesi
 
 Yükleme sırası ve hazır jar'lar: masaüstünde `DV Yayin/Guncellemeler` (betik: `AGENTS/calisma/yayin-guncelleme.sh`). 2026-11-10 dalgası: Lib 1.0.2, Backpack 1.0.0.1, Vein 1.0.0.2, Grave 1.0.0.2, Map 1.0.1.0, Team 1.0.1.0, Souls 1.0.1.0, Food 1.0.1.0, Lens 1.0.1.1, Music 1.0.1.0, New Crafts 1.1.0, Slots 1.0.1.0. Vein/Grave 1.0.0.1, Team 1.0.0.1 ve Lens 1.0.1.0 hiç yüklenmedi; içerikleri bir üst sürümde. DV Lens 1.0.0.1–1.0.0.2 ve DV Music 1.0.0.1 sitelere yüklenmedi; içerikleri 1.0.1.0'da.
+
+### DV Skin 1.0.0.0
+İlk sürüm: skin (dosya, Mojang adı, Ely.by adı, bağlantı), DV pelerinleri ve kendi pelerin, ayrı elytra dokusu, ince/kalın kol, döndürülen önizleme; sunucu üzerinden paylaşım (`allowSkins`, `allowCapes`).
+
+### DV Lib 1.0.4
+DV menüsünde DV Skin da var (simgesi ve kısa açıklamasıyla). 1.0.3 henüz yüklenmediyse onun yerine bu yüklenir; içeriği 1.0.3'ü de kapsar.
+Sayfalara yazılacak İngilizce metin: "DV Skin now has its tile in the DV menu."
 
 ### DV Glass 1.0.0.0
 İlk sürüm: bağlantılı cam (cam, renkli camlar, karartılmış cam, cam paneller) ve çerçevesiz mod ayarı.

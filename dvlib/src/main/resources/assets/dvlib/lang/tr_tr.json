@@ -51,6 +51,8 @@
   "dvlib.mod.dvsouls.desc": "Ruhları yakala, birleştirip yeni canlılar yap, evcil bağla.",
   "dvlib.mod.dvglass.name": "DV Glass",
   "dvlib.mod.dvglass.desc": "Cam bloklar ve paneller birleşip tek, temiz bir yüzey olur.",
+  "dvlib.mod.dvskin.name": "DV Skin",
+  "dvlib.mod.dvskin.desc": "Kendi skinin, pelerinin ve elytran; DV Skin'i olan herkes görür.",
   "dvlib.config.server": "Sunucu",
   "dvlib.config.keys": "Tuşlar"
 }

@@ -51,6 +51,8 @@
   "dvlib.mod.dvsouls.desc": "Catch souls, fuse them into new creatures, bind pets.",
   "dvlib.mod.dvglass.name": "DV Glass",
   "dvlib.mod.dvglass.desc": "Glass blocks and panes join into one clear surface.",
+  "dvlib.mod.dvskin.name": "DV Skin",
+  "dvlib.mod.dvskin.desc": "Your own skin, cape and elytra, seen by everyone with DV Skin.",
   "dvlib.config.server": "Server",
   "dvlib.config.keys": "Keys"
 }

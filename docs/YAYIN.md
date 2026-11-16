@@ -30,6 +30,10 @@ Jar'lar: `<mod>/build/libs/` (`.\gradlew.bat build` ile üretilir).
 ## Ortak kısa paragraf (her sayfanın sonuna)
 
 > Part of **Darkvolfi's DV mods** — small, focused quality-of-life mods that share one library (DV Lib). Every DV mod adds its settings and key bindings to the **DV** button on the title screen and pause menu. Written from scratch; no code from other mods.
+>
+> *NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.*
+
+Uyarı satırı Mojang kullanım kurallarının istediği metin (2026-11-16); her sayfada bulunmalı, Türkçe sayfalarda da İngilizce kalır.
 
 ---
 

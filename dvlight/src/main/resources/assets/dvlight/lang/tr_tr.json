@@ -1,0 +1,22 @@
+{
+  "key.dvlight.toggle": "DV Light aç/kapa",
+  "key.dvlight.shape": "Yuvarlak / koni ışık",
+  "dvlight.message.on": "DV Light açık",
+  "dvlight.message.off": "DV Light kapalı",
+  "dvlight.message.round": "Işık: yuvarlak",
+  "dvlight.message.cone": "Işık: koni",
+  "dvlight.config.mode": "Mod",
+  "dvlight.config.mode.off": "Kapalı",
+  "dvlight.config.mode.fast": "Hızlı",
+  "dvlight.config.mode.fancy": "Güzel",
+  "dvlight.config.range": "Menzil (blok)",
+  "dvlight.config.shape": "Eldeki ışık",
+  "dvlight.config.shape.round": "Yuvarlak",
+  "dvlight.config.shape.cone": "Koni (el feneri)",
+  "dvlight.config.coneAngle": "Koni genişliği (derece)",
+  "dvlight.config.coneRange": "Koni menzili (blok)",
+  "dvlight.config.smooth": "Yumuşak açılıp kapanma",
+  "dvlight.config.enchantedGlow": "Büyülü eşyalar parlasın",
+  "dvlight.config.itemLights": "Eşya ışık seviyeleri",
+  "dvlight.config.entityLights": "Canlı ışık seviyeleri"
+}

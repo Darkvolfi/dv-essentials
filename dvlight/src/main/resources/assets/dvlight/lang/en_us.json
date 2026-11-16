@@ -1,0 +1,22 @@
+{
+  "key.dvlight.toggle": "Toggle DV Light",
+  "key.dvlight.shape": "Round / cone light",
+  "dvlight.message.on": "DV Light on",
+  "dvlight.message.off": "DV Light off",
+  "dvlight.message.round": "Light: round",
+  "dvlight.message.cone": "Light: cone",
+  "dvlight.config.mode": "Mode",
+  "dvlight.config.mode.off": "Off",
+  "dvlight.config.mode.fast": "Fast",
+  "dvlight.config.mode.fancy": "Fancy",
+  "dvlight.config.range": "Range (blocks)",
+  "dvlight.config.shape": "Light from hands",
+  "dvlight.config.shape.round": "Round",
+  "dvlight.config.shape.cone": "Cone (flashlight)",
+  "dvlight.config.coneAngle": "Cone width (degrees)",
+  "dvlight.config.coneRange": "Cone reach (blocks)",
+  "dvlight.config.smooth": "Fade in and out",
+  "dvlight.config.enchantedGlow": "Enchanted items glow",
+  "dvlight.config.itemLights": "Item light levels",
+  "dvlight.config.entityLights": "Creature light levels"
+}

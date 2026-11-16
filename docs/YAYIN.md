@@ -22,6 +22,7 @@ DV New Crafts'in bakır dokuları Minecraft dokularından türetilmiştir ve MIT
 | DV Science of Souls | `dvsouls-1.20.1-1.0.0.0.jar` | ikisi (zorunlu) | DV Lib; DV Backpack, JEI isteğe bağlı | Mobs, Magic, Technology |
 | DV Glass | `dvglass-1.20.1-1.0.0.0.jar` | istemci | DV Lib | Decoration, Utility |
 | DV Skin | `dvskin-1.20.1-1.0.0.0.jar` | ikisi (ikisi de isteğe bağlı; paylaşım için sunucuda da) | DV Lib | Cosmetic, Utility |
+| DV Light | `dvlight-1.20.1-1.0.0.0.jar` | istemci | DV Lib | Utility, Cosmetic |
 
 Jar'lar: `<mod>/build/libs/` (`.\gradlew.bat build` ile üretilir).
 
@@ -285,9 +286,36 @@ The library behind the DV mods. Install it together with any DV mod.
 - Sunucular için güvenli: resimleri yalnızca oyuncuların bilgisayarı indirir; sunucu hiçbir yere bağlanmaz, her resmi doğrular, her oyuncunun ne sıklıkta ve ne kadar gönderdiğini sınırlar. Sunucu ayarları: `allowSkins`, `allowCapes`
 - DV menüsünden ya da bir tuştan açılır (varsayılan atanmamış)
 
+## DV Light
+**Summary:** Moving light: torches in your hand or on the ground, burning creatures and fireballs light up the world around them.
+
+- Hold a torch, lantern, glowstone or any light block and it lights up around you; drop it and it keeps shining on the ground
+- Burning creatures, blazes, magma cubes, glow squids, fireballs, fireworks, lit TNT, a hissing creeper and a running furnace minecart give off light
+- **Round** light or a **cone** like a flashlight from your hands, with its own width and reach (a key switches between them)
+- Other players' lights show too
+- Off / Fast / Fancy modes: in Fancy the light glides with you instead of jumping a block at a time, and fades in and out; optional enchanted glow
+- Light levels of items and creatures can be changed in the settings
+- Nothing is placed in the world: works with Embeddium; client-side only
+- Do not use it together with another dynamic light mod (LambDynamicLights, Sodium Dynamic Lights…): only one of them can light the world
+
+**Özet:** Hareketli ışık: elindeki ya da yerdeki meşale, yanan canlılar ve ateş topları çevrelerini aydınlatır.
+
+- Meşale, fener, ışıltı taşı ya da ışık veren her blok elindeyken çevreni aydınlatır; yere atınca orada parlamaya devam eder
+- Yanan canlılar, Blaze, magma küpü, ışıltılı kalamar, ateş topları, havai fişek, yanan TNT, tıslayan Creeper ve çalışan fırınlı maden arabası ışık verir
+- Elindeki ışık **yuvarlak** ya da el feneri gibi **koni** (genişliği ve menzili ayarlı; bir tuşla değişir)
+- Diğer oyuncuların ışığı da görünür
+- Kapalı / Hızlı / Güzel modları: Güzel modda ışık blok blok zıplamadan seninle akar ve yumuşakça açılıp kapanır; isteğe bağlı büyülü eşya parıltısı
+- Eşyaların ve canlıların ışık seviyeleri ayardan değiştirilebilir
+- Dünyaya hiçbir şey konmaz; Embeddium ile çalışır; yalnızca istemci
+- Bilinen sınır: ışık duvarların arkasına da geçer
+- Başka bir hareketli ışık moduyla (LambDynamicLights, Sodium Dynamic Lights…) birlikte kullanma: dünyayı yalnız biri aydınlatabilir
+
 ## Değişiklik listesi
 
 Yükleme sırası ve hazır jar'lar: masaüstünde `DV Yayin/Guncellemeler` (betik: `AGENTS/calisma/yayin-guncelleme.sh`). 2026-11-10 dalgası: Lib 1.0.2, Backpack 1.0.0.1, Vein 1.0.0.2, Grave 1.0.0.2, Map 1.0.1.0, Team 1.0.1.0, Souls 1.0.1.0, Food 1.0.1.0, Lens 1.0.1.1, Music 1.0.1.0, New Crafts 1.1.0, Slots 1.0.1.0. Vein/Grave 1.0.0.1, Team 1.0.0.1 ve Lens 1.0.1.0 hiç yüklenmedi; içerikleri bir üst sürümde. DV Lens 1.0.0.1–1.0.0.2 ve DV Music 1.0.0.1 sitelere yüklenmedi; içerikleri 1.0.1.0'da.
+
+### DV Light 1.0.0.0
+İlk sürüm: elde ve yerde ışıklı eşyalar, yanan ve parlayan canlılar, ateş topları, havai fişek, TNT, Creeper, fırınlı maden arabası; yuvarlak ya da koni ışık; Kapalı/Hızlı/Güzel (Güzel: çeyrek blok hassasiyetle akan ışık), yumuşak geçiş.
 
 ### DV Skin 1.0.0.0
 İlk sürüm: skin (dosya, Mojang adı, Ely.by adı, bağlantı), DV pelerinleri ve kendi pelerin, ayrı elytra dokusu, ince/kalın kol, döndürülen önizleme; sunucu üzerinden paylaşım (`allowSkins`, `allowCapes`).

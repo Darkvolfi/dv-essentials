@@ -287,6 +287,17 @@ Paint (Mask (RectS 16 24 4 1)) (Col '#FF9A2E')
 Paint (Mask (RectS 21 11 3 10)) (Col '#FF9A2E')                   # orange arm
 Paint (Mask (RectS 17 26 3 2)) (Col '#14111C')                    # dark leg
 Save-Icon 'dvskin'
+
+# ---------- DV Light: a held torch lighting up the dark around it, with motion lines behind it
+New-Icon '#FFB547'
+Paint (Mask (Disc 17 12 10)) (Col '#3A3046')                      # outer glow
+Paint (Mask (Disc 17 12 7)) (Col '#5A4636')                       # inner glow
+Paint (Mask (Seg 4 16 8 16 0.6)) (Col '#FFB547')                  # motion lines
+Paint (Mask (Seg 3 20 8 20 0.6)) (Col '#C98A3A')
+Part (Poly @(15, 14, 19, 14, 18, 27, 16, 27)) '#8A5A32'           # stick
+Part (Poly @(17, 4, 21, 9, 20, 14, 14, 14, 13, 9)) '#FF9A2E'      # flame
+Paint (Mask (Poly @(17, 8, 19, 11, 18, 13, 16, 13, 15, 11))) (Col '#FFE58A') # hot core
+Save-Icon 'dvlight'
 # ---------- write files (nearest-neighbour scaling keeps the pixels sharp)
 function Scale($bmp, [int]$size) {
     $big = New-Object System.Drawing.Bitmap($size, $size)

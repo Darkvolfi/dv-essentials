@@ -53,6 +53,8 @@
   "dvlib.mod.dvglass.desc": "Glass blocks and panes join into one clear surface.",
   "dvlib.mod.dvskin.name": "DV Skin",
   "dvlib.mod.dvskin.desc": "Your own skin, cape and elytra, seen by everyone with DV Skin.",
+  "dvlib.mod.dvlight.name": "DV Light",
+  "dvlib.mod.dvlight.desc": "Torches in hand or on the ground, burning creatures and fireballs light up the world.",
   "dvlib.config.server": "Server",
   "dvlib.config.keys": "Keys"
 }

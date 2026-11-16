@@ -53,6 +53,8 @@
   "dvlib.mod.dvglass.desc": "Cam bloklar ve paneller birleşip tek, temiz bir yüzey olur.",
   "dvlib.mod.dvskin.name": "DV Skin",
   "dvlib.mod.dvskin.desc": "Kendi skinin, pelerinin ve elytran; DV Skin'i olan herkes görür.",
+  "dvlib.mod.dvlight.name": "DV Light",
+  "dvlib.mod.dvlight.desc": "Eldeki ve yerdeki meşaleler, yanan canlılar ve ateş topları çevreyi aydınlatır.",
   "dvlib.config.server": "Sunucu",
   "dvlib.config.keys": "Tuşlar"
 }

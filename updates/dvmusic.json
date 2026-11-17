@@ -1,10 +1,10 @@
 {
   "homepage": "https://www.curseforge.com/projects/1787394",
   "promos": {
-    "1.20.1-latest": "1.0.0.0",
-    "1.20.1-recommended": "1.0.0.0"
+    "1.20.1-latest": "1.0.1.0",
+    "1.20.1-recommended": "1.0.1.0"
   },
   "1.20.1": {
-    "1.0.0.0": ""
+    "1.0.1.0": "Plays MP3, WAV, M4A, MP4 and AAC files as well as OGG (the decoders are inside the mod, nothing else to install). Drop files onto the music window to add them; the music folder is now one plain folder. Make categories in game: pick songs for them and, if you like, where they play (menu, world, creative, underwater, Nether, End). A paused song no longer plays for a moment when the pause menu or the world map closes."
   }
 }

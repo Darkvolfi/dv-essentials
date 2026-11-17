@@ -1,10 +1,10 @@
 {
   "homepage": "https://www.curseforge.com/projects/1786960",
   "promos": {
-    "1.20.1-latest": "1.0.0.0",
-    "1.20.1-recommended": "1.0.0.0"
+    "1.20.1-latest": "1.0.1.1",
+    "1.20.1-recommended": "1.0.1.1"
   },
   "1.20.1": {
-    "1.0.0.0": ""
+    "1.0.1.1": "Chest contents and furnaces/brewing stands are now two separate settings. The Toggle DV Lens key is back in the controls (the light marks key showed twice instead). The breaking bar fills smoothly. The server now limits how often each player can ask for block details, so a modified client can no longer flood it. The box hides while the player list (Tab) is open, so they no longer overlap."
   }
 }

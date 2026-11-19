@@ -1,10 +1,10 @@
 {
   "homepage": "https://www.curseforge.com/projects/1787404",
   "promos": {
-    "1.20.1-latest": "1.0.0.0",
-    "1.20.1-recommended": "1.0.0.0"
+    "1.20.1-latest": "1.1.0",
+    "1.20.1-recommended": "1.1.0"
   },
   "1.20.1": {
-    "1.0.0.0": ""
+    "1.1.0": "Operators can now add, edit and delete recipes in game (DV menu, or Mods → Config): shaped, shapeless, furnace, smoker, blast furnace, campfire and stonecutter. Pick items by clicking them into the grid; recipes are saved as a data pack inside the world and load at once, for every player and in JEI. Recipes of the game and of other mods can be switched off too: put the item in the result slot and press Switch off; pick it in the list and press Enable to bring it back. New recipe: shears in the middle and 8 rotten flesh around them make 8 leather; the shears lose 8 durability."
   }
 }

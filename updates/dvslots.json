@@ -1,10 +1,10 @@
 {
   "homepage": "https://www.curseforge.com/projects/1786931",
   "promos": {
-    "1.20.1-latest": "1.0.0.0",
-    "1.20.1-recommended": "1.0.0.0"
+    "1.20.1-latest": "1.0.1.0",
+    "1.20.1-recommended": "1.0.1.0"
   },
   "1.20.1": {
-    "1.0.0.0": ""
+    "1.0.1.0": "Mending now repairs what you wear in the DV slots too, like the elytra on your back. Each experience orb picks one damaged Mending item, among your armor, hands and DV slots alike, as the game does. Safer alongside other elytra mods: if one changes the same flight code, the game still starts and only back-slot flying is skipped. With an elytra on your back your cape is no longer drawn on top of it; like a chest elytra, the wings wear your cape's texture instead."
   }
 }

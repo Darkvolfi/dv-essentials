@@ -61,7 +61,10 @@ public final class DVMods {
             Map.entry("dvmusic", CURSEFORGE + "1787394"),
             Map.entry("dvbackpack", CURSEFORGE + "1786937"),
             Map.entry("dvnewcrafts", CURSEFORGE + "1787404"),
-            Map.entry("dvsouls", CURSEFORGE + "1786946"));
+            Map.entry("dvsouls", CURSEFORGE + "1786946"),
+            Map.entry("dvglass", CURSEFORGE + "1817504"),
+            Map.entry("dvskin", CURSEFORGE + "1817509"),
+            Map.entry("dvlight", CURSEFORGE + "1817520"));
 
     private static final Map<String, Mod> MODS = new TreeMap<>();
     /** Mods whose tile opens their own screen (e.g. a music player) instead of the settings. */

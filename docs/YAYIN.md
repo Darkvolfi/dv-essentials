@@ -314,6 +314,10 @@ The library behind the DV mods. Install it together with any DV mod.
 
 Yükleme sırası ve hazır jar'lar: masaüstünde `DV Yayin/Guncellemeler` (betik: `AGENTS/calisma/yayin-guncelleme.sh`). 2026-11-10 dalgası: Lib 1.0.2, Backpack 1.0.0.1, Vein 1.0.0.2, Grave 1.0.0.2, Map 1.0.1.0, Team 1.0.1.0, Souls 1.0.1.0, Food 1.0.1.0, Lens 1.0.1.1, Music 1.0.1.0, New Crafts 1.1.0, Slots 1.0.1.0. Vein/Grave 1.0.0.1, Team 1.0.0.1 ve Lens 1.0.1.0 hiç yüklenmedi; içerikleri bir üst sürümde. DV Lens 1.0.0.1–1.0.0.2 ve DV Music 1.0.0.1 sitelere yüklenmedi; içerikleri 1.0.1.0'da.
 
+### DV Lib 1.0.5
+1.0.4 hiç yüklenmedi; 1.0.5 onun yerine çıkar ve içeriğini kapsar. DV menüsünde DV Glass, DV Skin ve DV Light var (simgeleri ve kısa açıklamalarıyla); kurulu değillerse kutuları CurseForge sayfalarını açıyor. DV modları yeni sürüm çıkınca haber veriyor: DV menüsündeki kutuda ve DV düğmesinde yeşil işaret.
+Sayfalara yazılacak İngilizce metin: "DV Glass, DV Skin and DV Light now have their tiles in the DV menu; if you don't have them, the tile opens their CurseForge page. DV mods now tell you when a new version is out: a green mark on their tile and on the DV button."
+
 ### DV Light 1.0.0.0
 İlk sürüm: elde ve yerde ışıklı eşyalar, yanan ve parlayan canlılar, ateş topları, havai fişek, TNT, Creeper, fırınlı maden arabası; yuvarlak ya da koni ışık; Kapalı/Hızlı/Güzel (Güzel: çeyrek blok hassasiyetle akan ışık), yumuşak geçiş.
 
